@@ -1,0 +1,33 @@
+
+# ignore docker image dependencies
+*.tar.gz
+sonar*.zip
+
+# ui
+node_modules/
+bower_components/
+__MACOSX/
+coverage
+node/
+npm/
+node_tmp
+npm-debug.log
+dist/
+*.eslintcache
+*.log
+.gradle
+.gradletasknamecache
+*target
+*generated-sources
+*.apps-docker
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+*.DS_Store
+
+# File Upload Directory
+modules/registration/api/applicant/
+.docker

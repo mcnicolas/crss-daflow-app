@@ -1,0 +1,166 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+
+        // this two repository must not be here since it was already
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:3.0.3'
+    }
+}
+
+import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
+import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
+
+apply plugin: com.bmuschko.gradle.docker.DockerRemoteApiPlugin
+
+ext {
+    baseImage = 'exist/jre:1.8'
+    daemonUrl = 'unix:///var/run/docker.sock'
+    registryUrl = 'pemc.medcurial.com'
+    serviceName = "${project.name}"
+    dockerImageName = "$project.serviceName"
+    //dockerImageTag = "$project.dockerImageName:$version"
+    dockerImageTag = "pemc.medcurial.com/$project.dockerImageName:" + 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+}
+
+docker {
+    def extPropertyValue = { String property, defaultVal ->
+        return project.hasProperty(property) ? project.ext[property] : defaultVal
+    }
+
+    url = extPropertyValue 'docker.host.url', daemonUrl
+
+    if (url != daemonUrl) {
+        certPath = file(extPropertyValue('docker.host.certpath', '/var/docker'))
+    }
+
+
+
+    registryCredentials {
+        url = extPropertyValue 'docker.repository.url', registryUrl
+    }
+}
+
+task copyArtifacts(type: Copy, dependsOn: build) {
+
+    //println "${project.buildDir}/libs/${project.name}-${version}.jar"
+
+    from "${project.buildDir}/libs/${project.name}-${version}.jar"
+    into "${project.buildDir}/docker"
+    rename("${project.name}-${version}.jar", "app.jar")
+
+    from "${project.buildDir}/resources/main/entrypoint.sh"
+    into "${project.buildDir}/docker"
+}
+
+
+task createDockerfile(type: Dockerfile, dependsOn: copyArtifacts) {
+    destFile = project.file("${project.buildDir}/docker/Dockerfile")
+    from baseImage
+    maintainer 'Exist Software Labs'
+    volume('/tmp')
+
+    copyFile('app.jar', 'app.jar')
+    entryPoint("java",
+            "-Djava.security.egd=file:/dev/./urandom",
+            "-server",
+            "-Xms128m",
+            "-Xmx1g",
+            "-XX:MaxMetaspaceSize=768m",
+            "-jar", "/app.jar")
+    //exposePort({ servicePort })
+}
+
+task buildDockerImage(type: DockerBuildImage, dependsOn: createDockerfile) {
+    noCache = true
+    tag = dockerImageTag
+    inputDir = createDockerfile.destFile.parentFile
+    remove = true
+}
+
+task tagDockerImage(type: DockerTagImage) {
+    imageId = dockerImageTag
+    tag = "$version"
+    repository = "${docker.registryCredentials.url}/$dockerImageName"
+}
+
+task pushDockerImage(type: DockerPushImage, dependsOn: tagDockerImage) {
+    imageName = "${docker.registryCredentials.url}/$dockerImageName"
+}
+
+
+
+task createDockerContainer(type: DockerCreateContainer, dependsOn: buildDockerImage) {
+    targetImageId {
+        buildDockerImage.getImageId()
+    }
+
+    // set container name to crss_<module name> e.g crss_discovery
+    // if project has an -app in name e.g admin-app remove -app to have the crss_admin
+    containerName = rootProject.name + '_' + project.name.replace('-app', '')
+
+    // for the mean time, lets supply the database url
+    // maybe we can used an environment file per runnable project here
+    /*env = ["spring.datasource.url=${System.getProperty('spring.datasource.url')} ?: ",
+           "spring.profiles.active=${System.getProperty('spring.profiles.active') ?: 'dev'}",
+           "server.port=${servicePort}"]*/
+
+    env = ["spring.datasource.url=${System.getProperty('spring.datasource.url')} ?: ",
+           "spring.profiles.active=${System.getProperty('spring.profiles.active') ?: 'dev'}"]
+
+    image = dockerImageTag
+
+    // all executable project
+    afterEvaluate { project ->
+        //portBindings = ["${project.servicePort}:$servicePort", "8000:8000"]
+        // set memory if project had a property of dockerOptions
+        // some project may not have this to use just the default
+        if (project.hasProperty('dockerOptions') && project.dockerOptions.memory) {
+            logger.info("Found project memory config - ${project.dockerOptions.memory}")
+            memory = project.dockerOptions.memory
+        }
+    }
+
+    // log only in execution
+    doLast {
+        logger.quiet("Creating docker container: $containerName")
+    }
+}
+
+
+task startDockerContainer(type: DockerStartContainer, dependsOn: createDockerContainer) {
+    doLast {
+        // persist the container id in a file for us to enable to call it in another command
+        file('.docker').createNewFile()
+        file('.docker').text = createDockerContainer.getContainerId()
+    }
+
+    targetContainerId {
+        createDockerContainer.getContainerId()
+    }
+}
+
+task stopDockerContainer(type: DockerStopContainer) {
+    targetContainerId {
+        file('.docker').text
+    }
+}
+
+task stopAndRemoveDockerContainer(type: DockerRemoveContainer, dependsOn: stopDockerContainer) {
+    targetContainerId {
+        file('.docker').text
+    }
+}
+

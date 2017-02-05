@@ -1,0 +1,52 @@
+import groovy.json.*
+
+ext {
+    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+}
+
+task setupDeployer() {
+    doLast {
+        println "Setting up deployer: ${project.name}"
+        def dockerPath = "registry.marathon.l4lb.thisdcos.directory:5000/${project.name}:$project.dockerImageVersion"
+        def deployerFile = "$rootDir/buildtools/deployer/${project.name}.json"
+        def outputDir = new File("$project.buildDir/deployer/")
+        outputDir.mkdirs()
+        def outputDeployerFile = new File("$project.buildDir/deployer/${project.name}.json")
+        outputDeployerFile.createNewFile()
+
+        def inputFile = new File(deployerFile)
+        def outputFile = new File("$project.buildDir/deployer/${project.name}.json")
+        def json = new JsonSlurper().parseText(inputFile.text)
+
+        json.container.docker.image = dockerPath
+
+        def builder = new JsonBuilder(json)
+        outputFile.text = builder.toPrettyString()
+    }
+}
+
+task stopApp()  {
+    doLast {
+        // stop process app
+        println "Stopping current deployed app: ${project.name}"
+        def marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps/"
+        def proc = "curl -X DELETE $marathonUrl${project.name}".execute()
+        Thread.start { System.err << proc.err }
+        proc.waitFor()
+        println "Stopped"
+    }
+}
+
+task deployApp(dependsOn: setupDeployer) {
+    doLast {
+        exec {
+            println "Deploying new app: ${project.name}"
+            commandLine "$rootDir/buildtools/deployer/deploy.sh"
+            args "$project.buildDir/deployer/${project.name}.json"
+
+        }
+        println "Deployed"
+    }
+}
+
+

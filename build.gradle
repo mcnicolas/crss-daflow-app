@@ -1,0 +1,115 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+buildscript {
+    ext {
+        springBootVersion = '1.4.2.RELEASE'
+    }
+    apply from: file('gradle/buildscript.gradle'), to: buildscript
+}
+
+ext {
+    // runnable project has project name format of <projectname>-app
+    runnableProject = ['app']
+    springbootVersion = '1.4.1.RELEASE'
+    nodeVersion = '4.4.7'
+}
+
+
+project.buildDir = 'target'
+
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: "idea"
+    apply plugin: "io.spring.dependency-management"
+
+    project.buildDir = 'target'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+apply plugin: 'java'
+apply plugin: 'spring-boot'
+
+jar {
+    baseName = 'crss-rest-resource'
+    version = '1.0.0.BUILD-SNAPSHOT'
+}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+    maven {
+        url "http://pemc-discovery.manila.exist.com:8081/repository/pemc-snapshots/"
+    }
+}
+
+
+apply from: file("$rootDir/gradle/docker.gradle")
+apply from: file("$rootDir/gradle/deployer.gradle")
+
+configurations {
+    compile.exclude module: 'tomcat-jdbc'
+}
+
+dependencies {
+    compile 'com.pemc.crss:crss-meterprocess-core-main:1.0.0.BUILD-SNAPSHOT'
+    compile 'com.pemc.crss:crss-shared-core-registration:1.0.1.BUILD-SNAPSHOT'
+    compile 'com.pemc.crss:crss-shared-core-nmms:1.0.1.BUILD-SNAPSHOT'
+    compile 'com.pemc.crss:crss-shared-core-dataflow:1.0.1.BUILD-SNAPSHOT'
+
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'org.springframework.boot:spring-boot-starter-batch'
+    compile 'org.springframework.boot:spring-boot-starter-hateoas'
+    compile 'org.springframework.cloud:spring-cloud-starter-eureka'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
+    compile 'org.apache.commons:commons-csv:1.4'
+    compile 'commons-io:commons-io'
+    compile 'org.springframework.cloud:spring-cloud-task-starter'
+    compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
+
+    testCompile 'com.pemc.crss:crss-shared-commons-test:1.0.1.BUILD-SNAPSHOT'
+
+    // Database
+    runtime 'com.zaxxer:HikariCP'
+    runtime 'org.postgresql:postgresql'
+    runtime files("$rootDir/libs/ojdbc6-11.2.0.3.jar")
+
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dataflow-dependencies:1.0.1.RELEASE"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:Camden.RELEASE"
+    }
+}
+
+/*task pathingJar(type: Jar) {
+    dependsOn configurations.runtime
+    appendix = 'pathing'
+
+    doFirst {
+        manifest {
+            attributes "Class-Path": configurations.runtime.files.collect {
+                it.toURL().toString().replaceFirst(/file:\/+/, '/')
+            }.join(' ')
+        }
+    }
+}*/
+
+bootRun {
+    systemProperties = System.properties
+}

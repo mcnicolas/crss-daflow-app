@@ -1,3 +1,3 @@
 spring:
   application:
-    name: crss-restresource
+    name: crss-dataflow-app

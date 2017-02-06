@@ -15,22 +15,7 @@ spring:
       driverClassName: org.postgresql.Driver
       connectionTimeout: 10000
       maxPoolSize: 20
-  crss-registration:
-    datasource:
-      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_reg
-      username: admin
-      password: password
-      driverClassName: org.postgresql.Driver
-      connectionTimeout: 10000
-      maxPoolSize: 20
-  crss-nmms:
-    datasource:
-      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_nmms
-      username: admin
-      password: password
-      driverClassName: org.postgresql.Driver
-      connectionTimeout: 10000
-      maxPoolSize: 20
+
 
   jpa:
     show-sql: false

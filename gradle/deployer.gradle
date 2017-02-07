@@ -53,7 +53,7 @@ task stopApp() {
         // stop process app
         println "Stopping current deployed app: ${project.name}"
 
-        def proc = "curl -X DELETE $project.marathonUrl${project.name}".execute()
+        def proc = "curl -X DELETE $project.marathonUrl/${project.name}".execute()
         Thread.start { System.err << proc.err }
         proc.waitFor()
         println "Stopped"

@@ -1,7 +1,29 @@
-import groovy.json.*
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+
+def allowableProfiles = ['dev', 'qa']
+
+if (project.hasProperty('env') && !allowableProfiles.contains(project.env)) {
+    throw new IllegalArgumentException("Unknown environment supplied: ${project.env}")
+}
+
+def profile = project.hasProperty('env') ? project.getProperty('env') : 'local'
+
 
 ext {
-    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim() + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    switch (profile) {
+        case 'dev':
+            marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps/"
+            break
+
+        case 'qa':
+            marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps/"
+            break
+
+        default:
+            break
+    }
 }
 
 task setupDeployer() {
@@ -25,12 +47,13 @@ task setupDeployer() {
     }
 }
 
-task stopApp()  {
+
+task stopApp() {
     doLast {
         // stop process app
         println "Stopping current deployed app: ${project.name}"
-        def marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps/"
-        def proc = "curl -X DELETE $marathonUrl${project.name}".execute()
+
+        def proc = "curl -X DELETE $project.marathonUrl${project.name}".execute()
         Thread.start { System.err << proc.err }
         proc.waitFor()
         println "Stopped"
@@ -42,6 +65,7 @@ task deployApp(dependsOn: setupDeployer) {
         exec {
             println "Deploying new app: ${project.name}"
             commandLine "$rootDir/buildtools/deployer/deploy.sh"
+            args "$project.marathonUrl"
             args "$project.buildDir/deployer/${project.name}.json"
 
         }

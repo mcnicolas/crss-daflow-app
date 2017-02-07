@@ -14,11 +14,11 @@ ext {
     dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim() + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
     switch (profile) {
         case 'dev':
-            marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps/"
+            marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps"
             break
 
         case 'qa':
-            marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps/"
+            marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps"
             break
 
         default:

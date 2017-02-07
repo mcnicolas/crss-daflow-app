@@ -39,7 +39,7 @@ apply plugin: 'java'
 apply plugin: 'spring-boot'
 
 jar {
-    baseName = 'crss-rest-resource'
+    baseName = 'crss-dataflow-app'
     version = '1.0.0.BUILD-SNAPSHOT'
 }
 sourceCompatibility = 1.8

@@ -1,0 +1,73 @@
+{
+    "volumes": null,
+    "id": "/crss-dataflow-app",
+    "cmd": null,
+    "args": null,
+    "user": null,
+    "env": {
+        "SPRING_APPLICATION_JSON": "{\"spring.cloud.config.enabled\":\"false\",\"eureka.instance.hostname\":\"crss-dataflow-app.marathon.l4lb.thisdcos.directory\",\"eureka.instance.prefer-ip-address\":\"false\"}",
+        "SPRING_PROFILES_ACTIVE": "qa,skipSSLA"
+    },
+    "instances": 1,
+    "cpus": 1,
+    "mem": 1024,
+    "disk": 0,
+    "gpus": 0,
+    "executor": null,
+    "constraints": null,
+    "fetch": null,
+    "storeUrls": null,
+    "backoffSeconds": 1,
+    "backoffFactor": 1.15,
+    "maxLaunchDelaySeconds": 3600,
+    "container": {
+        "docker": {
+            "image": "registry.marathon.l4lb.thisdcos.directory:5000/crss-dataflow-app:master-afbcd40",
+            "forcePullImage": false,
+            "privileged": false,
+            "portMappings": [
+                {
+                    "containerPort": 8081,
+                    "protocol": "tcp",
+                    "labels": {
+                        "VIP_0": "/crss-dataflow-app:8081"
+                    }
+                }
+            ],
+            "network": "BRIDGE"
+        }
+    },
+    "healthChecks": [
+        {
+            "protocol": "HTTP",
+            "path": "/health",
+            "gracePeriodSeconds": 120,
+            "intervalSeconds": 60,
+            "timeoutSeconds": 20,
+            "maxConsecutiveFailures": 29,
+            "ignoreHttp1xx": false
+        }
+    ],
+    "readinessChecks": null,
+    "dependencies": null,
+    "upgradeStrategy": {
+        "minimumHealthCapacity": 1,
+        "maximumOverCapacity": 1
+    },
+    "labels": {
+        "HAPROXY_0_VHOST": "app.meterprocess.pemc.com",
+        "HAPROXY_GROUP": "external"
+    },
+    "acceptedResourceRoles": null,
+    "residency": null,
+    "secrets": null,
+    "taskKillGracePeriodSeconds": null,
+    "portDefinitions": [
+        {
+            "port": 10125,
+            "protocol": "tcp",
+            "labels": {}
+        }
+    ],
+    "requirePorts": false
+}

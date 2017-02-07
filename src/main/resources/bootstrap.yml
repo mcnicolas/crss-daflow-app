@@ -1,3 +1,17 @@
 spring:
   application:
     name: crss-dataflow-app
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: true
+
+---
+spring:
+  profiles: qa
+  cloud:
+    config:
+      uri: http://config-server.marathon.l4lb.thisdcos.directory:8080
+      label: crss2

@@ -75,6 +75,7 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-batch'
     compile 'org.springframework.boot:spring-boot-starter-hateoas'
     compile 'org.springframework.cloud:spring-cloud-starter-eureka'
+    compile 'org.springframework.cloud:spring-cloud-starter-config'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
     compile 'org.apache.commons:commons-csv:1.4'
     compile 'commons-io:commons-io'

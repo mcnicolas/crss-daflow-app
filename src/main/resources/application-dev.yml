@@ -52,7 +52,7 @@ eureka:
     prefer-ip-address: true
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://crss-discovery.marathon.l4lb.thisdcos.directory:8761/eureka/
 #          healthcheck:
 #            enabled: true
 #    lease:
@@ -82,7 +82,7 @@ logging:
     org.apache.http: DEBUG
 
 dataflow:
-  url: http://localhost:9393
+  url: http://spring-cloud-data-flow.marathon.l4lb.thisdcos.directory:9393
 
 job:
   maxRun: 1

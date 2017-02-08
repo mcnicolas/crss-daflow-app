@@ -74,12 +74,12 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-actuator'
     compile 'org.springframework.boot:spring-boot-starter-batch'
     compile 'org.springframework.boot:spring-boot-starter-hateoas'
-    compile 'org.springframework.cloud:spring-cloud-starter-eureka'
+    compile 'org.springframework.cloud:spring-cloud-starter-eureka:1.1.4.RELEASE'
     compile 'org.springframework.cloud:spring-cloud-starter-config'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
     compile 'org.apache.commons:commons-csv:1.4'
-    compile 'commons-io:commons-io'
-    compile 'org.springframework.cloud:spring-cloud-task-starter'
+    compile 'commons-io:commons-io:2.4'
+    compile 'org.springframework.cloud:spring-cloud-task-starter:1.0.3.RELEASE'
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 
     testCompile 'com.pemc.crss:crss-shared-commons-test:1.0.1.BUILD-SNAPSHOT'
@@ -93,8 +93,11 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dataflow-dependencies:1.0.1.RELEASE"
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:Camden.RELEASE"
+        //mavenBom "org.springframework.cloud:spring-cloud-dataflow-dependencies:1.0.1.RELEASE"
+        //mavenBom "org.springframework.cloud:spring-cloud-dependencies:Camden.RELEASE"
+        mavenBom 'org.springframework.cloud:spring-cloud-netflix:1.2.0.RELEASE'
+        mavenBom "org.springframework.boot:spring-boot-dependencies:$springbootVersion"
+        mavenBom "org.springframework.cloud.stream.app:spring-cloud-stream-app-dependencies:1.0.4.RELEASE"
     }
 }
 

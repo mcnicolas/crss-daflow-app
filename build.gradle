@@ -80,6 +80,10 @@ dependencies {
     compile 'org.apache.commons:commons-csv:1.4'
     compile 'commons-io:commons-io:2.4'
     compile 'org.springframework.cloud:spring-cloud-task-starter:1.0.3.RELEASE'
+
+    // Spring Batch Compatibility Issue
+    compile 'org.codehaus.jettison:jettison:1.1'
+
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 
     testCompile 'com.pemc.crss:crss-shared-commons-test:1.0.1.BUILD-SNAPSHOT'

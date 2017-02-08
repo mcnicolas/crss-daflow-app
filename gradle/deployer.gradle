@@ -15,10 +15,12 @@ ext {
     switch (profile) {
         case 'dev':
             marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps"
+            appProfile = "dev,skipSSLA"
             break
 
         case 'qa':
             marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps"
+            appProfile = "qa,skipSSLA"
             break
 
         default:
@@ -41,6 +43,7 @@ task setupDeployer() {
         def json = new JsonSlurper().parseText(inputFile.text)
 
         json.container.docker.image = dockerPath
+        json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
 
         def builder = new JsonBuilder(json)
         outputFile.text = builder.toPrettyString()

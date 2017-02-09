@@ -17,6 +17,7 @@ public class DataInterfaceExecutionDTO {
     private String status;
     private TaskProgressDto progress;
     private BatchStatus batchStatus;
+    private String mode;
 
     public Long getId() {
         return id;
@@ -80,5 +81,13 @@ public class DataInterfaceExecutionDTO {
 
     public void setBatchStatus(BatchStatus batchStatus) {
         this.batchStatus = batchStatus;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 }

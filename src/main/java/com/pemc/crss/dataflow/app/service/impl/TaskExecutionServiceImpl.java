@@ -28,16 +28,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.ResourceSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created on 1/22/17.
@@ -62,6 +62,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String METER_TYPE = "meterType";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
     private static final String QUOTE = "\"";
+    private static final String MODE = "mode";
 
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
 
@@ -232,6 +233,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate()) ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate()) ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
+            arguments.add(concatKeyValue(MODE, "Manual"));
 
             //TODO create market info type enum in shared
             if (taskRunDto.getMarketInformationType().equals("energyPriceAndSchedule")) {
@@ -328,35 +330,17 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Override
     public List<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
 
-        int count = 0;
+        List<DataInterfaceExecutionDTO> energyPriceSchedExecutions = getDataInterfaceJobByName("importEnergyPriceSchedJob", pageable);
+        List<DataInterfaceExecutionDTO> reservePriceSchedExecutions = getDataInterfaceJobByName("importReservePriceSchedJob", pageable);
+        List<DataInterfaceExecutionDTO> reserveBcqExecutions = getDataInterfaceJobByName("importReserveBCQ", pageable);
+        List<DataInterfaceExecutionDTO> rtuExecutions = getDataInterfaceJobByName("importRTUJob", pageable);
 
-        try {
-            count = jobExplorer.getJobInstanceCount("dataInterfaceJob");
-        } catch (NoSuchJobException e) {
-            LOG.error("Exception: " + e);
-        }
+        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
-        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = Lists.newArrayList();
-
-        if (count > 0) {
-            dataInterfaceExecutionDTOs = jobExplorer.findJobInstancesByJobName("importEnergyPriceSchedJob",
-                    pageable.getOffset(), pageable.getPageSize()).stream()
-                    .map(jobInstance -> {
-
-                        JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
-                        DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
-                        dataInterfaceExecutionDTO.setId(jobInstance.getId());
-                        dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
-                        dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
-                        dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
-                        dataInterfaceExecutionDTO.setParams(Maps.transformValues(
-                                jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-                        dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-
-                        return dataInterfaceExecutionDTO;
-
-                    }).collect(Collectors.toList());
-        }
+        dataInterfaceExecutionDTOs.addAll(energyPriceSchedExecutions);
+        dataInterfaceExecutionDTOs.addAll(reservePriceSchedExecutions);
+        dataInterfaceExecutionDTOs.addAll(reserveBcqExecutions);
+        dataInterfaceExecutionDTOs.addAll(rtuExecutions);
 
         return dataInterfaceExecutionDTOs;
     }
@@ -426,5 +410,48 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         progressDto.setExecutedCount(stepProgressRepository.findByStepId(runningStep.getId()).map(StepProgress::getChunkCount).orElse(0L));
         progressDto.setTotalCount(runningStep.getExecutionContext().getLong(key));
         return progressDto;
+    }
+
+    private List<DataInterfaceExecutionDTO> getDataInterfaceJobByName(String jobName, Pageable pageable) {
+        int count = 0;
+
+        try {
+            count = jobExplorer.getJobInstanceCount(jobName);
+        } catch (NoSuchJobException e) {
+            LOG.error("Exception: " + e);
+        }
+
+        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = Lists.newArrayList();
+
+        if (count > 0) {
+            dataInterfaceExecutionDTOs = jobExplorer.findJobInstancesByJobName(jobName,
+                    pageable.getOffset(), pageable.getPageSize()).stream()
+                    .map(jobInstance -> {
+
+                        JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
+                        DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
+                        dataInterfaceExecutionDTO.setId(jobInstance.getId());
+                        dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
+                        dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
+                        dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
+                        dataInterfaceExecutionDTO.setParams(Maps.transformValues(
+                                jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+                        dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
+
+                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                        try {
+                            Assert.notNull(jobParameters.get(MODE), "mode is null");
+                            String mode = (String)jobParameters.get(MODE);
+                            dataInterfaceExecutionDTO.setMode(mode.toUpperCase());
+                        } catch(Exception e) {
+                            dataInterfaceExecutionDTO.setMode("AUTOMATIC");
+                        }
+
+                        return dataInterfaceExecutionDTO;
+
+                    }).collect(Collectors.toList());
+        }
+
+        return dataInterfaceExecutionDTOs;
     }
 }

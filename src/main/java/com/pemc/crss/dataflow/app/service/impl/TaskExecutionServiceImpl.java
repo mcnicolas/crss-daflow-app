@@ -244,7 +244,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             } else if (taskRunDto.getMarketInformationType().equals("actualDispatchData")) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("actualDispatchData")));
             }
-            jobName = "data-interface-data-job";
+            jobName = "crss-datainterface-task-ingest";
         } else if (RUN_COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
             if (PROCESS_TYPE_DAILY.equals(type)) {

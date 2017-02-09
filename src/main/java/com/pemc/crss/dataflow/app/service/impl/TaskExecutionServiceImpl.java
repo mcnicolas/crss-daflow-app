@@ -51,7 +51,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String RUN_WESM_JOB_NAME = "computeWesmMq";
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
     private static final String RUN_COMPUTE_STL_JOB_NAME = "computeSettlement";
-    private static final String RUN_DATA_INTERFACE_JOB_NAME = "dataInterfaceJob";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
     private static final String DATE = "date";
     private static final String START_DATE = "startDate";
@@ -63,6 +62,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
     private static final String QUOTE = "\"";
     private static final String MODE = "mode";
+
+    private List<String> RUN_DATA_INTERFACE_JOB_NAMES = Arrays.asList("importEnergyPriceSchedJob","importReservePriceSchedJob","importReserveBCQ","importRTUJob");
 
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
 
@@ -229,7 +230,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         String jobName = null;
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
-        if (RUN_DATA_INTERFACE_JOB_NAME.equals(taskRunDto.getJobName())) {
+        if (RUN_DATA_INTERFACE_JOB_NAMES.contains(taskRunDto.getJobName())) {
             arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate()) ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate()) ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));

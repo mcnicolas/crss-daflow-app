@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.resource;
 
 import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
@@ -33,8 +34,8 @@ public class TaskExecutionResource {
     }
 
     @RequestMapping(value = "/stl", method = RequestMethod.GET)
-    public ResponseEntity<Page<TaskExecutionDto>> findAllStlJobInstances(Pageable pageable) {
-        List<TaskExecutionDto> taskExecutionDtos = taskExecutionService.findSettlementJobInstances(pageable);
+    public ResponseEntity<Page<StlTaskExecutionDto>> findAllStlJobInstances(Pageable pageable) {
+        List<StlTaskExecutionDto> taskExecutionDtos = taskExecutionService.findSettlementJobInstances(pageable);
         return new ResponseEntity<>(new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size()), HttpStatus.OK);
     }
 

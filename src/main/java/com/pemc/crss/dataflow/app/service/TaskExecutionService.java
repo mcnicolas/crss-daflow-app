@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.service;
 
 import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
@@ -16,7 +17,7 @@ public interface TaskExecutionService {
 
     List<TaskExecutionDto> findJobInstances(Pageable pageable);
 
-    List<TaskExecutionDto> findSettlementJobInstances(Pageable pageable);
+    List<StlTaskExecutionDto> findSettlementJobInstances(Pageable pageable);
 
     List<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable);
 

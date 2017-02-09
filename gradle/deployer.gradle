@@ -15,7 +15,7 @@ ext {
     switch (profile) {
         case 'dev':
             marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps"
-            appProfile = "dev,skipSSLA"
+            appProfile = "dev"
             break
 
         case 'qa':

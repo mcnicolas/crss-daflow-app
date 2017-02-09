@@ -222,7 +222,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         Preconditions.checkNotNull(taskRunDto.getJobName());
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
-        Preconditions.checkState(batchJobRunLockRepository.countByLockedIsTrue() < jobMaxRun,
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) < jobMaxRun,
                 "Job already exceeds the maximum allowable concurrent run");
 
         String jobName = null;

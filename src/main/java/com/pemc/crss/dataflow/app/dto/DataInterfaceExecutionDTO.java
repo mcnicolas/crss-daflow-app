@@ -18,6 +18,11 @@ public class DataInterfaceExecutionDTO {
     private TaskProgressDto progress;
     private BatchStatus batchStatus;
     private String mode;
+    private String type;
+    private int recordsExpected;
+    private int recordsWritten;
+    private int recordsRead;
+    private int abnormalPrice;
 
     public Long getId() {
         return id;
@@ -89,5 +94,45 @@ public class DataInterfaceExecutionDTO {
 
     public void setMode(String mode) {
         this.mode = mode;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public int getRecordsExpected() {
+        return recordsExpected;
+    }
+
+    public void setRecordsExpected(int recordsExpected) {
+        this.recordsExpected = recordsExpected;
+    }
+
+    public int getRecordsWritten() {
+        return recordsWritten;
+    }
+
+    public void setRecordsWritten(int recordsWritten) {
+        this.recordsWritten = recordsWritten;
+    }
+
+    public int getRecordsRead() {
+        return recordsRead;
+    }
+
+    public void setRecordsRead(int recordsRead) {
+        this.recordsRead = recordsRead;
+    }
+
+    public int getAbnormalPrice() {
+        return abnormalPrice;
+    }
+
+    public void setAbnormalPrice(int abnormalPrice) {
+        this.abnormalPrice = abnormalPrice;
     }
 }

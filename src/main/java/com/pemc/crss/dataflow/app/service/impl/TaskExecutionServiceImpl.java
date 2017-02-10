@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
 import com.pemc.crss.meterprocess.core.main.reference.MeterType;
 import com.pemc.crss.meterprocess.core.main.repository.BillingPeriodRepository;
+import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
@@ -64,8 +65,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
     private static final String QUOTE = "\"";
     private static final String MODE = "mode";
-
-    private List<String> RUN_DATA_INTERFACE_JOB_NAMES = Arrays.asList("importEnergyPriceSchedJob","importReservePriceSchedJob","importReserveBCQ","importRTUJob");
 
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
 
@@ -272,24 +271,22 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         String jobName = null;
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
-        if (RUN_DATA_INTERFACE_JOB_NAMES.contains(taskRunDto.getJobName())) {
-            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate()) ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate()) ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
+
+        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList( MarketInfoType.values());
+
+        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(taskRunDto.getJobName()))) {
+            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
+                    ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
+                    ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(MODE, "Manual"));
 
-            //TODO create market info type enum in shared
-            if (taskRunDto.getMarketInformationType().equals("energyPriceAndSchedule")) {
-                String testProfile = fetchSpringProfilesActive("energyPriceSched");
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, testProfile));
-            } else if (taskRunDto.getMarketInformationType().equals("reservePriceAndSchedule")) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("reservePriceSched")));
-            } else if (taskRunDto.getMarketInformationType().equals("reserveBCQ")) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("reserveBCQ")));
-            } else if (taskRunDto.getMarketInformationType().equals("actualDispatchData")) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("actualDispatchData")));
-            }
+            properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
+                    .getByJobName(taskRunDto.getJobName()).getProfileName())));
+
             jobName = "crss-datainterface-task-ingest";
+
         } else if (RUN_COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
             if (PROCESS_TYPE_DAILY.equals(type)) {
@@ -387,17 +384,11 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Override
     public List<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
 
-        List<DataInterfaceExecutionDTO> energyPriceSchedExecutions = getDataInterfaceJobByName("importEnergyPriceSchedJob", pageable);
-        List<DataInterfaceExecutionDTO> reservePriceSchedExecutions = getDataInterfaceJobByName("importReservePriceSchedJob", pageable);
-        List<DataInterfaceExecutionDTO> reserveBcqExecutions = getDataInterfaceJobByName("importReserveBCQ", pageable);
-        List<DataInterfaceExecutionDTO> rtuExecutions = getDataInterfaceJobByName("importRTUJob", pageable);
-
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
-        dataInterfaceExecutionDTOs.addAll(energyPriceSchedExecutions);
-        dataInterfaceExecutionDTOs.addAll(reservePriceSchedExecutions);
-        dataInterfaceExecutionDTOs.addAll(reserveBcqExecutions);
-        dataInterfaceExecutionDTOs.addAll(rtuExecutions);
+        for(MarketInfoType marketInfoType : MarketInfoType.values()) {
+            dataInterfaceExecutionDTOs.addAll(getDataInterfaceJobByName(marketInfoType, pageable));
+        }
 
         return dataInterfaceExecutionDTOs;
     }
@@ -469,8 +460,10 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         return progressDto;
     }
 
-    private List<DataInterfaceExecutionDTO> getDataInterfaceJobByName(String jobName, Pageable pageable) {
+    private List<DataInterfaceExecutionDTO> getDataInterfaceJobByName(MarketInfoType marketInfoType, Pageable pageable) {
         int count = 0;
+        String jobName = marketInfoType.getJobName();
+        String type = marketInfoType.getLabel();
 
         try {
             count = jobExplorer.getJobInstanceCount(jobName);
@@ -485,6 +478,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     pageable.getOffset(), pageable.getPageSize()).stream()
                     .map(jobInstance -> {
 
+
                         JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
                         dataInterfaceExecutionDTO.setId(jobInstance.getId());
@@ -494,8 +488,25 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         dataInterfaceExecutionDTO.setParams(Maps.transformValues(
                                 jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
+                        dataInterfaceExecutionDTO.setType(type);
+
+                        Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+                        Iterator it = executionSteps.iterator();
+
+                        StepExecution stepExecution = null;
+
+                        while(it.hasNext()){
+                            StepExecution temp = (StepExecution)it.next();
+                            if (temp.getStepName().equals("step1")) {
+                                stepExecution = temp;
+                                break;
+                            }
+                        }
+
+                        setLogs(jobName, dataInterfaceExecutionDTO, stepExecution);
 
                         Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+
                         try {
                             Assert.notNull(jobParameters.get(MODE), "mode is null");
                             String mode = (String)jobParameters.get(MODE);
@@ -510,5 +521,15 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         }
 
         return dataInterfaceExecutionDTOs;
+    }
+
+    private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, StepExecution executionStep) {
+        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob") || jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
+            //TODO imlement getting of abnormal price
+
+        }
+
+        executionDTO.setRecordsWritten(executionStep.getWriteCount());
+        executionDTO.setRecordsRead(executionStep.getReadCount());
     }
 }

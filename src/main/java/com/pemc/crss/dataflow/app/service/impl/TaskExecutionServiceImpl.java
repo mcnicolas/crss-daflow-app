@@ -36,8 +36,9 @@ import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Created on 1/22/17.
@@ -167,7 +168,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
                         return taskExecutionDto;
 
-                    }).collect(Collectors.toList());
+                    }).collect(toList());
         }
         return taskExecutionDtos;
     }
@@ -184,50 +185,74 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
 
         List<StlTaskExecutionDto> stlTaskExecutionDtos = Lists.newArrayList();
-        if (count > 0) {
-            stlTaskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_COMPUTE_STL_JOB_NAME.concat("*"),
-                    pageable.getOffset(), pageable.getPageSize()).stream()
-                    .map((JobInstance jobInstance) -> {
-
-                        JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
-                        BatchStatus status = jobExecution.getStatus();
-
-                        StlTaskExecutionDto stlTaskExecutionDto = new StlTaskExecutionDto();
-                        stlTaskExecutionDto.setId(jobInstance.getId());
-                        stlTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                        stlTaskExecutionDto.setParams(Maps.transformValues(
-                                jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-                        stlTaskExecutionDto.setCalculationStatus(status);
-
-                        if (status.isRunning()) {
-//                            calculateProgress(jobExecution, taskExecutionDto);
-                        } else if (status.isUnsuccessful()) {
-                            stlTaskExecutionDto.setExitMessage(jobExecution.getExitStatus().getExitDescription());
-                        }
-
-                        stlTaskExecutionDto.setStatus(status.name());
-
-                        List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
-
-                        if (!settlementJobs.isEmpty()) {
-                            JobExecution settlementJobExecution = jobExplorer.getJobExecutions(settlementJobs.get(0)).iterator().next();
-                            stlTaskExecutionDto.setInvoiceGenerationStatus(settlementJobExecution.getStatus());
-
-                            if (stlTaskExecutionDto.getInvoiceGenerationStatus().isUnsuccessful()) {
-                                stlTaskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
-                            } else if (stlTaskExecutionDto.getInvoiceGenerationStatus() == BatchStatus.COMPLETED) {
-                                stlTaskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
-                            }
-                            stlTaskExecutionDto.setStatus(convertStatus(stlTaskExecutionDto.getInvoiceGenerationStatus(), "SETTLEMENT"));
-                        }
-
-                        return stlTaskExecutionDto;
-
-                    }).collect(Collectors.toList());
-        }
+//        if (count > 0) {
+            stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("Daily", null));
+            stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("MonthlyAdjusted", MeterProcessType.ADJUSTED));
+            stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("MonthlyPrelim", MeterProcessType.PRELIMINARY));
+            stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("MonthlyFinal", MeterProcessType.FINAL));
+//        }
 
         return stlTaskExecutionDtos;
+    }
+
+    private List<StlTaskExecutionDto> stlTaskExecutionDtoList(String processType, MeterProcessType meterProcessType) {
+        List<StlTaskExecutionDto> data = jobExplorer.findJobInstancesByJobName(RUN_COMPUTE_STL_JOB_NAME.concat(processType), 0, 1)
+                .stream().map((JobInstance jobInstance) -> {
+
+            JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
+            BatchStatus status = jobExecution.getStatus();
+
+            StlTaskExecutionDto stlTaskExecutionDto = new StlTaskExecutionDto();
+            stlTaskExecutionDto.setId(jobInstance.getId());
+            stlTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+            stlTaskExecutionDto.setParams(Maps.transformValues(
+                    jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+            stlTaskExecutionDto.setCalculationStatus(status);
+
+            if (status.isRunning()) {
+//                            calculateProgress(jobExecution, taskExecutionDto);
+            } else if (status.isUnsuccessful()) {
+                stlTaskExecutionDto.setExitMessage(jobExecution.getExitStatus().getExitDescription());
+            }
+
+            stlTaskExecutionDto.setStatus(status.name());
+
+            List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
+                    RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+
+            if (!settlementJobs.isEmpty()) {
+                JobExecution settlementJobExecution = jobExplorer.getJobExecutions(settlementJobs.get(0)).iterator().next();
+                stlTaskExecutionDto.setInvoiceGenerationStatus(settlementJobExecution.getStatus());
+
+                if (stlTaskExecutionDto.getInvoiceGenerationStatus().isUnsuccessful()) {
+                    stlTaskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
+                } else if (stlTaskExecutionDto.getInvoiceGenerationStatus() == BatchStatus.COMPLETED) {
+                    stlTaskExecutionDto.getSummary().put(RUN_GENERATE_INVOICE_STL_JOB_NAME, showSummary(settlementJobExecution));
+                }
+                stlTaskExecutionDto.setStatus(convertStatus(stlTaskExecutionDto.getInvoiceGenerationStatus(), "SETTLEMENT"));
+            }
+
+            return stlTaskExecutionDto;
+
+        }).collect(toList());
+
+
+
+        StlTaskExecutionDto dto = new StlTaskExecutionDto();
+        dto.setId(9999L);
+        dto.setCalculationStatus(BatchStatus.FAILED);
+        dto.setInvoiceGenerationStatus(null);
+        dto.setExitMessage("");
+        dto.setParams(ImmutableMap.of(START_DATE, "2017-06-26",
+                END_DATE, "2017-07-25",
+                PROCESS_TYPE, meterProcessType == null ? "DAILY" : meterProcessType.name()));
+        dto.setProgress(null);
+        dto.setStatus("SETTLEMENT READY");
+        dto.setRunDateTime(new Date());
+
+        return data.isEmpty()
+                ? Lists.newArrayList(dto)
+                : data;
     }
 
     @Override
@@ -410,8 +435,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     taskSummaryDto.setStepId(stepExecution.getId());
                     return taskSummaryDto;
                 })
-                .sorted(Comparator.comparing(TaskSummaryDto::getStepId))
-                .collect(Collectors.toList());
+                .sorted(comparing(TaskSummaryDto::getStepId))
+                .collect(toList());
     }
 
     private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
@@ -481,7 +506,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
                         return dataInterfaceExecutionDTO;
 
-                    }).collect(Collectors.toList());
+                    }).collect(toList());
         }
 
         return dataInterfaceExecutionDTOs;

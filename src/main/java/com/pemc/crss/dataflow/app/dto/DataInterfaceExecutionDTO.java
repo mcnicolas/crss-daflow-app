@@ -19,6 +19,8 @@ public class DataInterfaceExecutionDTO {
     private BatchStatus batchStatus;
     private String mode;
     private String type;
+    private String tradingDay;
+    private String dispatchInterval;
     private int recordsExpected;
     private int recordsWritten;
     private int recordsRead;
@@ -102,6 +104,22 @@ public class DataInterfaceExecutionDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getTradingDay() {
+        return tradingDay;
+    }
+
+    public void setTradingDay(String tradingDay) {
+        this.tradingDay = tradingDay;
+    }
+
+    public String getDispatchInterval() {
+        return dispatchInterval;
+    }
+
+    public void setDispatchInterval(String dispatchInterval) {
+        this.dispatchInterval = dispatchInterval;
     }
 
     public int getRecordsExpected() {

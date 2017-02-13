@@ -17,6 +17,10 @@ import com.pemc.crss.shared.core.dataflow.entity.StepProgress;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.Days;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
@@ -34,9 +38,12 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -474,52 +481,92 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = Lists.newArrayList();
 
         if (count > 0) {
-            dataInterfaceExecutionDTOs = jobExplorer.findJobInstancesByJobName(jobName,
-                    pageable.getOffset(), pageable.getPageSize()).stream()
-                    .map(jobInstance -> {
+
+            List<JobInstance> jobInstances = jobExplorer.findJobInstancesByJobName(jobName,
+                    pageable.getOffset(), pageable.getPageSize());
+
+            for (JobInstance jobInstance : jobInstances) {
+
+                JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
+                Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+
+                LocalDateTime startDateTime = new LocalDateTime((Timestamp)jobParameters.get("startDatetime"));
+                LocalDateTime endDateTime = new LocalDateTime((Timestamp)jobParameters.get("endDatetime"));
+
+                Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
+                int noOfDaysInBetween = daysInBetween.getDays();
+                List<LocalDateTime> daysRange;
+                if (noOfDaysInBetween > 0) {
+                    daysRange = Stream.iterate(startDateTime, date -> date.plusDays(1))
+                            .limit(daysInBetween.getDays() + 2).collect(toList());
+                } else {
+                    daysRange = new ArrayList<LocalDateTime>();
+                    daysRange.add(startDateTime);
+                }
 
 
-                        JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
-                        DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
-                        dataInterfaceExecutionDTO.setId(jobInstance.getId());
-                        dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
-                        dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
-                        dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
-                        dataInterfaceExecutionDTO.setParams(Maps.transformValues(
-                                jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-                        dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                        dataInterfaceExecutionDTO.setType(type);
+                DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+                String startDateChecker = dtf.print(startDateTime).split(" ")[0];
+                String endDateChecker = dtf.print(endDateTime).split(" ")[0];
 
-                        Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-                        Iterator it = executionSteps.iterator();
+                List<DataInterfaceExecutionDTO> tempList = daysRange.stream().map(days -> {
+                    DataInterfaceExecutionDTO temp = new DataInterfaceExecutionDTO();
 
-                        StepExecution stepExecution = null;
+                    String date = dtf.print(days);
+                    String tradingDay = date.split(" ")[0];
+                    String dispatchInterval = "";
 
-                        while(it.hasNext()){
-                            StepExecution temp = (StepExecution)it.next();
-                            if (temp.getStepName().equals("step1")) {
-                                stepExecution = temp;
-                                break;
-                            }
+                    temp.setId(jobInstance.getId());
+                    temp.setRunStartDateTime(jobExecution.getStartTime());
+                    temp.setRunEndDateTime(jobExecution.getEndTime());
+                    temp.setTradingDay(tradingDay);
+                    temp.setStatus(jobExecution.getStatus().toString());
+                    temp.setParams(jobParameters);
+                    temp.setBatchStatus(jobExecution.getStatus());
+                    temp.setType(type);
+
+                    if (tradingDay.equals(startDateChecker) && tradingDay.equals(endDateChecker)) {
+                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-" + dtf.print(endDateTime).split(" ")[1];
+                    } else if (tradingDay.equals(startDateChecker)) {
+                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-24:00";
+                    } else if (tradingDay.equals(endDateChecker)) {
+                        dispatchInterval = "00:05-" + dtf.print(endDateTime).split(" ")[1];
+                    } else {
+                        dispatchInterval = "00:05-24:00";
+                    }
+
+                    temp.setDispatchInterval(dispatchInterval);
+
+                    Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+                    Iterator it = executionSteps.iterator();
+
+                    StepExecution stepExecution = null;
+
+                    while(it.hasNext()){
+                        StepExecution stepChecker = (StepExecution)it.next();
+                        if (stepChecker.getStepName().equals("step1")) {
+                            stepExecution = stepChecker;
+                            break;
                         }
+                    }
 
-                        setLogs(jobName, dataInterfaceExecutionDTO, stepExecution);
+                    setLogs(jobName, temp, stepExecution);
 
-                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                    try {
+                        Assert.notNull(jobParameters.get(MODE), "mode is null");
+                        String mode = (String)jobParameters.get(MODE);
+                        temp.setMode(mode.toUpperCase());
+                    } catch(Exception e) {
+                        temp.setMode("AUTOMATIC");
+                    }
 
-                        try {
-                            Assert.notNull(jobParameters.get(MODE), "mode is null");
-                            String mode = (String)jobParameters.get(MODE);
-                            dataInterfaceExecutionDTO.setMode(mode.toUpperCase());
-                        } catch(Exception e) {
-                            dataInterfaceExecutionDTO.setMode("AUTOMATIC");
-                        }
+                    return temp;
+                }).collect(Collectors.toList());
 
-                        return dataInterfaceExecutionDTO;
-
-                    }).collect(toList());
+                dataInterfaceExecutionDTOs.addAll(tempList);
+            }
         }
-
+        Collections.reverse(dataInterfaceExecutionDTOs);
         return dataInterfaceExecutionDTOs;
     }
 

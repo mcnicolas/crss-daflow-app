@@ -4,9 +4,9 @@ spring:
   cloud:
     config:
       discovery:
-        enabled: true
+        enabled: false
         service-id: config-server
-      fail-fast: true
+      fail-fast: false
 
 ---
 spring:

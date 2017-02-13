@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.net.URISyntaxException;
@@ -15,11 +16,11 @@ import java.util.List;
  */
 public interface TaskExecutionService {
 
-    List<TaskExecutionDto> findJobInstances(Pageable pageable);
+    Page<TaskExecutionDto> findJobInstances(Pageable pageable);
 
-    List<StlTaskExecutionDto> findSettlementJobInstances(Pageable pageable);
+    Page<StlTaskExecutionDto> findSettlementJobInstances(Pageable pageable);
 
-    List<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable);
+    Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable);
 
     List<BillingPeriod> findBillingPeriods();
 

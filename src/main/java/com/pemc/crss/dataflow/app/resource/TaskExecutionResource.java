@@ -8,7 +8,6 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,14 +28,17 @@ public class TaskExecutionResource {
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<TaskExecutionDto>> findAllJobInstances(Pageable pageable) {
-        List<TaskExecutionDto> taskExecutionDtos = taskExecutionService.findJobInstances(pageable);
-        return new ResponseEntity<>(new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size()), HttpStatus.OK);
+        return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/stl", method = RequestMethod.GET)
     public ResponseEntity<Page<StlTaskExecutionDto>> findAllStlJobInstances(Pageable pageable) {
-        List<StlTaskExecutionDto> taskExecutionDtos = taskExecutionService.findSettlementJobInstances(pageable);
-        return new ResponseEntity<>(new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size()), HttpStatus.OK);
+        return new ResponseEntity<>(taskExecutionService.findSettlementJobInstances(pageable), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/data-interface-task-executions", method = RequestMethod.GET)
+    public ResponseEntity<Page<DataInterfaceExecutionDTO>> findDataInterfaceJobInstances(Pageable pageable) {
+        return new ResponseEntity<>(taskExecutionService.findDataInterfaceInstances(pageable), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)
@@ -45,16 +47,9 @@ public class TaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-
     @RequestMapping(value = "/billing-period", method = RequestMethod.GET)
     public ResponseEntity<List<BillingPeriod>> findBillingPeriods() {
         List<BillingPeriod> billingPeriods = taskExecutionService.findBillingPeriods();
         return new ResponseEntity<>(billingPeriods, HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/data-interface-task-executions", method = RequestMethod.GET)
-    public ResponseEntity<Page<DataInterfaceExecutionDTO>> findDataInterfaceJobInstances(Pageable pageable) {
-        List<DataInterfaceExecutionDTO> taskExecutionDtos = taskExecutionService.findDataInterfaceInstances(pageable);
-        return new ResponseEntity<>(new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size()), HttpStatus.OK);
     }
 }

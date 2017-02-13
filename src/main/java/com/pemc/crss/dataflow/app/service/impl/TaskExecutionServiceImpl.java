@@ -4,7 +4,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
 import com.pemc.crss.meterprocess.core.main.reference.MeterType;
@@ -23,12 +28,23 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.*;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.NoSuchJobException;
+import org.springframework.batch.core.repository.dao.ExecutionContextDao;
+import org.springframework.batch.core.repository.dao.JobExecutionDao;
+import org.springframework.batch.core.repository.dao.JobInstanceDao;
+import org.springframework.batch.core.repository.dao.StepExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.ResourceSupport;
 import org.springframework.stereotype.Service;
@@ -38,10 +54,16 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -77,6 +99,14 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     @Autowired
     private JobExplorer jobExplorer;
+    @Autowired
+    private JobInstanceDao jobInstanceDao;
+    @Autowired
+    private JobExecutionDao jobExecutionDao;
+    @Autowired
+    private StepExecutionDao stepExecutionDao;
+    @Autowired
+    private ExecutionContextDao ecDao;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -101,8 +131,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private int jobMaxRun;
 
     @Override
-    public List<TaskExecutionDto> findJobInstances(Pageable pageable) {
-
+    public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
         int count = 0;
 
         try {
@@ -119,7 +148,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     pageable.getOffset(), pageable.getPageSize()).stream()
                     .map((JobInstance jobInstance) -> {
 
-                        JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
+                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
                         TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
                         taskExecutionDto.setId(jobInstance.getId());
@@ -143,7 +172,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                                         .concat(jobInstance.getId().toString()), 0, 1);
 
                         if (!rcoaJobs.isEmpty()) {
-                            JobExecution rcoaJobExecution = jobExplorer.getJobExecutions(rcoaJobs.get(0)).iterator().next();
+                            JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
                             taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
 
                             if (taskExecutionDto.getRcoaStatus().isRunning()) {
@@ -161,7 +190,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                                 RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
                         if (!settlementJobs.isEmpty()) {
-                            JobExecution settlementJobExecution = jobExplorer.getJobExecutions(settlementJobs.get(0)).iterator().next();
+                            JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
                             taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
 
                             if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
@@ -176,72 +205,73 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
                     }).collect(toList());
         }
-        return taskExecutionDtos;
+        return new PageImpl<>(taskExecutionDtos, pageable, count);
     }
 
     @Override
-    public List<StlTaskExecutionDto> findSettlementJobInstances(Pageable pageable) {
+    public Page<StlTaskExecutionDto> findSettlementJobInstances(Pageable pageable) {
         int count = 0;
 
         try {
-            count = jobExplorer.getJobInstanceCount(RUN_COMPUTE_STL_JOB_NAME);
+            count = jobExplorer.getJobInstanceCount(RUN_COMPUTE_STL_JOB_NAME.concat("Daily"));
+            count += jobExplorer.getJobInstanceCount(RUN_COMPUTE_STL_JOB_NAME.concat("MonthlyAdjusted"));
+            count += jobExplorer.getJobInstanceCount(RUN_COMPUTE_STL_JOB_NAME.concat("MonthlyPrelim"));
+            count += jobExplorer.getJobInstanceCount(RUN_COMPUTE_STL_JOB_NAME.concat("MonthlyFinal"));
         } catch (NoSuchJobException e) {
             LOG.error("Exception: " + e);
         }
 
-
         List<StlTaskExecutionDto> stlTaskExecutionDtos = Lists.newArrayList();
-//        if (count > 0) {
+        if (count > 0) {
             stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("Daily", null));
             stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("MonthlyAdjusted", MeterProcessType.ADJUSTED));
             stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("MonthlyPrelim", MeterProcessType.PRELIMINARY));
             stlTaskExecutionDtos.addAll(stlTaskExecutionDtoList("MonthlyFinal", MeterProcessType.FINAL));
-//        }
+        }
 
-        return stlTaskExecutionDtos;
+        return new PageImpl<>(stlTaskExecutionDtos, pageable, count);
     }
 
     private List<StlTaskExecutionDto> stlTaskExecutionDtoList(String processType, MeterProcessType meterProcessType) {
         List<StlTaskExecutionDto> data = jobExplorer.findJobInstancesByJobName(RUN_COMPUTE_STL_JOB_NAME.concat(processType), 0, 1)
                 .stream().map((JobInstance jobInstance) -> {
 
-            JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
-            BatchStatus status = jobExecution.getStatus();
+                    JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                    BatchStatus status = jobExecution.getStatus();
 
-            StlTaskExecutionDto stlTaskExecutionDto = new StlTaskExecutionDto();
-            stlTaskExecutionDto.setId(jobInstance.getId());
-            stlTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-            stlTaskExecutionDto.setParams(Maps.transformValues(
-                    jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-            stlTaskExecutionDto.setCalculationStatus(status);
+                    StlTaskExecutionDto stlTaskExecutionDto = new StlTaskExecutionDto();
+                    stlTaskExecutionDto.setId(jobInstance.getId());
+                    stlTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+                    stlTaskExecutionDto.setParams(Maps.transformValues(
+                            jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+                    stlTaskExecutionDto.setCalculationStatus(status);
 
-            if (status.isRunning()) {
+                    if (status.isRunning()) {
 //                            calculateProgress(jobExecution, taskExecutionDto);
-            } else if (status.isUnsuccessful()) {
-                stlTaskExecutionDto.setExitMessage(jobExecution.getExitStatus().getExitDescription());
-            }
+                    } else if (status.isUnsuccessful()) {
+                        stlTaskExecutionDto.setExitMessage(jobExecution.getExitStatus().getExitDescription());
+                    }
 
-            stlTaskExecutionDto.setStatus(status.name());
+                    stlTaskExecutionDto.setStatus(status.name());
 
-            List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
-                    RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+                    List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
+                            RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
-            if (!settlementJobs.isEmpty()) {
-                JobExecution settlementJobExecution = jobExplorer.getJobExecutions(settlementJobs.get(0)).iterator().next();
-                stlTaskExecutionDto.setInvoiceGenerationStatus(settlementJobExecution.getStatus());
+                    if (!settlementJobs.isEmpty()) {
+                        JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
+                        stlTaskExecutionDto.setInvoiceGenerationStatus(settlementJobExecution.getStatus());
 
-                if (stlTaskExecutionDto.getInvoiceGenerationStatus().isUnsuccessful()) {
-                    stlTaskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
-                } else if (stlTaskExecutionDto.getInvoiceGenerationStatus() == BatchStatus.COMPLETED) {
-                    stlTaskExecutionDto.getSummary().put(RUN_GENERATE_INVOICE_STL_JOB_NAME, showSummary(settlementJobExecution));
-                }
-                stlTaskExecutionDto.setStatus(convertStatus(stlTaskExecutionDto.getInvoiceGenerationStatus(), "SETTLEMENT"));
-            }
+                        if (stlTaskExecutionDto.getInvoiceGenerationStatus().isUnsuccessful()) {
+                            stlTaskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
+                        } else if (stlTaskExecutionDto.getInvoiceGenerationStatus() == BatchStatus.COMPLETED) {
+                            stlTaskExecutionDto.getSummary().put(RUN_GENERATE_INVOICE_STL_JOB_NAME, showSummary(settlementJobExecution));
+                        }
+                        stlTaskExecutionDto.setStatus(convertStatus(stlTaskExecutionDto.getInvoiceGenerationStatus(), "SETTLEMENT"));
+                    }
 
-            return stlTaskExecutionDto;
+                    return stlTaskExecutionDto;
 
-        }).collect(toList());
-
+                }).collect(toList());
 
 
         StlTaskExecutionDto dto = new StlTaskExecutionDto();
@@ -279,7 +309,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
-        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList( MarketInfoType.values());
+        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
 
         if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(taskRunDto.getJobName()))) {
             arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
@@ -311,7 +341,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             jobName = "crss-settlement-task-calculation";
-        }  else if (RUN_GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+        } else if (RUN_GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedInvoiceGeneration")));
@@ -340,7 +370,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (taskRunDto.getParentJob() != null) {
                 JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
-                JobParameters jobParameters = jobExplorer.getJobExecutions(jobInstance).get(0).getJobParameters();
+                JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
                 if (jobParameters.getString(PROCESS_TYPE) == null) {
                     arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), "date"));
                 } else {
@@ -389,15 +419,130 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     }
 
     @Override
-    public List<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
-
+    public Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
-        for(MarketInfoType marketInfoType : MarketInfoType.values()) {
-            dataInterfaceExecutionDTOs.addAll(getDataInterfaceJobByName(marketInfoType, pageable));
+        int count = 0;
+        for (MarketInfoType marketInfoType : MarketInfoType.values()) {
+            count += processDataInterfaceJobByName(dataInterfaceExecutionDTOs, marketInfoType, pageable);
         }
 
-        return dataInterfaceExecutionDTOs;
+        return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
+    }
+
+    private int processDataInterfaceJobByName(List<DataInterfaceExecutionDTO> dataInterfaceExecutions,
+                                              MarketInfoType marketInfoType, Pageable pageable) {
+        int count = 0;
+        String jobName = marketInfoType.getJobName();
+        String type = marketInfoType.getLabel();
+
+        try {
+            count = jobExplorer.getJobInstanceCount(jobName);
+        } catch (NoSuchJobException e) {
+            LOG.error("Exception: " + e);
+        }
+
+        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = Lists.newArrayList();
+
+        if (count > 0) {
+
+            List<JobInstance> jobInstances = jobExplorer.findJobInstancesByJobName(jobName,
+                    pageable.getOffset(), pageable.getPageSize());
+
+            for (JobInstance jobInstance : jobInstances) {
+
+                JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+
+                LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDatetime"));
+                LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDatetime"));
+
+                Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
+                int noOfDaysInBetween = daysInBetween.getDays();
+                List<LocalDateTime> daysRange;
+                if (noOfDaysInBetween > 0) {
+                    daysRange = Stream.iterate(startDateTime, date -> date.plusDays(1))
+                            .limit(daysInBetween.getDays() + 2).collect(toList());
+                } else {
+                    daysRange = new ArrayList<>();
+                    daysRange.add(startDateTime);
+                }
+
+                DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+                String startDateChecker = dtf.print(startDateTime).split(" ")[0];
+                String endDateChecker = dtf.print(endDateTime).split(" ")[0];
+
+                List<DataInterfaceExecutionDTO> tempList = daysRange.stream().map(days -> {
+                    DataInterfaceExecutionDTO temp = new DataInterfaceExecutionDTO();
+
+                    String date = dtf.print(days);
+                    String tradingDay = date.split(" ")[0];
+                    String dispatchInterval = "";
+
+                    temp.setId(jobInstance.getId());
+                    temp.setRunStartDateTime(jobExecution.getStartTime());
+                    temp.setRunEndDateTime(jobExecution.getEndTime());
+                    temp.setTradingDay(tradingDay);
+                    temp.setStatus(jobExecution.getStatus().toString());
+                    temp.setParams(jobParameters);
+                    temp.setBatchStatus(jobExecution.getStatus());
+                    temp.setType(type);
+
+                    if (tradingDay.equals(startDateChecker) && tradingDay.equals(endDateChecker)) {
+                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-" + dtf.print(endDateTime).split(" ")[1];
+                    } else if (tradingDay.equals(startDateChecker)) {
+                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-24:00";
+                    } else if (tradingDay.equals(endDateChecker)) {
+                        dispatchInterval = "00:05-" + dtf.print(endDateTime).split(" ")[1];
+                    } else {
+                        dispatchInterval = "00:05-24:00";
+                    }
+
+                    temp.setDispatchInterval(dispatchInterval);
+
+                    Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+                    Iterator it = executionSteps.iterator();
+
+                    StepExecution stepExecution = null;
+
+                    while (it.hasNext()) {
+                        StepExecution stepChecker = (StepExecution) it.next();
+                        if (stepChecker.getStepName().equals("step1")) {
+                            stepExecution = stepChecker;
+                            break;
+                        }
+                    }
+
+                    setLogs(jobName, temp, stepExecution);
+
+                    try {
+                        Assert.notNull(jobParameters.get(MODE), "mode is null");
+                        String mode = (String) jobParameters.get(MODE);
+                        temp.setMode(mode.toUpperCase());
+                    } catch (Exception e) {
+                        temp.setMode("AUTOMATIC");
+                    }
+
+                    return temp;
+                }).collect(Collectors.toList());
+
+                dataInterfaceExecutionDTOs.addAll(tempList);
+            }
+        }
+
+        Collections.reverse(dataInterfaceExecutionDTOs);
+        dataInterfaceExecutions.addAll(dataInterfaceExecutionDTOs);
+
+        return count;
+    }
+
+    private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, StepExecution executionStep) {
+        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob") || jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
+            //TODO imlement getting of abnormal price
+        }
+
+        executionDTO.setRecordsWritten(executionStep.getWriteCount());
+        executionDTO.setRecordsRead(executionStep.getReadCount());
     }
 
     private String fetchSpringProfilesActive(String profile) {
@@ -470,116 +615,27 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         return progressDto;
     }
 
-    private List<DataInterfaceExecutionDTO> getDataInterfaceJobByName(MarketInfoType marketInfoType, Pageable pageable) {
-        int count = 0;
-        String jobName = marketInfoType.getJobName();
-        String type = marketInfoType.getLabel();
-
-        try {
-            count = jobExplorer.getJobInstanceCount(jobName);
-        } catch (NoSuchJobException e) {
-            LOG.error("Exception: " + e);
-        }
-
-        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = Lists.newArrayList();
-
-        if (count > 0) {
-
-            List<JobInstance> jobInstances = jobExplorer.findJobInstancesByJobName(jobName,
-                    pageable.getOffset(), pageable.getPageSize());
-
-            for (JobInstance jobInstance : jobInstances) {
-
-                JobExecution jobExecution = jobExplorer.getJobExecutions(jobInstance).iterator().next();
-                Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-
-                LocalDateTime startDateTime = new LocalDateTime((Timestamp)jobParameters.get("startDatetime"));
-                LocalDateTime endDateTime = new LocalDateTime((Timestamp)jobParameters.get("endDatetime"));
-
-                Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
-                int noOfDaysInBetween = daysInBetween.getDays();
-                List<LocalDateTime> daysRange;
-                if (noOfDaysInBetween > 0) {
-                    daysRange = Stream.iterate(startDateTime, date -> date.plusDays(1))
-                            .limit(daysInBetween.getDays() + 2).collect(toList());
-                } else {
-                    daysRange = new ArrayList<LocalDateTime>();
-                    daysRange.add(startDateTime);
-                }
-
-
-                DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
-                String startDateChecker = dtf.print(startDateTime).split(" ")[0];
-                String endDateChecker = dtf.print(endDateTime).split(" ")[0];
-
-                List<DataInterfaceExecutionDTO> tempList = daysRange.stream().map(days -> {
-                    DataInterfaceExecutionDTO temp = new DataInterfaceExecutionDTO();
-
-                    String date = dtf.print(days);
-                    String tradingDay = date.split(" ")[0];
-                    String dispatchInterval = "";
-
-                    temp.setId(jobInstance.getId());
-                    temp.setRunStartDateTime(jobExecution.getStartTime());
-                    temp.setRunEndDateTime(jobExecution.getEndTime());
-                    temp.setTradingDay(tradingDay);
-                    temp.setStatus(jobExecution.getStatus().toString());
-                    temp.setParams(jobParameters);
-                    temp.setBatchStatus(jobExecution.getStatus());
-                    temp.setType(type);
-
-                    if (tradingDay.equals(startDateChecker) && tradingDay.equals(endDateChecker)) {
-                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-" + dtf.print(endDateTime).split(" ")[1];
-                    } else if (tradingDay.equals(startDateChecker)) {
-                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-24:00";
-                    } else if (tradingDay.equals(endDateChecker)) {
-                        dispatchInterval = "00:05-" + dtf.print(endDateTime).split(" ")[1];
-                    } else {
-                        dispatchInterval = "00:05-24:00";
-                    }
-
-                    temp.setDispatchInterval(dispatchInterval);
-
-                    Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-                    Iterator it = executionSteps.iterator();
-
-                    StepExecution stepExecution = null;
-
-                    while(it.hasNext()){
-                        StepExecution stepChecker = (StepExecution)it.next();
-                        if (stepChecker.getStepName().equals("step1")) {
-                            stepExecution = stepChecker;
-                            break;
-                        }
-                    }
-
-                    setLogs(jobName, temp, stepExecution);
-
-                    try {
-                        Assert.notNull(jobParameters.get(MODE), "mode is null");
-                        String mode = (String)jobParameters.get(MODE);
-                        temp.setMode(mode.toUpperCase());
-                    } catch(Exception e) {
-                        temp.setMode("AUTOMATIC");
-                    }
-
-                    return temp;
-                }).collect(Collectors.toList());
-
-                dataInterfaceExecutionDTOs.addAll(tempList);
+    private List<JobExecution> getJobExecutions(JobInstance jobInstance) {
+        List<JobExecution> executions = jobExecutionDao.findJobExecutions(jobInstance);
+        for (JobExecution jobExecution : executions) {
+            getJobExecutionDependencies(jobExecution);
+            for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
+                getStepExecutionDependencies(stepExecution);
             }
         }
-        Collections.reverse(dataInterfaceExecutionDTOs);
-        return dataInterfaceExecutionDTOs;
+        return executions;
     }
 
-    private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, StepExecution executionStep) {
-        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob") || jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
-            //TODO imlement getting of abnormal price
+    private void getJobExecutionDependencies(JobExecution jobExecution) {
+        JobInstance jobInstance = jobInstanceDao.getJobInstance(jobExecution);
+        stepExecutionDao.addStepExecutions(jobExecution);
+        jobExecution.setJobInstance(jobInstance);
+        jobExecution.setExecutionContext(ecDao.getExecutionContext(jobExecution));
+    }
 
+    private void getStepExecutionDependencies(StepExecution stepExecution) {
+        if (stepExecution != null && stepExecution.getStepName().endsWith("Step")) {
+            stepExecution.setExecutionContext(ecDao.getExecutionContext(stepExecution));
         }
-
-        executionDTO.setRecordsWritten(executionStep.getWriteCount());
-        executionDTO.setRecordsRead(executionStep.getReadCount());
     }
 }

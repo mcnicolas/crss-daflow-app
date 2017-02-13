@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.repository.ExecutionContextSerializer;
+import org.springframework.batch.core.repository.dao.*;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
@@ -19,6 +21,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.incrementer.AbstractDataFieldMaxValueIncrementer;
+import org.springframework.jdbc.support.incrementer.DataFieldMaxValueIncrementer;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.persistenceunit.PersistenceUnitManager;
 import org.springframework.orm.jpa.vendor.AbstractJpaVendorAdapter;
@@ -35,6 +41,15 @@ import java.util.List;
 public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationConfig.class);
+
+    private String tablePrefix = AbstractJdbcBatchMetadataDao.DEFAULT_TABLE_PREFIX;
+
+    private DataFieldMaxValueIncrementer incrementer = new AbstractDataFieldMaxValueIncrementer() {
+        @Override
+        protected long getNextKey() {
+            throw new IllegalStateException("JobExplorer is read only.");
+        }
+    };
 
     @Autowired
     private JpaProperties properties;
@@ -92,5 +107,56 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean
+    public JdbcOperations jdbcOperations(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+
+    @Bean
+    public XStreamExecutionContextStringSerializer serializer() {
+        return new XStreamExecutionContextStringSerializer();
+    }
+
+    @Bean
+    public ExecutionContextDao executionContextDao(JdbcOperations jdbcOperations, ExecutionContextSerializer serializer) throws Exception {
+        JdbcExecutionContextDao dao = new JdbcExecutionContextDao();
+        dao.setJdbcTemplate(jdbcOperations);
+        dao.setTablePrefix(tablePrefix);
+        dao.setSerializer(serializer);
+        dao.afterPropertiesSet();
+        return dao;
+    }
+
+    @Bean
+    public JobInstanceDao jobInstanceDao(JdbcOperations jdbcOperations) throws Exception {
+        JdbcJobInstanceDao dao = new JdbcJobInstanceDao();
+        dao.setJdbcTemplate(jdbcOperations);
+        dao.setJobIncrementer(incrementer);
+        dao.setTablePrefix(tablePrefix);
+        dao.afterPropertiesSet();
+        return dao;
+    }
+
+    @Bean
+    public JobExecutionDao jobExecutionDao(JdbcOperations jdbcOperations) throws Exception {
+        JdbcJobExecutionDao dao = new JdbcJobExecutionDao();
+        dao.setJdbcTemplate(jdbcOperations);
+        dao.setJobExecutionIncrementer(incrementer);
+        dao.setTablePrefix(tablePrefix);
+        dao.afterPropertiesSet();
+        return dao;
+    }
+
+    @Bean
+    public StepExecutionDao stepExecutionDao(JdbcOperations jdbcOperations) throws Exception {
+        JdbcStepExecutionDao dao = new JdbcStepExecutionDao();
+        dao.setJdbcTemplate(jdbcOperations);
+        dao.setStepExecutionIncrementer(incrementer);
+        dao.setTablePrefix(tablePrefix);
+        dao.afterPropertiesSet();
+        return dao;
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 
 @SpringBootApplication
-//@EnableDiscoveryClient
+@EnableDiscoveryClient
 @ComponentScan(basePackageClasses = {CrssMainDatasourceConfig.class,
         CrssDataflowDatasourceConfig.class,
         Application.class})

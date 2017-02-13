@@ -66,8 +66,6 @@ configurations {
 
 dependencies {
     compile 'com.pemc.crss:crss-meterprocess-core-main:1.0.0.BUILD-SNAPSHOT'
-    compile 'com.pemc.crss:crss-shared-core-registration:1.0.1.BUILD-SNAPSHOT'
-    compile 'com.pemc.crss:crss-shared-core-nmms:1.0.1.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-shared-core-dataflow:1.0.1.BUILD-SNAPSHOT'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
@@ -76,13 +74,6 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-hateoas'
     compile 'org.springframework.cloud:spring-cloud-starter-eureka:1.1.4.RELEASE'
     compile 'org.springframework.cloud:spring-cloud-starter-config'
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
-    compile 'org.apache.commons:commons-csv:1.4'
-    compile 'commons-io:commons-io:2.4'
-    compile 'org.springframework.cloud:spring-cloud-task-starter:1.0.3.RELEASE'
-
-    // Spring Batch Compatibility Issue
-    compile 'org.codehaus.jettison:jettison:1.1'
 
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 

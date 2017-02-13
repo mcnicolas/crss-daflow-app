@@ -541,8 +541,10 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             //TODO imlement getting of abnormal price
         }
 
-        executionDTO.setRecordsWritten(executionStep.getWriteCount());
-        executionDTO.setRecordsRead(executionStep.getReadCount());
+        if (executionStep != null) {
+            executionDTO.setRecordsWritten(executionStep.getWriteCount());
+            executionDTO.setRecordsRead(executionStep.getReadCount());
+        }
     }
 
     private String fetchSpringProfilesActive(String profile) {

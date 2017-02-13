@@ -67,6 +67,7 @@ configurations {
 dependencies {
     compile 'com.pemc.crss:crss-meterprocess-core-main:1.0.0.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-shared-core-dataflow:1.0.1.BUILD-SNAPSHOT'
+    compile 'com.pemc.crss:crss-shared-core-nmms:1.0.1.BUILD-SNAPSHOT'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-actuator'
@@ -74,6 +75,7 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-hateoas'
     compile 'org.springframework.cloud:spring-cloud-starter-eureka:1.1.4.RELEASE'
     compile 'org.springframework.cloud:spring-cloud-starter-config'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
 
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 

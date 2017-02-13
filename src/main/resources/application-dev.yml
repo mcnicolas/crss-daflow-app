@@ -17,7 +17,14 @@ spring:
       maxPoolSize: 5
       test-on-borrow: true
       validation-query: SELECT 1
-
+  crss-nmms:
+      datasource:
+        jdbcUrl: jdbc:postgresql://192.168.236.2:5432:5432/crss_nmms
+        username: postgres
+        password: postgres
+        driverClassName: org.postgresql.Driver
+        connectionTimeout: 10000
+        maxPoolSize: 5
   jpa:
     show-sql: false
     generate-ddl: true

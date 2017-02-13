@@ -21,6 +21,7 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.entity.StepProgress;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
+import com.pemc.crss.shared.core.nmms.entity.EnergyPriceSched;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Days;
 import org.joda.time.LocalDateTime;
@@ -41,19 +42,24 @@ import org.springframework.batch.core.repository.dao.JobExecutionDao;
 import org.springframework.batch.core.repository.dao.JobInstanceDao;
 import org.springframework.batch.core.repository.dao.StepExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.ResourceSupport;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
+import javax.sql.DataSource;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -107,6 +113,11 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private StepExecutionDao stepExecutionDao;
     @Autowired
     private ExecutionContextDao ecDao;
+    @Autowired
+    @Qualifier("crssNmmsDataSource")
+    private DataSource crssNmmsDataSource;
+
+    private JdbcTemplate crssNmmsJdbcTemplate = new JdbcTemplate(crssNmmsDataSource);
 
     @Autowired
     private RestTemplate restTemplate;
@@ -121,7 +132,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private BatchJobRunLockRepository batchJobRunLockRepository;
     @Autowired
     private StepProgressRepository stepProgressRepository;
-
     @Autowired
     private Environment environment;
 
@@ -500,20 +510,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
                     temp.setDispatchInterval(dispatchInterval);
 
-                    Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-                    Iterator it = executionSteps.iterator();
-
-                    StepExecution stepExecution = null;
-
-                    while (it.hasNext()) {
-                        StepExecution stepChecker = (StepExecution) it.next();
-                        if (stepChecker.getStepName().equals("step1")) {
-                            stepExecution = stepChecker;
-                            break;
-                        }
-                    }
-
-                    setLogs(jobName, temp, stepExecution);
+                    setLogs(jobName, temp, jobExecution);
 
                     try {
                         Assert.notNull(jobParameters.get(MODE), "mode is null");
@@ -530,20 +527,54 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             }
         }
 
-        Collections.reverse(dataInterfaceExecutionDTOs);
         dataInterfaceExecutions.addAll(dataInterfaceExecutionDTOs);
 
         return count;
     }
 
-    private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, StepExecution executionStep) {
-        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob") || jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
-            //TODO imlement getting of abnormal price
+    private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
+        //todo to get treshhold in config_db
+        int abTreshhold = 10000;
+
+        int abnormalPrice = 0;
+        boolean checkAbnormalPrice = false;
+        StepExecution stepExecution = null;
+        String tableName = "";
+        String query;
+
+        Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+        Iterator it = executionSteps.iterator();
+
+        while(it.hasNext()){
+            StepExecution stepChecker = (StepExecution)it.next();
+            if (stepChecker.getStepName().equals("step1")) {
+                stepExecution = stepChecker;
+                break;
+            }
         }
 
-        if (executionStep != null) {
-            executionDTO.setRecordsWritten(executionStep.getWriteCount());
-            executionDTO.setRecordsRead(executionStep.getReadCount());
+        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
+            checkAbnormalPrice = true;
+            tableName = "txn_energy_price_sched";
+        } else if (jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
+            checkAbnormalPrice = true;
+            tableName = "txn_reserve_price_sched";
+        }
+
+        query = "select count(*) from " + tableName + " where job_id = " + jobExecution.getJobId() +
+                " and fedp > " + abTreshhold + "or fedp_mlc > " + abTreshhold + " or fedp_mcc > " + abTreshhold +
+                " or fedp_smp > " + abTreshhold;
+
+        LOG.info("QUERY: " + query);
+
+        if (checkAbnormalPrice) {
+            abnormalPrice = crssNmmsJdbcTemplate.queryForObject(query, Integer.class);
+        }
+
+        if (stepExecution != null) {
+            executionDTO.setRecordsWritten(stepExecution.getWriteCount());
+            executionDTO.setRecordsRead(stepExecution.getReadCount());
+            executionDTO.setAbnormalPrice(abnormalPrice);
         }
     }
 

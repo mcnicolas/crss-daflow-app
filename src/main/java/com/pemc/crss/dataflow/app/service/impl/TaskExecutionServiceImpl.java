@@ -117,8 +117,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Qualifier("crssNmmsDataSource")
     private DataSource crssNmmsDataSource;
 
-    private JdbcTemplate crssNmmsJdbcTemplate = new JdbcTemplate(crssNmmsDataSource);
-
     @Autowired
     private RestTemplate restTemplate;
 
@@ -534,6 +532,9 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
         //todo to get treshhold in config_db
+
+        JdbcTemplate crssNmmsJdbcTemplate = new JdbcTemplate(crssNmmsDataSource);
+
         int abTreshhold = 10000;
 
         int abnormalPrice = 0;

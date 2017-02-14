@@ -644,11 +644,11 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr, String key) {
         TaskProgressDto progressDto = new TaskProgressDto();
         progressDto.setRunningStep(stepStr);
-        if (runningStep.getExecutionContext().containsKey(key)) {
+        /*if (runningStep.getExecutionContext().containsKey(key)) {
             progressDto.setTotalCount(runningStep.getExecutionContext().getLong(key));
             progressDto.setExecutedCount(Math.min(stepProgressRepository.findByStepId(runningStep.getId()).map(StepProgress::getChunkCount).orElse(0L),
                     progressDto.getTotalCount()));
-        }
+        }*/
         return progressDto;
     }
 

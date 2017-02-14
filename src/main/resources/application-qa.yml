@@ -1,0 +1,115 @@
+spring:
+  crss-dataflow:
+    datasource:
+      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_dataflow
+      username: admin
+      password: password
+      driverClassName: org.postgresql.Driver
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
+  crss-main:
+    datasource:
+      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_meterprocess
+      username: admin
+      password: password
+      driverClassName: org.postgresql.Driver
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
+  crss-registration:
+    datasource:
+      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_reg
+      username: admin
+      password: password
+      driverClassName: org.postgresql.Driver
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
+  crss-nmms:
+    datasource:
+      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_nmms
+      username: admin
+      password: password
+      driverClassName: org.postgresql.Driver
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
+
+  jpa:
+    show-sql: false
+    generate-ddl: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        ddl-auto: none
+        hbm2ddl:
+          import_files:
+
+  # prevent batch job from running on app start
+  batch:
+    job:
+      enabled: false
+
+#liquibase:
+#  change-log: classpath:/db/db.changelog-master.xml
+
+server:
+  port: 8081
+  undertow:
+    accesslog:
+      dir: target
+      enabled: true
+      pattern: combined
+  compression:
+    enabled: true
+    min-response-size: 1
+
+eureka:
+  instance:
+    prefer-ip-address: false
+    hostname: crss-dataflow-app.marathon.l4lb.thisdcos.directory
+  client:
+    serviceUrl:
+      defaultZone: http://crss-discovery.marathon.l4lb.thisdcos.directory:8761/eureka/
+#          healthcheck:
+#            enabled: true
+#    lease:
+#      duration: 5
+#  instance:
+#    leaseRenewalIntervalInSeconds: 1
+#    leaseExpirationDurationInSeconds: 2
+
+#security:
+#  oauth2:
+#    client:
+#      accessTokenUri: http://localhost:8082/oauth/access_token
+#      userAuthorizationUri: http://localhost:8082/oauth/authorize
+#      clientId: crss
+#      clientSecret: crsssecret
+#      authorized-grant-types: authorization_code,refresh_token,password
+#      scope: openid
+#      access-token-validity-seconds: 3600
+#    resource:
+#      userInfoUri: http://localhost:8082/user
+
+logging:
+  level:
+    com.pemc: DEBUG
+    com.netflix: DEBUG
+    org.springframework.cloud: DEBUG
+
+dataflow:
+  url: http://spring-cloud-data-flow.marathon.l4lb.thisdcos.directory:9393
+
+job:
+  maxRun: 1
+
+sftp:
+  credentials:
+    username: pemc
+    password: 123qwe
+    host: sftp.marathon.l4lb.thisdcos.directory
+    port: 22
+    workingDirectory: /upload
+    privateKey:

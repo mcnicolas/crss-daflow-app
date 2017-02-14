@@ -344,6 +344,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
             jobName = "crss-settlement-task-calculation";
         } else if (RUN_GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
@@ -358,6 +359,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
             jobName = "crss-settlement-task-invoice-generation";
         } else {
             if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {

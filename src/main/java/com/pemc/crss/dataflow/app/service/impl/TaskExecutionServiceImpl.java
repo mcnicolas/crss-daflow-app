@@ -531,7 +531,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     }
 
     private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
-        //todo to get treshhold in config_db
+        //todo to get treshhold in config_db change to spring data repo
 
         JdbcTemplate crssNmmsJdbcTemplate = new JdbcTemplate(crssNmmsDataSource);
 
@@ -541,7 +541,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         boolean checkAbnormalPrice = false;
         StepExecution stepExecution = null;
         String tableName = "";
-        String query;
+        String query = "";
 
         Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
         Iterator it = executionSteps.iterator();
@@ -557,14 +557,17 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
             checkAbnormalPrice = true;
             tableName = "txn_energy_price_sched";
+
+            query = "select count(*) from " + tableName + " where job_id = " + jobExecution.getJobId() +
+                    " and fedp > " + abTreshhold + "or fedp_mlc > " + abTreshhold + " or fedp_mcc > " + abTreshhold +
+                    " or fedp_smp > " + abTreshhold;
         } else if (jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
             checkAbnormalPrice = true;
             tableName = "txn_reserve_price_sched";
-        }
 
-        query = "select count(*) from " + tableName + " where job_id = " + jobExecution.getJobId() +
-                " and fedp > " + abTreshhold + "or fedp_mlc > " + abTreshhold + " or fedp_mcc > " + abTreshhold +
-                " or fedp_smp > " + abTreshhold;
+            query = "select count(*) from " + tableName + " where job_id = " + jobExecution.getJobId() +
+                    " and price > " + abTreshhold;
+        }
 
         LOG.info("QUERY: " + query);
 

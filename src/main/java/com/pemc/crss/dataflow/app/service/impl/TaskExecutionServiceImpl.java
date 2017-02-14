@@ -91,8 +91,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String RUN_GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
     private static final String DATE = "date";
-    private static final String START_DATE = "startDate";
-    private static final String END_DATE = "endDate";
+    private static final String START_DATE = "startDatetime";
+    private static final String END_DATE = "endDatetime";
     private static final String PROCESS_TYPE = "processType";
     private static final String PARENT_JOB = "parentJob";
     private static final String PROCESS_TYPE_DAILY = "DAILY";

@@ -20,6 +20,8 @@ import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
+import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
+import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Days;
 import org.joda.time.LocalDateTime;
@@ -53,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
@@ -111,6 +114,10 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Autowired
     @Qualifier("crssNmmsDataSource")
     private DataSource crssNmmsDataSource;
+    @Autowired
+    EnergyPriceSchedRepository energyPriceSchedRepository;
+    @Autowired
+    ReservePriceSchedRepository reservePriceSchedRepository;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -461,8 +468,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                 JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
                 Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
 
-                LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDatetime"));
-                LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDatetime"));
+                LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
+                LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDate"));
 
                 Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
                 int noOfDaysInBetween = daysInBetween.getDays();
@@ -524,48 +531,26 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     }
 
     private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
-        //todo to get treshhold in config_db change to spring data repo
-
-        JdbcTemplate crssNmmsJdbcTemplate = new JdbcTemplate(crssNmmsDataSource);
-
-        int abTreshhold = 10000;
+        //todo to get treshhold in config_db
+        BigDecimal abTreshhold = new BigDecimal(10000) ;
 
         int abnormalPrice = 0;
-        boolean checkAbnormalPrice = false;
         StepExecution stepExecution = null;
-        String tableName = "";
-        String query = "";
+
+        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
+            abnormalPrice = energyPriceSchedRepository.getAbnormalPriceCount(abTreshhold, jobExecution.getJobId());
+        } else if (jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
+            abnormalPrice = reservePriceSchedRepository.getAbnormalPriceCount(abTreshhold, jobExecution.getJobId());
+        }
 
         Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
         Iterator it = executionSteps.iterator();
-
-        while (it.hasNext()) {
-            StepExecution stepChecker = (StepExecution) it.next();
+        while(it.hasNext()) {
+            StepExecution stepChecker = (StepExecution)it.next();
             if (stepChecker.getStepName().equals("step1")) {
                 stepExecution = stepChecker;
                 break;
             }
-        }
-
-        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
-            checkAbnormalPrice = true;
-            tableName = "txn_energy_price_sched";
-
-            query = "select count(*) from " + tableName + " where job_id = " + jobExecution.getJobId() +
-                    " and fedp > " + abTreshhold + "or fedp_mlc > " + abTreshhold + " or fedp_mcc > " + abTreshhold +
-                    " or fedp_smp > " + abTreshhold;
-        } else if (jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
-            checkAbnormalPrice = true;
-            tableName = "txn_reserve_price_sched";
-
-            query = "select count(*) from " + tableName + " where job_id = " + jobExecution.getJobId() +
-                    " and price > " + abTreshhold;
-        }
-
-        LOG.info("QUERY: " + query);
-
-        if (checkAbnormalPrice) {
-            abnormalPrice = crssNmmsJdbcTemplate.queryForObject(query, Integer.class);
         }
 
         if (stepExecution != null) {

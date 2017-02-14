@@ -18,10 +18,8 @@ import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
-import com.pemc.crss.shared.core.dataflow.entity.StepProgress;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
-import com.pemc.crss.shared.core.nmms.entity.EnergyPriceSched;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Days;
 import org.joda.time.LocalDateTime;
@@ -44,7 +42,6 @@ import org.springframework.batch.core.repository.dao.StepExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -53,19 +50,16 @@ import org.springframework.hateoas.ResourceSupport;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -97,9 +91,10 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String PARENT_JOB = "parentJob";
     private static final String PROCESS_TYPE_DAILY = "DAILY";
     private static final String METER_TYPE = "meterType";
-    private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
     private static final String QUOTE = "\"";
     private static final String MODE = "mode";
+    private static final String RUN_ID = "run.id";
+    private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
 
@@ -326,6 +321,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(MODE, "Manual"));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
 
             properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
                     .getByJobName(taskRunDto.getJobName()).getProfileName())));
@@ -374,6 +370,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
                 }
+                arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
                 arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_WESM.name()));
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (taskRunDto.getParentJob() != null) {
@@ -510,13 +507,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
                     setLogs(jobName, temp, jobExecution);
 
-                    try {
-                        Assert.notNull(jobParameters.get(MODE), "mode is null");
-                        String mode = (String) jobParameters.get(MODE);
-                        temp.setMode(mode.toUpperCase());
-                    } catch (Exception e) {
-                        temp.setMode("AUTOMATIC");
-                    }
+                    temp.setMode(StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC")));
 
                     return temp;
                 }).collect(Collectors.toList());
@@ -546,8 +537,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
         Iterator it = executionSteps.iterator();
 
-        while(it.hasNext()){
-            StepExecution stepChecker = (StepExecution)it.next();
+        while (it.hasNext()) {
+            StepExecution stepChecker = (StepExecution) it.next();
             if (stepChecker.getStepName().equals("step1")) {
                 stepExecution = stepChecker;
                 break;

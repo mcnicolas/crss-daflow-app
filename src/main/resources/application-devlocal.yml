@@ -91,9 +91,6 @@ logging:
 dataflow:
   url: http://localhost:9393
 
-job:
-  maxRun: 1
-
 sftp:
   credentials:
     username: pemc

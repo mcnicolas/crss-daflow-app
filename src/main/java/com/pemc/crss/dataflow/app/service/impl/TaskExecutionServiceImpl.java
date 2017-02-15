@@ -42,19 +42,16 @@ import org.springframework.batch.core.repository.dao.JobExecutionDao;
 import org.springframework.batch.core.repository.dao.JobInstanceDao;
 import org.springframework.batch.core.repository.dao.StepExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.ResourceSupport;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -112,9 +109,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Autowired
     private ExecutionContextDao ecDao;
     @Autowired
-    @Qualifier("crssNmmsDataSource")
-    private DataSource crssNmmsDataSource;
-    @Autowired
     EnergyPriceSchedRepository energyPriceSchedRepository;
     @Autowired
     ReservePriceSchedRepository reservePriceSchedRepository;
@@ -137,8 +131,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     @Value("${dataflow.url}")
     private String dataFlowUrl;
-    @Value("${job.maxRun}")
-    private int jobMaxRun;
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -312,8 +304,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         Preconditions.checkNotNull(taskRunDto.getJobName());
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) < jobMaxRun,
-                "Job already exceeds the maximum allowable concurrent run");
 
         String jobName = null;
         List<String> properties = Lists.newArrayList();

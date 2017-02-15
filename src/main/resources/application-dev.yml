@@ -92,9 +92,6 @@ logging:
 dataflow:
   url: http://spring-cloud-data-flow.marathon.l4lb.thisdcos.directory:9393
 
-job:
-  maxRun: 1
-
 sftp:
   credentials:
     username: pemc

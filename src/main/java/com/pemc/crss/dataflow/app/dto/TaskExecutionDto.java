@@ -18,6 +18,8 @@ public class TaskExecutionDto {
     private BatchStatus wesmStatus;
     private BatchStatus rcoaStatus;
     private BatchStatus settlementStatus;
+    private BatchStatus calculationStatus;
+    private BatchStatus taggingStatus;
     private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();
 
     public Long getId() {
@@ -90,6 +92,22 @@ public class TaskExecutionDto {
 
     public void setSettlementStatus(BatchStatus settlementStatus) {
         this.settlementStatus = settlementStatus;
+    }
+
+    public BatchStatus getCalculationStatus() {
+        return calculationStatus;
+    }
+
+    public void setCalculationStatus(BatchStatus calculationStatus) {
+        this.calculationStatus = calculationStatus;
+    }
+
+    public BatchStatus getTaggingStatus() {
+        return taggingStatus;
+    }
+
+    public void setTaggingStatus(BatchStatus taggingStatus) {
+        this.taggingStatus = taggingStatus;
     }
 
     public Map<String, List<TaskSummaryDto>> getSummary() {

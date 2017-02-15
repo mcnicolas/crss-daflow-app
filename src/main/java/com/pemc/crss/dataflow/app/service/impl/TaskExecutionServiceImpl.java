@@ -377,77 +377,44 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             LOG.error("Exception: " + e);
         }
 
-        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = Lists.newArrayList();
-
         if (count > 0) {
 
-            List<JobInstance> jobInstances = jobExplorer.findJobInstancesByJobName(jobName,
-                    pageable.getOffset(), pageable.getPageSize());
+            List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = jobExplorer.findJobInstancesByJobName(jobName,
+                    pageable.getOffset(), pageable.getPageSize())
+                    .stream().map((JobInstance jobInstance) -> {
 
-            for (JobInstance jobInstance : jobInstances) {
+                        DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
+                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
 
-                JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
-                Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                        LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
+                        LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDate"));
 
-                LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
-                LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDate"));
+                        Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
+                        int noOfDaysInBetween = daysInBetween.getDays();
 
-                Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
-                int noOfDaysInBetween = daysInBetween.getDays();
-                List<LocalDateTime> daysRange;
-                if (noOfDaysInBetween > 0) {
-                    daysRange = Stream.iterate(startDateTime, date -> date.plusDays(1))
-                            .limit(daysInBetween.getDays() + 2).collect(toList());
-                } else {
-                    daysRange = new ArrayList<>();
-                    daysRange.add(startDateTime);
-                }
+                        DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+                        String tradingDay = noOfDaysInBetween > 0 ? dtf.print(startDateTime).split(" ")[0]
+                                : dtf.print(startDateTime).split(" ")[0] + " - " + dtf.print(endDateTime).split(" ")[0];
 
-                DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
-                String startDateChecker = dtf.print(startDateTime).split(" ")[0];
-                String endDateChecker = dtf.print(endDateTime).split(" ")[0];
+                        String dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-" + dtf.print(endDateTime).split(" ")[1];
 
-                List<DataInterfaceExecutionDTO> tempList = daysRange.stream().map(days -> {
-                    DataInterfaceExecutionDTO temp = new DataInterfaceExecutionDTO();
+                        dataInterfaceExecutionDTO.setId(jobInstance.getId());
+                        dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
+                        dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
+                        dataInterfaceExecutionDTO.setTradingDay(tradingDay);
+                        dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
+                        dataInterfaceExecutionDTO.setParams(jobParameters);
+                        dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
+                        dataInterfaceExecutionDTO.setType(type);
+                        dataInterfaceExecutionDTO.setDispatchInterval(dispatchInterval);
+                        dataInterfaceExecutionDTO.setMode(StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC")));
+                        setLogs(jobName, dataInterfaceExecutionDTO, jobExecution);
 
-                    String date = dtf.print(days);
-                    String tradingDay = date.split(" ")[0];
-                    String dispatchInterval = "";
-
-                    temp.setId(jobInstance.getId());
-                    temp.setRunStartDateTime(jobExecution.getStartTime());
-                    temp.setRunEndDateTime(jobExecution.getEndTime());
-                    temp.setTradingDay(tradingDay);
-                    temp.setStatus(jobExecution.getStatus().toString());
-                    temp.setParams(jobParameters);
-                    temp.setBatchStatus(jobExecution.getStatus());
-                    temp.setType(type);
-
-                    if (tradingDay.equals(startDateChecker) && tradingDay.equals(endDateChecker)) {
-                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-" + dtf.print(endDateTime).split(" ")[1];
-                    } else if (tradingDay.equals(startDateChecker)) {
-                        dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-24:00";
-                    } else if (tradingDay.equals(endDateChecker)) {
-                        dispatchInterval = "00:05-" + dtf.print(endDateTime).split(" ")[1];
-                    } else {
-                        dispatchInterval = "00:05-24:00";
-                    }
-
-                    temp.setDispatchInterval(dispatchInterval);
-
-                    setLogs(jobName, temp, jobExecution);
-
-                    temp.setMode(StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC")));
-
-                    return temp;
-                }).collect(Collectors.toList());
-
-                dataInterfaceExecutionDTOs.addAll(tempList);
-            }
+                        return dataInterfaceExecutionDTO;
+                    }).collect(toList());
+            dataInterfaceExecutions.addAll(dataInterfaceExecutionDTOs);
         }
-
-        dataInterfaceExecutions.addAll(dataInterfaceExecutionDTOs);
-
         return count;
     }
 
@@ -456,7 +423,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         BigDecimal abTreshhold = new BigDecimal(10000) ;
 
         int abnormalPrice = 0;
-        StepExecution stepExecution = null;
 
         if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
             abnormalPrice = energyPriceSchedRepository.getAbnormalPriceCount(abTreshhold, jobExecution.getJobId());
@@ -464,20 +430,15 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             abnormalPrice = reservePriceSchedRepository.getAbnormalPriceCount(abTreshhold, jobExecution.getJobId());
         }
 
-        Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-        Iterator it = executionSteps.iterator();
-        while(it.hasNext()) {
-            StepExecution stepChecker = (StepExecution)it.next();
-            if (stepChecker.getStepName().equals("step1")) {
-                stepExecution = stepChecker;
-                break;
-            }
-        }
+        executionDTO.setAbnormalPrice(abnormalPrice);
 
-        if (stepExecution != null) {
+        if (!jobExecution.getStepExecutions().isEmpty()) {
+            StepExecution stepExecution = jobExecution.getStepExecutions().parallelStream()
+                    .filter(execution -> execution.getStepName().equals("step1"))
+                    .findFirst().get();
+
             executionDTO.setRecordsWritten(stepExecution.getWriteCount());
             executionDTO.setRecordsRead(stepExecution.getReadCount());
-            executionDTO.setAbnormalPrice(abnormalPrice);
         }
     }
 

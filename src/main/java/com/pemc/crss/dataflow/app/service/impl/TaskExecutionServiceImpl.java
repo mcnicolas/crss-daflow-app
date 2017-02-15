@@ -328,7 +328,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(MODE, "Manual"));
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
 
             properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
                     .getByJobName(taskRunDto.getJobName()).getProfileName())));
@@ -351,7 +351,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             jobName = "crss-settlement-task-calculation";
         } else if (RUN_GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
@@ -366,7 +366,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             jobName = "crss-settlement-task-invoice-generation";
         } else {
             if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
@@ -379,7 +379,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
                 }
-                arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+                arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
                 arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_WESM.name()));
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (taskRunDto.getParentJob() != null) {

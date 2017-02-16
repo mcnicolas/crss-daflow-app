@@ -387,6 +387,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
                         Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
 
+                        String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC"));
+
                         LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
                         LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDate"));
 
@@ -397,7 +399,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         String tradingDay = noOfDaysInBetween > 0 ? dtf.print(startDateTime).split(" ")[0]
                                 : dtf.print(startDateTime).split(" ")[0] + " - " + dtf.print(endDateTime).split(" ")[0];
 
-                        String dispatchInterval = dtf.print(startDateTime).split(" ")[1] + "-" + dtf.print(endDateTime).split(" ")[1];
+                        String dispatchInterval = mode.equals("MANUAL") ? dtf.print(startDateTime).split(" ")[1]
+                                + "-" + dtf.print(endDateTime).split(" ")[1] : "00:05-24:00";
 
                         dataInterfaceExecutionDTO.setId(jobInstance.getId());
                         dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
@@ -408,7 +411,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
                         dataInterfaceExecutionDTO.setType(type);
                         dataInterfaceExecutionDTO.setDispatchInterval(dispatchInterval);
-                        dataInterfaceExecutionDTO.setMode(StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC")));
+                        dataInterfaceExecutionDTO.setMode(mode);
                         setLogs(jobName, dataInterfaceExecutionDTO, jobExecution);
 
                         return dataInterfaceExecutionDTO;

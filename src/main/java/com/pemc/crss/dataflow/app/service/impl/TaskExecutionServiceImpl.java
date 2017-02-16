@@ -323,11 +323,11 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     }
                     jobName = "crss-meterprocess-task-mqcomputation";
                 } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if ("DAILY".equals(taskRunDto.getMeterProcessType())) {
+                    if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
                     } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjusted")));
-                    } else if (MeterProcessType.PRELIM.getDescription().equals(taskRunDto.getMeterProcessType())) {
+                    } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelim")));
                     } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinal")));

@@ -421,7 +421,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
         //todo to get treshhold in config_db
         BigDecimal abTreshhold = new BigDecimal(10000) ;
-
+        StepExecution stepExecution = null;
         int abnormalPrice = 0;
 
         if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
@@ -432,11 +432,17 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
         executionDTO.setAbnormalPrice(abnormalPrice);
 
-        if (!jobExecution.getStepExecutions().isEmpty()) {
-            StepExecution stepExecution = jobExecution.getStepExecutions().parallelStream()
-                    .filter(execution -> execution.getStepName().equals("step1"))
-                    .findFirst().get();
+        Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+        Iterator it = executionSteps.iterator();
+        while(it.hasNext()) {
+            StepExecution stepChecker = (StepExecution)it.next();
+            if (stepChecker.getStepName().equals("step1")) {
+                stepExecution = stepChecker;
+                break;
+            }
+        }
 
+        if (stepExecution != null) {
             executionDTO.setRecordsWritten(stepExecution.getWriteCount());
             executionDTO.setRecordsRead(stepExecution.getReadCount());
         }

@@ -20,11 +20,11 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/task-executions")
-public class TaskExecutionResource {
+@RequestMapping("/task-executions/stl")
+public class StlTaskExecutionResource {
 
     @Autowired
-    @Qualifier("taskExecutionServiceImpl")
+    @Qualifier("stlTaskExecutionServiceImpl")
     private TaskExecutionService taskExecutionService;
 
     @RequestMapping(method = RequestMethod.GET)

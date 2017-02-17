@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Created on 1/22/17.
  */
-@Service
+@Service("taskExecutionServiceImpl")
 @Transactional(readOnly = true, value = "transactionManager")
 public class TaskExecutionServiceImpl implements TaskExecutionService {
 
@@ -187,48 +187,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                             taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "SETTLEMENT"));
                         }
 
-                        List<JobInstance> calculationJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
-
-                        Date calculationEndTime = null;
-                        if (!calculationJobs.isEmpty()) {
-                            JobExecution calculationJobExecution = jobExplorer.getJobExecutions(calculationJobs.get(0)).iterator().next();
-                            BatchStatus calculationStatus = calculationJobExecution.getStatus();
-                            calculationEndTime = calculationJobExecution.getEndTime();
-
-
-                            taskExecutionDto.setCalculationStatus(calculationStatus);
-
-                            if (calculationStatus.isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(calculationJobExecution));
-                            }
-                            if (!calculationStatus.isRunning() && calculationEndTime != null) {
-                                taskExecutionDto.setStatusDetails("Ended as of ".concat(dateTimeFormat.format(calculationEndTime)));
-                            }
-                            taskExecutionDto.setStatus(convertStatus(calculationStatus, "CALCULATION"));
-                        }
-
-                        List<JobInstance> generateInvoiceJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
-
-                        if (!generateInvoiceJobs.isEmpty()) {
-                            JobExecution invoiceGenJobExecution = jobExplorer.getJobExecutions(generateInvoiceJobs.get(0)).iterator().next();
-                            BatchStatus invoiceGenStatus = invoiceGenJobExecution.getStatus();
-                            Date invoiceGenEndDate = invoiceGenJobExecution.getEndTime();
-
-                            if (!invoiceGenEndDate.before(calculationEndTime)) {
-                                taskExecutionDto.setTaggingStatus(invoiceGenStatus);
-
-                                if (invoiceGenStatus.isUnsuccessful()) {
-                                    taskExecutionDto.setExitMessage(processFailedMessage(invoiceGenJobExecution));
-                                }
-                                if (!invoiceGenStatus.isRunning() && invoiceGenEndDate != null) {
-                                    taskExecutionDto.setStatusDetails("Ended as of ".concat(dateTimeFormat.format(invoiceGenEndDate)));
-                                }
-                                taskExecutionDto.setStatus(convertStatus(invoiceGenStatus, "TAGGING"));
-                            }
-                        }
-
                         return taskExecutionDto;
 
                     }).collect(toList());
@@ -267,43 +225,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     .getByJobName(taskRunDto.getJobName()).getProfileName())));
 
             jobName = "crss-datainterface-task-ingest";
-
-        } else if (RUN_COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-            String type = taskRunDto.getMeterProcessType();
-            if (type == null) {
-                type = PROCESS_TYPE_DAILY;
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyCalculation")));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
-            } else {
-                if (MeterProcessType.ADJUSTED.name().equals(type)) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedCalculation")));
-                } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimCalculation")));
-                } else if (MeterProcessType.FINAL.name().equals(type)) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalCalculation")));
-                }
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-            }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
-            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
-            arguments.add(concatKeyValue(PROCESS_TYPE, type));
-            jobName = "crss-settlement-task-calculation";
-        } else if (RUN_GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-            String type = taskRunDto.getMeterProcessType();
-            if (MeterProcessType.ADJUSTED.name().equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedInvoiceGeneration")));
-            } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimInvoiceGeneration")));
-            } else if (MeterProcessType.FINAL.name().equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
-            }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
-            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
-            arguments.add(concatKeyValue(PROCESS_TYPE, type));
-            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-            jobName = "crss-settlement-task-invoice-generation";
         } else {
             if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {

@@ -103,15 +103,15 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
-
-        List<TaskExecutionDto> taskExecutionDtos = Lists.newArrayList();
-
-        taskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_STL_READY_JOB_NAME.concat("*"),
+        List<TaskExecutionDto> taskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_STL_READY_JOB_NAME.concat("*"),
                 pageable.getOffset(), pageable.getPageSize()).stream()
                 .map((JobInstance jobInstance) -> {
-                    JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
-                    
+
                     String parentId = jobInstance.getJobName().split("-")[1];
+                    if (StringUtils.isEmpty(parentId)) {
+                        LOG.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
+                        parentId = String.valueOf(jobInstance.getInstanceId());
+                    }
                     JobInstance parentJob = jobExplorer.getJobInstance(Long.parseLong(parentId));
                     JobExecution parentExecutions = getJobExecutions(parentJob).iterator().next();
                     
@@ -122,11 +122,11 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                             parentExecutions.getJobParameters().getParameters(), JobParameter::getValue));
 
                     List<JobInstance> calculationJobs = jobExplorer.findJobInstancesByJobName(
-                            RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+                            RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId), 0, 1);
 
                     Date calculationEndTime = null;
                     if (!calculationJobs.isEmpty()) {
-                        JobExecution calculationJobExecution = jobExplorer.getJobExecutions(calculationJobs.get(0)).iterator().next();
+                        JobExecution calculationJobExecution = getJobExecutions(calculationJobs.get(0)).iterator().next();
                         BatchStatus calculationStatus = calculationJobExecution.getStatus();
                         calculationEndTime = calculationJobExecution.getEndTime();
 
@@ -143,10 +143,10 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                     }
 
                     List<JobInstance> generateInvoiceJobs = jobExplorer.findJobInstancesByJobName(
-                            RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+                            RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(parentId), 0, 1);
 
                     if (!generateInvoiceJobs.isEmpty()) {
-                        JobExecution invoiceGenJobExecution = jobExplorer.getJobExecutions(generateInvoiceJobs.get(0)).iterator().next();
+                        JobExecution invoiceGenJobExecution = getJobExecutions(generateInvoiceJobs.get(0)).iterator().next();
                         BatchStatus invoiceGenStatus = invoiceGenJobExecution.getStatus();
                         Date invoiceGenEndDate = invoiceGenJobExecution.getEndTime();
 

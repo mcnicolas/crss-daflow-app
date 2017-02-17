@@ -294,6 +294,9 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             count += processDataInterfaceJobByName(dataInterfaceExecutionDTOs, marketInfoType, pageable);
         }
 
+        dataInterfaceExecutionDTOs.stream().sorted((todiExecution1, todiExecution2)
+                -> todiExecution2.getRunStartDateTime().compareTo(todiExecution1.getRunStartDateTime()));
+        Collections.reverse(dataInterfaceExecutionDTOs);
         return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
     }
 

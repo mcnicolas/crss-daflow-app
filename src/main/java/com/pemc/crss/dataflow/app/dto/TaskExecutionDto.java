@@ -14,6 +14,7 @@ public class TaskExecutionDto {
     private String exitMessage;
     private Map<String, Object> params;
     private String status;
+    private String statusDetails;
     private TaskProgressDto progress;
     private BatchStatus wesmStatus;
     private BatchStatus rcoaStatus;
@@ -60,6 +61,14 @@ public class TaskExecutionDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getStatusDetails() {
+        return statusDetails;
+    }
+
+    public void setStatusDetails(String statusDetails) {
+        this.statusDetails = statusDetails;
     }
 
     public TaskProgressDto getProgress() {

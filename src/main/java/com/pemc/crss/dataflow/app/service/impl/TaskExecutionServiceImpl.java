@@ -48,8 +48,6 @@ import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -82,6 +80,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
+    private DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
 
     @Autowired
     private JobExplorer jobExplorer;
@@ -191,27 +190,43 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         List<JobInstance> calculationJobs = jobExplorer.findJobInstancesByJobName(
                                 RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
+                        Date calculationEndTime = null;
                         if (!calculationJobs.isEmpty()) {
                             JobExecution calculationJobExecution = jobExplorer.getJobExecutions(calculationJobs.get(0)).iterator().next();
-                            taskExecutionDto.setCalculationStatus(calculationJobExecution.getStatus());
+                            BatchStatus calculationStatus = calculationJobExecution.getStatus();
+                            calculationEndTime = calculationJobExecution.getEndTime();
 
-                            if (taskExecutionDto.getCalculationStatus().isUnsuccessful()) {
+
+                            taskExecutionDto.setCalculationStatus(calculationStatus);
+
+                            if (calculationStatus.isUnsuccessful()) {
                                 taskExecutionDto.setExitMessage(processFailedMessage(calculationJobExecution));
                             }
-                            taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getCalculationStatus(), "CALCULATION"));
+                            if (!calculationStatus.isRunning() && calculationEndTime != null) {
+                                taskExecutionDto.setStatusDetails("Ended as of ".concat(dateTimeFormat.format(calculationEndTime)));
+                            }
+                            taskExecutionDto.setStatus(convertStatus(calculationStatus, "CALCULATION"));
                         }
 
                         List<JobInstance> generateInvoiceJobs = jobExplorer.findJobInstancesByJobName(
                                 RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
                         if (!generateInvoiceJobs.isEmpty()) {
-                            JobExecution invoiceGenerationJobExecution = jobExplorer.getJobExecutions(generateInvoiceJobs.get(0)).iterator().next();
-                            taskExecutionDto.setTaggingStatus(invoiceGenerationJobExecution.getStatus());
+                            JobExecution invoiceGenJobExecution = jobExplorer.getJobExecutions(generateInvoiceJobs.get(0)).iterator().next();
+                            BatchStatus invoiceGenStatus = invoiceGenJobExecution.getStatus();
+                            Date invoiceGenEndDate = invoiceGenJobExecution.getEndTime();
 
-                            if (taskExecutionDto.getTaggingStatus().isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(invoiceGenerationJobExecution));
+                            if (!invoiceGenEndDate.before(calculationEndTime)) {
+                                taskExecutionDto.setTaggingStatus(invoiceGenStatus);
+
+                                if (invoiceGenStatus.isUnsuccessful()) {
+                                    taskExecutionDto.setExitMessage(processFailedMessage(invoiceGenJobExecution));
+                                }
+                                if (!invoiceGenStatus.isRunning() && invoiceGenEndDate != null) {
+                                    taskExecutionDto.setStatusDetails("Ended as of ".concat(dateTimeFormat.format(invoiceGenEndDate)));
+                                }
+                                taskExecutionDto.setStatus(convertStatus(invoiceGenStatus, "TAGGING"));
                             }
-                            taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getTaggingStatus(), "TAGGING"));
                         }
 
                         return taskExecutionDto;

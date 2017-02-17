@@ -63,9 +63,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private static final String RUN_WESM_JOB_NAME = "computeWesmMq";
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
-    private static final String RUN_COMPUTE_STL_JOB_NAME = "computeSettlement";
-    private static final String RUN_TAG_AS_FINAL_STL_JOB_NAME = "tagAsFinal";
-    private static final String RUN_GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
     private static final String DATE = "date";
     private static final String START_DATE = "startDate";
@@ -80,7 +77,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
-    private DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
 
     @Autowired
     private JobExplorer jobExplorer;

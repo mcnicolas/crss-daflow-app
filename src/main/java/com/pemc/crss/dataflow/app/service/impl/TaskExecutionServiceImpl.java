@@ -63,6 +63,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private static final String RUN_WESM_JOB_NAME = "computeWesmMq";
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
+    private static final String RUN_TODI_JOB_NAME = "import";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
     private static final String DATE = "date";
     private static final String START_DATE = "startDate";
@@ -290,38 +291,27 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
         int count = 0;
-        for (MarketInfoType marketInfoType : MarketInfoType.values()) {
-            count += processDataInterfaceJobByName(dataInterfaceExecutionDTOs, marketInfoType, pageable);
-        }
-
-        dataInterfaceExecutionDTOs.stream().sorted((todiExecution1, todiExecution2)
-                -> todiExecution2.getRunStartDateTime().compareTo(todiExecution1.getRunStartDateTime()));
-        Collections.reverse(dataInterfaceExecutionDTOs);
-        return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
-    }
-
-    private int processDataInterfaceJobByName(List<DataInterfaceExecutionDTO> dataInterfaceExecutions,
-                                              MarketInfoType marketInfoType, Pageable pageable) {
-        int count = 0;
-        String jobName = marketInfoType.getJobName();
-        String type = marketInfoType.getLabel();
 
         try {
-            count = jobExplorer.getJobInstanceCount(jobName);
+            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("EnergyPriceSchedJob"));
+            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("ReservePriceSchedJob"));
+            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("ReserveBCQ"));
+            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("RTUJob"));
         } catch (NoSuchJobException e) {
             LOG.error("Exception: " + e);
         }
 
         if (count > 0) {
-
-            List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = jobExplorer.findJobInstancesByJobName(jobName,
+            dataInterfaceExecutionDTOs
+                    = jobExplorer.findJobInstancesByJobName(RUN_TODI_JOB_NAME.concat("*"),
                     pageable.getOffset(), pageable.getPageSize())
                     .stream().map((JobInstance jobInstance) -> {
 
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
                         JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
-                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
 
+                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                        String jobName = jobExecution.getJobInstance().getJobName();
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC"));
 
                         LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
@@ -344,16 +334,16 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
                         dataInterfaceExecutionDTO.setParams(jobParameters);
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                        dataInterfaceExecutionDTO.setType(type);
+                        dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
                         dataInterfaceExecutionDTO.setDispatchInterval(dispatchInterval);
                         dataInterfaceExecutionDTO.setMode(mode);
                         setLogs(jobName, dataInterfaceExecutionDTO, jobExecution);
 
                         return dataInterfaceExecutionDTO;
                     }).collect(toList());
-            dataInterfaceExecutions.addAll(dataInterfaceExecutionDTOs);
         }
-        return count;
+        Collections.reverse(dataInterfaceExecutionDTOs);
+        return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
     }
 
     private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {

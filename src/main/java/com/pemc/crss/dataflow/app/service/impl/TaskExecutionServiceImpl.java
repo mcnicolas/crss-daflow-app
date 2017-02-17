@@ -320,9 +320,11 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
                         int noOfDaysInBetween = daysInBetween.getDays();
 
+                        boolean rangeFlag = noOfDaysInBetween > 0;
+
                         DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
-                        String tradingDay = noOfDaysInBetween > 0 ? dtf.print(startDateTime).split(" ")[0]
-                                : dtf.print(startDateTime).split(" ")[0] + " - " + dtf.print(endDateTime).split(" ")[0];
+                        String tradingDay = rangeFlag ? dtf.print(startDateTime).split(" ")[0]
+                                + " - " + dtf.print(endDateTime).split(" ")[0] : dtf.print(startDateTime).split(" ")[0];
 
                         String dispatchInterval = mode.equals("MANUAL") ? dtf.print(startDateTime).split(" ")[1]
                                 + "-" + dtf.print(endDateTime).split(" ")[1] : "00:05-24:00";
@@ -348,7 +350,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
         //todo to get treshhold in config_db
-        BigDecimal abTreshhold = new BigDecimal(10000) ;
+        BigDecimal abTreshhold = new BigDecimal(40000) ;
         StepExecution stepExecution = null;
         int abnormalPrice = 0;
 
@@ -371,8 +373,12 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         }
 
         if (stepExecution != null) {
-            executionDTO.setRecordsWritten(stepExecution.getWriteCount());
             executionDTO.setRecordsRead(stepExecution.getReadCount());
+            if (stepExecution.getJobExecution().getStatus().isUnsuccessful()) {
+                executionDTO.setRecordsWritten(0);
+            } else {
+                executionDTO.setRecordsWritten(stepExecution.getWriteCount());
+            }
         }
     }
 

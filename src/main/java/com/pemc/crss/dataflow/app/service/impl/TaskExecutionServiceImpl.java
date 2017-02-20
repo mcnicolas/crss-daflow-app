@@ -316,6 +316,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
                         LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
                         LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDate"));
+                        LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
                         Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
                         int noOfDaysInBetween = daysInBetween.getDays();
@@ -323,8 +324,17 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         boolean rangeFlag = noOfDaysInBetween > 0;
 
                         DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
-                        String tradingDay = rangeFlag ? dtf.print(startDateTime).split(" ")[0]
-                                + " - " + dtf.print(endDateTime).split(" ")[0] : dtf.print(startDateTime).split(" ")[0];
+                        String tradingDay = "";
+
+                        if (mode.equals("MANUAL")) {
+                            if (rangeFlag) {
+                                tradingDay = dtf.print(startDateTime).split(" ")[0] + " - " + dtf.print(endDateTime).split(" ")[0];
+                            } else if (!rangeFlag) {
+                                tradingDay = dtf.print(startDateTime).split(" ")[0];
+                            }
+                        } else if (mode.equals("AUTOMATIC")) {
+                            tradingDay = dtf.print(runDate.minusDays(1)).split(" ")[0];
+                        }
 
                         String dispatchInterval = mode.equals("MANUAL") ? dtf.print(startDateTime).split(" ")[1]
                                 + "-" + dtf.print(endDateTime).split(" ")[1] : "00:05-24:00";

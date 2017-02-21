@@ -18,10 +18,7 @@ import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
 import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.Days;
 import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
@@ -42,7 +39,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
@@ -314,42 +310,24 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         String jobName = jobExecution.getJobInstance().getJobName();
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC"));
 
-                        LocalDateTime startDateTime = new LocalDateTime(jobParameters.get("startDate"));
-                        LocalDateTime endDateTime = new LocalDateTime(jobParameters.get("endDate"));
                         LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
-                        Days daysInBetween = Days.daysBetween(startDateTime, endDateTime);
-                        int noOfDaysInBetween = daysInBetween.getDays();
-
-                        boolean rangeFlag = noOfDaysInBetween > 0;
-
-                        DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
-                        String tradingDay = "";
-
-                        if (mode.equals("MANUAL")) {
-                            if (rangeFlag) {
-                                tradingDay = dtf.print(startDateTime).split(" ")[0] + " - " + dtf.print(endDateTime).split(" ")[0];
-                            } else if (!rangeFlag) {
-                                tradingDay = dtf.print(startDateTime).split(" ")[0];
-                            }
-                        } else if (mode.equals("AUTOMATIC")) {
-                            tradingDay = dtf.print(runDate.minusDays(1)).split(" ")[0];
-                        }
-
-                        String dispatchInterval = mode.equals("MANUAL") ? dtf.print(startDateTime).split(" ")[1]
-                                + "-" + dtf.print(endDateTime).split(" ")[1] : "00:05-24:00";
+                        Date tradingDayStart = !mode.equals("AUTOMATIC")?(Date)jobParameters.get("startDate")
+                                : runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                        Date tradingDayEnd = !mode.equals("AUTOMATIC") ? (Date)jobParameters.get("endDate")
+                                : runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
 
                         dataInterfaceExecutionDTO.setId(jobInstance.getId());
                         dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
                         dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
-                        dataInterfaceExecutionDTO.setTradingDay(tradingDay);
                         dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
                         dataInterfaceExecutionDTO.setParams(jobParameters);
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
                         dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
-                        dataInterfaceExecutionDTO.setDispatchInterval(dispatchInterval);
                         dataInterfaceExecutionDTO.setMode(mode);
-                        setLogs(jobName, dataInterfaceExecutionDTO, jobExecution);
+                        dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
+                        dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
+                        setLogs(dataInterfaceExecutionDTO, jobExecution);
 
                         return dataInterfaceExecutionDTO;
                     }).collect(toList());
@@ -358,19 +336,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
     }
 
-    private void setLogs(String jobName, DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
-        //todo to get treshhold in config_db
-        BigDecimal abTreshhold = new BigDecimal(40000) ;
+    private void setLogs(DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
         StepExecution stepExecution = null;
-        int abnormalPrice = 0;
-
-        if (jobName.equalsIgnoreCase("importEnergyPriceSchedJob")) {
-            abnormalPrice = energyPriceSchedRepository.getAbnormalPriceCount(abTreshhold, jobExecution.getJobId());
-        } else if (jobName.equalsIgnoreCase("importReservePriceSchedJob")) {
-            abnormalPrice = reservePriceSchedRepository.getAbnormalPriceCount(abTreshhold, jobExecution.getJobId());
-        }
-
-        executionDTO.setAbnormalPrice(abnormalPrice);
 
         Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
         Iterator it = executionSteps.iterator();

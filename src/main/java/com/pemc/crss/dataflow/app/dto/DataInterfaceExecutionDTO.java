@@ -12,6 +12,8 @@ public class DataInterfaceExecutionDTO {
     private Long id;
     private Date runStartDateTime;
     private Date runEndDateTime;
+    private Date tradingDayStart;
+    private Date tradingDayEnd;
     private List<String> failureExceptions;
     private Map<String, Object> params;
     private String status;
@@ -19,12 +21,8 @@ public class DataInterfaceExecutionDTO {
     private BatchStatus batchStatus;
     private String mode;
     private String type;
-    private String tradingDay;
-    private String dispatchInterval;
-    private int recordsExpected;
     private int recordsWritten;
     private int recordsRead;
-    private int abnormalPrice;
 
     public Long getId() {
         return id;
@@ -106,30 +104,6 @@ public class DataInterfaceExecutionDTO {
         this.type = type;
     }
 
-    public String getTradingDay() {
-        return tradingDay;
-    }
-
-    public void setTradingDay(String tradingDay) {
-        this.tradingDay = tradingDay;
-    }
-
-    public String getDispatchInterval() {
-        return dispatchInterval;
-    }
-
-    public void setDispatchInterval(String dispatchInterval) {
-        this.dispatchInterval = dispatchInterval;
-    }
-
-    public int getRecordsExpected() {
-        return recordsExpected;
-    }
-
-    public void setRecordsExpected(int recordsExpected) {
-        this.recordsExpected = recordsExpected;
-    }
-
     public int getRecordsWritten() {
         return recordsWritten;
     }
@@ -146,11 +120,19 @@ public class DataInterfaceExecutionDTO {
         this.recordsRead = recordsRead;
     }
 
-    public int getAbnormalPrice() {
-        return abnormalPrice;
+    public Date getTradingDayStart() {
+        return tradingDayStart;
     }
 
-    public void setAbnormalPrice(int abnormalPrice) {
-        this.abnormalPrice = abnormalPrice;
+    public void setTradingDayStart(Date tradingDayStart) {
+        this.tradingDayStart = tradingDayStart;
+    }
+
+    public Date getTradingDayEnd() {
+        return tradingDayEnd;
+    }
+
+    public void setTradingDayEnd(Date tradingDayEnd) {
+        this.tradingDayEnd = tradingDayEnd;
     }
 }

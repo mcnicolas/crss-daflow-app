@@ -51,6 +51,12 @@ spring:
     job:
       enabled: false
 
+<<<<<<< HEAD
+=======
+  redis:
+    url: redis.marathon.l4lb.thisdcos.directory:6379
+
+>>>>>>> f0896b3... update yml
 #liquibase:
 #  change-log: classpath:/db/db.changelog-master.xml
 

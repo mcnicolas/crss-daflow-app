@@ -61,6 +61,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
     private static final String RUN_TODI_JOB_NAME = "import";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
+    private static final String RUN_MQ_REPORT_JOB_NAME = "generateReport";
     private static final String DATE = "date";
     private static final String START_DATE = "startDate";
     private static final String END_DATE = "endDate";
@@ -165,6 +166,20 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                             taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getRcoaStatus(), "RCOA"));
                         }
 
+                        List<JobInstance> mqReportJobs = jobExplorer.findJobInstancesByJobName(
+                                RUN_MQ_REPORT_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+
+                        if (!mqReportJobs.isEmpty()) {
+                            JobExecution mqReportJobExecution = getJobExecutions(mqReportJobs.get(0)).iterator().next();
+                            taskExecutionDto.setMqReportStatus(mqReportJobExecution.getStatus());
+
+                            if (taskExecutionDto.getMqReportStatus().isUnsuccessful()) {
+                                taskExecutionDto.setExitMessage(processFailedMessage(mqReportJobExecution));
+                            } else if (taskExecutionDto.getMqReportStatus() == BatchStatus.COMPLETED) {
+                                taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution));
+                            }
+                        }
+
                         List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
                                 RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
@@ -262,6 +277,13 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinal")));
                     }
                     jobName = "crss-meterprocess-task-stlready";
+                } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
+                    if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMqReport")));
+                    } else {
+                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMqReport")));
+                    }
+                    jobName = "crss-meterprocess-task-mqcomputation";
                 }
             }
         }

@@ -18,6 +18,7 @@ public class TaskExecutionDto {
     private TaskProgressDto progress;
     private BatchStatus wesmStatus;
     private BatchStatus rcoaStatus;
+    private BatchStatus mqReportStatus;
     private BatchStatus settlementStatus;
     private BatchStatus calculationStatus;
     private BatchStatus taggingStatus;
@@ -93,6 +94,14 @@ public class TaskExecutionDto {
 
     public void setRcoaStatus(BatchStatus rcoaStatus) {
         this.rcoaStatus = rcoaStatus;
+    }
+
+    public BatchStatus getMqReportStatus() {
+        return mqReportStatus;
+    }
+
+    public void setMqReportStatus(BatchStatus mqReportStatus) {
+        this.mqReportStatus = mqReportStatus;
     }
 
     public BatchStatus getSettlementStatus() {

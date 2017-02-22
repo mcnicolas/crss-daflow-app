@@ -35,6 +35,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.hateoas.ResourceSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,6 +110,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private StepProgressRepository stepProgressRepository;
     @Autowired
     private Environment environment;
+    @Autowired
+    private RedisTemplate<String, Long> redisTemplate;
 
     @Value("${dataflow.url}")
     private String dataFlowUrl;
@@ -466,11 +469,15 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr, String key) {
         TaskProgressDto progressDto = new TaskProgressDto();
         progressDto.setRunningStep(stepStr);
-        /*if (runningStep.getExecutionContext().containsKey(key)) {
-            progressDto.setTotalCount(runningStep.getExecutionContext().getLong(key));
-            progressDto.setExecutedCount(Math.min(stepProgressRepository.findByStepId(runningStep.getId()).map(StepProgress::getChunkCount).orElse(0L),
-                    progressDto.getTotalCount()));
-        }*/
+        if (runningStep.getExecutionContext().containsKey(key)) {
+            Object stepProg = redisTemplate.opsForValue().get(String.valueOf(runningStep.getId()));
+//            progressDto.setTotalCount(runningStep.getExecutionContext().getLong(key));
+//            progressDto.setExecutedCount(Math.min(stepProgressRepository.findByStepId(runningStep.getId()).map(StepProgress::getChunkCount).orElse(0L),
+//                    progressDto.getTotalCount()));
+            progressDto.setTotalCount(Long.parseLong(String.valueOf(redisTemplate.opsForValue().get(runningStep.getId() + "_total"))));
+            progressDto.setExecutedCount(stepProg != null ? Math.min(Long.parseLong(String.valueOf(stepProg)),
+                    progressDto.getTotalCount()) : 0L);
+        }
         return progressDto;
     }
 

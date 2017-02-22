@@ -40,6 +40,10 @@ spring:
     job:
       enabled: false
 
+  redis:
+    host: redis.marathon.l4lb.thisdcos.directory
+    port: 6379
+
 #liquibase:
 #  change-log: classpath:/db/db.changelog-master.xml
 

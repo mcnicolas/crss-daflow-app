@@ -77,6 +77,8 @@ dependencies {
     compile 'org.springframework.cloud:spring-cloud-starter-config'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
 
+    compile'org.springframework.boot:spring-boot-starter-data-redis:1.4.1.RELEASE'
+
     // Spring Batch Compatibility Issue
     compile 'org.codehaus.jettison:jettison:1.1'
 

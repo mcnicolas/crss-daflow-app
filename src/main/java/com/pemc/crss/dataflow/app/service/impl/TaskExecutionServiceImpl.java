@@ -14,6 +14,7 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
+import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
 import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
@@ -90,6 +91,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     EnergyPriceSchedRepository energyPriceSchedRepository;
     @Autowired
     ReservePriceSchedRepository reservePriceSchedRepository;
+    @Autowired
+    ExecutionParamRepository executionParamRepository;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -244,9 +247,17 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
                 } else {
+                    String processType = taskRunDto.getStartDate();
+                    if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
+                        String processBefore = processType.equalsIgnoreCase(MeterProcessType.FINAL.name()) ?
+                                MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
+                        String errMsq = "Must run " + processBefore + " first!";
+                        Preconditions.checkState(executionParamRepository.countMonthlyRun(taskRunDto.getStartDate(),
+                                taskRunDto.getEndDate(), processBefore) == 0, errMsq);
+                    }
                     arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                     arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-                    arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
+                    arguments.add(concatKeyValue(PROCESS_TYPE, processType));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
                 }
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));

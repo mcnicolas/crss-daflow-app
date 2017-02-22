@@ -258,6 +258,11 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     }
 
     @Override
+    public int getDispatchInterval() {
+        return 0;
+    }
+
+    @Override
     public Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
         return null;
     }

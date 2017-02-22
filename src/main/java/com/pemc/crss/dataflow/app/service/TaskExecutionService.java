@@ -23,4 +23,6 @@ public interface TaskExecutionService {
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 
+    int getDispatchInterval();
+
 }

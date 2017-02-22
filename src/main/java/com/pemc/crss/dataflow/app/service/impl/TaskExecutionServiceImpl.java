@@ -110,6 +110,9 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Value("${dataflow.url}")
     private String dataFlowUrl;
 
+    @Value("${todi-config.dispatch-interval}")
+    private String dispatchInterval;
+
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
         int count = 0;
@@ -359,6 +362,12 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         }
         Collections.reverse(dataInterfaceExecutionDTOs);
         return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
+    }
+
+    @Override
+    public int getDispatchInterval() {
+        //TODO connect to global configuration to get dispatch-interval
+        return Integer.valueOf(this.dispatchInterval);
     }
 
     private void setLogs(DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {

@@ -48,4 +48,9 @@ public class TaskExecutionResource {
         List<BillingPeriod> billingPeriods = taskExecutionService.findBillingPeriods();
         return new ResponseEntity<>(billingPeriods, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/get-dispatch-interval", method = RequestMethod.GET)
+    public int getDispatchInterval() {
+        return taskExecutionService.getDispatchInterval();
+    }
 }

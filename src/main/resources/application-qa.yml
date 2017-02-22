@@ -110,3 +110,7 @@ sftp:
     port: 22
     workingDirectory: /upload
     privateKey:
+
+# temporary todi-config, to be moved to general config
+todi-config:
+  dispatch-interval: 5

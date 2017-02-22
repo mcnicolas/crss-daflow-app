@@ -13,6 +13,11 @@ public class TaskRunDto {
     private String endDate;
     private String marketInformationType;
 
+    // FOR SETTLEMENT AMS OUTPUT GENERATION
+    private String amsInvoiceDate;
+    private String amsDueDate;
+    private String amsRemarks;
+
     public String getJobName() {
         return jobName;
     }
@@ -69,10 +74,37 @@ public class TaskRunDto {
         this.marketInformationType = marketInformationType;
     }
 
+    public String getAmsInvoiceDate() {
+        return amsInvoiceDate;
+    }
+
+    public void setAmsInvoiceDate(final String amsInvoiceDate) {
+        this.amsInvoiceDate = amsInvoiceDate;
+    }
+
+    public String getAmsDueDate() {
+        return amsDueDate;
+    }
+
+    public void setAmsDueDate(final String amsDueDate) {
+        this.amsDueDate = amsDueDate;
+    }
+
+    public String getAmsRemarks() {
+        return amsRemarks;
+    }
+
+    public void setAmsRemarks(final String amsRemarks) {
+        this.amsRemarks = amsRemarks;
+    }
+
     public String toString() {
         return "jobName: " +  jobName + "\n" +
                "startDate: " + startDate + "\n" +
                "endDate: " + endDate + "\n" +
-               "marketInformationType: " + marketInformationType + "\n";
+               "marketInformationType: " + marketInformationType + "\n" +
+               "amsInvoiceDate: " + amsInvoiceDate + "\n" +
+               "amsDueDate: " + amsDueDate + "\n" +
+               "amsRemarks: " + amsRemarks + "\n";
     }
 }

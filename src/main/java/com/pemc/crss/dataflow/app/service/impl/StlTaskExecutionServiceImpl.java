@@ -52,12 +52,15 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     private static final Logger LOG = LoggerFactory.getLogger(TaskExecutionServiceImpl.class);
 
     private static final String RUN_COMPUTE_STL_JOB_NAME = "computeSettlement";
-    private static final String RUN_TAG_AS_FINAL_STL_JOB_NAME = "tagAsFinal";
     private static final String RUN_GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
+    private static final String RUN_FINALIZE_STL_JOB_NAME = "finalizeSettlement";
+
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
-    private static final String DATE = "date";
     private static final String START_DATE = "startDate";
     private static final String END_DATE = "endDate";
+    private static final String AMS_INVOICE_DATE = "amsInvoiceDate";
+    private static final String AMS_DUE_DATE = "amsDueDate";
+    private static final String AMS_REMARKS = "amsRemarks";
     private static final String PROCESS_TYPE = "processType";
     private static final String PARENT_JOB = "parentJob";
     private static final String PROCESS_TYPE_DAILY = "DAILY";
@@ -221,6 +224,20 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+            jobName = "crss-settlement-task-invoice-generation";
+        } else if (RUN_FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+            String type = taskRunDto.getMeterProcessType();
+            if (MeterProcessType.FINAL.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
+            }
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
+            arguments.add(concatKeyValue(PROCESS_TYPE, type));
+            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+            arguments.add(concatKeyValue(AMS_INVOICE_DATE, taskRunDto.getAmsInvoiceDate(), "date"));
+            arguments.add(concatKeyValue(AMS_DUE_DATE, taskRunDto.getAmsDueDate(), "date"));
+            arguments.add(concatKeyValue(AMS_REMARKS, taskRunDto.getAmsRemarks(), "string"));
             jobName = "crss-settlement-task-invoice-generation";
         }
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);

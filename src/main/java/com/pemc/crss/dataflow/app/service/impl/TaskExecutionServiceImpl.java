@@ -207,6 +207,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         return billingPeriodRepository.findAll();
     }
 
+
+
     @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
@@ -250,7 +252,8 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             } else if (taskRunDto.getParentJob() != null) {
                 JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
                 JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
-                if (jobParameters.getString(PROCESS_TYPE) == null) {
+                boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
+                if (isDaily) {
                     arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), "date"));
                 } else {
                     arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), "date"));
@@ -260,7 +263,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                 arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
                 if (RUN_RCOA_JOB_NAME.equals(taskRunDto.getJobName())) {
                     arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_RCOA.name()));
-                    if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                    if (isDaily) {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
                     } else {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));

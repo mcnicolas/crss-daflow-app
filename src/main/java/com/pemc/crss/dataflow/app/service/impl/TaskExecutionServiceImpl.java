@@ -471,9 +471,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         progressDto.setRunningStep(stepStr);
         Long stepProg = redisTemplate.opsForValue().get(String.valueOf(runningStep.getId()));
         if (stepProg != null) {
-//            progressDto.setTotalCount(runningStep.getExecutionContext().getLong(key));
-//            progressDto.setExecutedCount(Math.min(stepProgressRepository.findByStepId(runningStep.getId()).map(StepProgress::getChunkCount).orElse(0L),
-//                    progressDto.getTotalCount()));
             progressDto.setTotalCount(redisTemplate.opsForValue().get(runningStep.getId() + "_total"));
             progressDto.setExecutedCount(Math.min(stepProg,
                     progressDto.getTotalCount()));

@@ -451,7 +451,9 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
                     .findFirst().get();
-            if (runningStep.getStepName().equals("computeMqStep")) {
+            if (runningStep.getStepName().equals("processGapStep")) {
+                progressDto = processStepProgress(runningStep, "Generate gap records", "gapPartitionerTotal");
+            } else if (runningStep.getStepName().equals("computeMqStep")) {
                 progressDto = processStepProgress(runningStep, "Generate raw mq data", "mqPartitionerTotal");
             } else if (runningStep.getStepName().equals("applySSLAStep")) {
                 progressDto = processStepProgress(runningStep, "Applying SSLA Computation", "sslaPartitionerTotal");

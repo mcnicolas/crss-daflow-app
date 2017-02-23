@@ -126,6 +126,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                     taskExecutionDto.setParams(Maps.transformValues(
                             parentExecutions.getJobParameters().getParameters(), JobParameter::getValue));
                     taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));
+                    taskExecutionDto.setSettlementStatus(jobStatus);
 
                     List<JobInstance> calculationJobs = jobExplorer.findJobInstancesByJobName(
                             RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId), 0, 1);

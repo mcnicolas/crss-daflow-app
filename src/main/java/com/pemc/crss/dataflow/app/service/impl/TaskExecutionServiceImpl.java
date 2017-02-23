@@ -251,9 +251,9 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
                 } else {
                     String processType = taskRunDto.getStartDate();
-                    if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
+                    if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.toString())) {
                         String processBefore = processType.equalsIgnoreCase(MeterProcessType.FINAL.name()) ?
-                                MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
+                                MeterProcessType.PRELIM.toString() : MeterProcessType.FINAL.toString();
                         String errMsq = "Must run " + processBefore + " first!";
                         Preconditions.checkState(executionParamRepository.countMonthlyRun(taskRunDto.getStartDate(),
                                 taskRunDto.getEndDate(), processBefore) == 0, errMsq);

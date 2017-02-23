@@ -109,6 +109,8 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
         List<TaskExecutionDto> taskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_STL_READY_JOB_NAME.concat("*"),
                 pageable.getOffset(), pageable.getPageSize()).stream()
                 .map((JobInstance jobInstance) -> {
+                    JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                    BatchStatus jobStatus = jobExecution.getStatus();
 
                     String parentId = jobInstance.getJobName().split("-")[1];
                     if (StringUtils.isEmpty(parentId)) {
@@ -123,6 +125,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                     taskExecutionDto.setRunDateTime(parentExecutions.getStartTime());
                     taskExecutionDto.setParams(Maps.transformValues(
                             parentExecutions.getJobParameters().getParameters(), JobParameter::getValue));
+                    taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));
 
                     List<JobInstance> calculationJobs = jobExplorer.findJobInstancesByJobName(
                             RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId), 0, 1);

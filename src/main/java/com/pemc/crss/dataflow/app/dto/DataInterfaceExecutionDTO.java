@@ -2,12 +2,13 @@ package com.pemc.crss.dataflow.app.dto;
 
 
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.scheduling.config.Task;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class DataInterfaceExecutionDTO {
+public class DataInterfaceExecutionDTO extends TaskExecutionDto {
 
     private Long id;
     private Date runStartDateTime;

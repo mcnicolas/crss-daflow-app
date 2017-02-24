@@ -371,6 +371,10 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
                         setLogs(dataInterfaceExecutionDTO, jobExecution);
 
+                        if (jobExecution.getStatus().isRunning()) {
+                            calculateProgress(jobExecution, dataInterfaceExecutionDTO);
+                        }
+
                         return dataInterfaceExecutionDTO;
                     }).collect(toList());
         }
@@ -446,7 +450,29 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
         TaskProgressDto progressDto = null;
-        if (!jobExecution.getStepExecutions().isEmpty()) {
+        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
+
+        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(jobExecution.getJobInstance().getJobName()))) {
+            StepExecution stepExecution = null;
+
+            Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+            Iterator it = executionSteps.iterator();
+            while(it.hasNext()) {
+                StepExecution stepChecker = (StepExecution)it.next();
+                if (stepChecker.getStepName().equals("step1")) {
+                    stepExecution = stepChecker;
+                    break;
+                }
+            }
+
+            if (stepExecution != null) {
+                if (stepExecution.getStepName().equals("step1")) {
+                    progressDto = processStepProgress(stepExecution, "Importing Data", null);
+                }
+            }
+            taskExecutionDto.setProgress(progressDto);
+
+        } else if (!jobExecution.getStepExecutions().isEmpty()) {
             StepExecution runningStep = jobExecution.getStepExecutions().parallelStream()
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))

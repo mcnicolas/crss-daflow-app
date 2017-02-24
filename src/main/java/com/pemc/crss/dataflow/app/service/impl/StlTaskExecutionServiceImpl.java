@@ -221,7 +221,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimInvoiceGeneration")));
             } else if (MeterProcessType.FINAL.name().equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
+//                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
             }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));

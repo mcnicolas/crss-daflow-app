@@ -24,6 +24,7 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
     private String type;
     private int recordsWritten;
     private int recordsRead;
+    private int expectedRecord;
 
     public Long getId() {
         return id;
@@ -135,5 +136,13 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
 
     public void setTradingDayEnd(Date tradingDayEnd) {
         this.tradingDayEnd = tradingDayEnd;
+    }
+
+    public int getExpectedRecord() {
+        return expectedRecord;
+    }
+
+    public void setExpectedRecord(int expectedRecord) {
+        this.expectedRecord = expectedRecord;
     }
 }

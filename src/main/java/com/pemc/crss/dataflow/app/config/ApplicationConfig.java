@@ -4,8 +4,6 @@ package com.pemc.crss.dataflow.app.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.pemc.crss.shared.core.config.redis.RedisConfig;
-import com.pemc.crss.shared.core.config.sftp.SftpGatewayConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;

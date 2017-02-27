@@ -1,16 +1,4 @@
 buildscript {
-    repositories {
-        maven {
-            url 'http://jaspersoft.artifactoryonline.com/jaspersoft/third-party-ce-artifacts/'
-        }
-        maven {
-            url 'http://jasperreports.sourceforge.net/maven2'
-        }
-        maven {
-            url 'http://repository.jboss.org/maven2/'
-        }
-        mavenCentral()
-    }
     ext {
         springBootVersion = '1.4.2.RELEASE'
     }
@@ -65,6 +53,15 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
+    maven {
+        url 'http://jaspersoft.artifactoryonline.com/jaspersoft/third-party-ce-artifacts/'
+    }
+    maven {
+        url 'http://jasperreports.sourceforge.net/maven2'
+    }
+    maven {
+        url 'http://repository.jboss.org/maven2/'
+    }
     mavenLocal()
     mavenCentral()
     maven {

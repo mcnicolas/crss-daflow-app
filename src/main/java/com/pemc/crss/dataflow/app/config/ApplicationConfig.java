@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.pemc.crss.shared.core.config.redis.RedisConfig;
+import com.pemc.crss.shared.core.config.sftp.SftpGatewayConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
@@ -18,7 +19,6 @@ import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -40,7 +40,6 @@ import java.util.List;
 @Configuration
 @EnableBatchProcessing
 @EnableConfigurationProperties({JpaProperties.class})
-@ComponentScan(basePackageClasses = {RedisConfig.class})
 public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationConfig.class);

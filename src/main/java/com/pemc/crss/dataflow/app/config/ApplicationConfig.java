@@ -4,6 +4,7 @@ package com.pemc.crss.dataflow.app.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.pemc.crss.shared.core.config.redis.RedisConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
@@ -13,18 +14,12 @@ import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.dao.*;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericToStringSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -44,7 +39,8 @@ import java.util.List;
 
 @Configuration
 @EnableBatchProcessing
-@EnableConfigurationProperties({JpaProperties.class, RedisProperties.class})
+@EnableConfigurationProperties({JpaProperties.class})
+@ComponentScan(basePackageClasses = {RedisConfig.class})
 public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationConfig.class);
@@ -60,9 +56,6 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Autowired
     private JpaProperties properties;
-
-    @Autowired
-    private RedisProperties redisProperties;
 
     @Bean
     public BatchConfigurer configurer(DataSource dataSource) {
@@ -168,34 +161,6 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
         dao.setTablePrefix(tablePrefix);
         dao.afterPropertiesSet();
         return dao;
-    }
-
-    @Bean
-    public JedisConnectionFactory jedisConnectionFactory() {
-        JedisConnectionFactory factory = new JedisConnectionFactory();
-        factory.setHostName(this.redisProperties.getHost());
-        factory.setPort(this.redisProperties.getPort());
-        factory.setUsePool(true);
-        return factory;
-    }
-
-    @Bean
-    public RedisTemplate<String, Long> redisTemplate() {
-        RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(jedisConnectionFactory());
-        redisTemplate.setHashValueSerializer(new GenericToStringSerializer<>(Long.class));
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericToStringSerializer<>(Long.class));
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        redisTemplate.afterPropertiesSet();
-        return redisTemplate;
-    }
-
-    @Bean
-    CacheManager cacheManager() {
-        RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate());
-        cacheManager.setUsePrefix(true); // THIS IS NEEDED!
-        return cacheManager;
     }
 
 }

@@ -68,6 +68,7 @@ dependencies {
     compile 'com.pemc.crss:crss-meterprocess-core-main:1.0.0.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-shared-core-dataflow:1.0.1.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-shared-core-nmms:1.0.1.BUILD-SNAPSHOT'
+    compile 'com.pemc.crss:crss-shared-core-config:1.0.1.BUILD-SNAPSHOT'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-actuator'

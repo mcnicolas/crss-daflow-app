@@ -22,6 +22,8 @@ public class TaskExecutionDto {
     private BatchStatus settlementStatus;
     private BatchStatus calculationStatus;
     private BatchStatus taggingStatus;
+    private BatchStatus mtrStatus;
+
     private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();
 
     public Long getId() {
@@ -42,6 +44,14 @@ public class TaskExecutionDto {
 
     public String getExitMessage() {
         return exitMessage;
+    }
+
+    public void setMtrStatus(BatchStatus mtrStatus) {
+        this.mtrStatus = mtrStatus;
+    }
+
+    public BatchStatus getMtrStatus() {
+        return mtrStatus;
     }
 
     public void setExitMessage(String exitMessage) {

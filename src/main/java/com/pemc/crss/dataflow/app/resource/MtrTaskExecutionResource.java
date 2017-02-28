@@ -23,7 +23,7 @@ import java.util.List;
 public class MtrTaskExecutionResource {
 
     @Autowired
-    @Qualifier("taskExecutionServiceImpl")
+    @Qualifier("mtrTaskExecutionServiceImpl")
     private TaskExecutionService taskExecutionService;
 
     @RequestMapping(method = RequestMethod.GET)

@@ -43,7 +43,7 @@ import java.util.*;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
-@Service("taskExecutionServiceImpl")
+@Service("mtrTaskExecutionServiceImpl")
 @Transactional(readOnly = true, value = "transactionManager")
 public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
 

@@ -15,7 +15,8 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
     private Date runEndDateTime;
     private Date tradingDayStart;
     private Date tradingDayEnd;
-    private List<String> failureExceptions;
+    private String failureException;
+    private String stacktrace;
     private Map<String, Object> params;
     private String status;
     private TaskProgressDto progress;
@@ -48,14 +49,6 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
 
     public void setRunEndDateTime(Date runEndDateTime) {
         this.runEndDateTime = runEndDateTime;
-    }
-
-    public List<String> getFailureExceptions() {
-        return failureExceptions;
-    }
-
-    public void setFailureExceptions(List<String> failureExceptions) {
-        this.failureExceptions = failureExceptions;
     }
 
     public Map<String, Object> getParams() {
@@ -144,5 +137,21 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
 
     public void setExpectedRecord(int expectedRecord) {
         this.expectedRecord = expectedRecord;
+    }
+
+    public String getFailureException() {
+        return failureException;
+    }
+
+    public void setFailureException(String failureException) {
+        this.failureException = failureException;
+    }
+
+    public String getStacktrace() {
+        return stacktrace;
+    }
+
+    public void setStacktrace(String stacktrace) {
+        this.stacktrace = stacktrace;
     }
 }

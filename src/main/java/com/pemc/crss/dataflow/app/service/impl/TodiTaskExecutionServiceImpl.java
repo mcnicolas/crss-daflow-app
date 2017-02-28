@@ -222,6 +222,8 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
             executionDTO.setExpectedRecord(jobExecution.getExecutionContext().getInt("expected_record", 0));
             if (stepExecution.getJobExecution().getStatus().isUnsuccessful()) {
                 executionDTO.setRecordsWritten(0);
+                executionDTO.setStacktrace(stepExecution.getExitStatus().getExitDescription());
+                executionDTO.setFailureException(jobExecution.getExecutionContext().getString("userFriendlyError", ""));
             } else {
                 executionDTO.setRecordsWritten(stepExecution.getWriteCount());
             }

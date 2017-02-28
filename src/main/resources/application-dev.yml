@@ -26,7 +26,7 @@ spring:
         connectionTimeout: 10000
         maxPoolSize: 5
   jpa:
-    show-sql: false
+    show-sql: true
     generate-ddl: false
     properties:
       hibernate:

@@ -9,7 +9,6 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
 import com.pemc.crss.meterprocess.core.main.reference.MeterType;
 import com.pemc.crss.meterprocess.core.main.repository.BillingPeriodRepository;
-import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
@@ -19,7 +18,6 @@ import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
 import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
@@ -61,7 +59,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private static final String RUN_WESM_JOB_NAME = "computeWesmMq";
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
-    private static final String RUN_TODI_JOB_NAME = "import";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
     private static final String RUN_MQ_REPORT_JOB_NAME = "generateReport";
     private static final String DATE = "date";
@@ -72,7 +69,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String PROCESS_TYPE_DAILY = "DAILY";
     private static final String METER_TYPE = "meterType";
     private static final String QUOTE = "\"";
-    private static final String MODE = "mode";
     private static final String RUN_ID = "run.id";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
@@ -229,28 +225,12 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
-        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
-
-        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(taskRunDto.getJobName()))) {
-            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
-                    ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
-                    ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
-            arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
-            arguments.add(concatKeyValue(MODE, "Manual"));
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
-
-            properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
-                    .getByJobName(taskRunDto.getJobName()).getProfileName())));
-
-            jobName = "crss-datainterface-task-ingest";
-        } else {
-            if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
-                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                    arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
-                } else {
-                    String processType = taskRunDto.getMeterProcessType();
+        if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
+            if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
+            } else {
+                String processType = taskRunDto.getMeterProcessType();
                     /*if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
                         String processBefore = processType.equalsIgnoreCase(MeterProcessType.FINAL.name()) ?
                                 MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
@@ -258,55 +238,55 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                         Preconditions.checkState(executionParamRepository.countMonthlyRun(taskRunDto.getStartDate(),
                                 taskRunDto.getEndDate(), processBefore) == 0, errMsq);
                     }*/
-                    arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                    arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-                    arguments.add(concatKeyValue(PROCESS_TYPE, processType));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                arguments.add(concatKeyValue(PROCESS_TYPE, processType));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
+            }
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
+            arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_WESM.name()));
+            jobName = "crss-meterprocess-task-mqcomputation";
+        } else if (taskRunDto.getParentJob() != null) {
+            JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
+            JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
+            boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
+            if (isDaily) {
+                arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), "date"));
+            } else {
+                arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), "date"));
+                arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), "date"));
+                arguments.add(concatKeyValue(PROCESS_TYPE, jobParameters.getString(PROCESS_TYPE)));
+            }
+            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
+            if (RUN_RCOA_JOB_NAME.equals(taskRunDto.getJobName())) {
+                arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_RCOA.name()));
+                if (isDaily) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
+                } else {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
                 }
-                arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
-                arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_WESM.name()));
                 jobName = "crss-meterprocess-task-mqcomputation";
-            } else if (taskRunDto.getParentJob() != null) {
-                JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
-                JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
-                boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
-                if (isDaily) {
-                    arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), "date"));
+            } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
+                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
+                } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjusted")));
+                } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelim")));
+                } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinal")));
+                }
+                jobName = "crss-meterprocess-task-stlready";
+            } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
+                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMqReport")));
                 } else {
-                    arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), "date"));
-                    arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), "date"));
-                    arguments.add(concatKeyValue(PROCESS_TYPE, jobParameters.getString(PROCESS_TYPE)));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMqReport")));
                 }
-                arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
-                if (RUN_RCOA_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_RCOA.name()));
-                    if (isDaily) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
-                    } else {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
-                    }
-                    jobName = "crss-meterprocess-task-mqcomputation";
-                } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
-                    } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjusted")));
-                    } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelim")));
-                    } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinal")));
-                    }
-                    jobName = "crss-meterprocess-task-stlready";
-                } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMqReport")));
-                    } else {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMqReport")));
-                    }
-                    jobName = "crss-meterprocess-task-mqcomputation";
-                }
+                jobName = "crss-meterprocess-task-mqcomputation";
             }
         }
+
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         if (jobName != null) {
@@ -326,90 +306,13 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     @Override
     public Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
-        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
-
-        int count = 0;
-
-        try {
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("EnergyPriceSchedJob"));
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("ReservePriceSchedJob"));
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("ReserveBCQ"));
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("RTUJob"));
-        } catch (NoSuchJobException e) {
-            LOG.error("Exception: " + e);
-        }
-
-        if (count > 0) {
-            dataInterfaceExecutionDTOs
-                    = jobExplorer.findJobInstancesByJobName(RUN_TODI_JOB_NAME.concat("*"),
-                    pageable.getOffset(), pageable.getPageSize())
-                    .stream().map((JobInstance jobInstance) -> {
-
-                        DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
-                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
-
-                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                        String jobName = jobExecution.getJobInstance().getJobName();
-                        String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC"));
-
-                        LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
-
-                        Date tradingDayStart = !mode.equals("AUTOMATIC")?(Date)jobParameters.get("startDate")
-                                : runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
-                        Date tradingDayEnd = !mode.equals("AUTOMATIC") ? (Date)jobParameters.get("endDate")
-                                : runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
-
-                        dataInterfaceExecutionDTO.setId(jobInstance.getId());
-                        dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
-                        dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
-                        dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
-                        dataInterfaceExecutionDTO.setParams(jobParameters);
-                        dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                        dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
-                        dataInterfaceExecutionDTO.setMode(mode);
-                        dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
-                        dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
-                        setLogs(dataInterfaceExecutionDTO, jobExecution);
-
-                        if (jobExecution.getStatus().isRunning()) {
-                            calculateProgress(jobExecution, dataInterfaceExecutionDTO);
-                        }
-
-                        return dataInterfaceExecutionDTO;
-                    }).collect(toList());
-        }
-        Collections.reverse(dataInterfaceExecutionDTOs);
-        return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
+        return null;
     }
 
     @Override
     public int getDispatchInterval() {
         //TODO connect to global configuration to get dispatch-interval
         return Integer.valueOf(this.dispatchInterval);
-    }
-
-    private void setLogs(DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
-        StepExecution stepExecution = null;
-
-        Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-        Iterator it = executionSteps.iterator();
-        while(it.hasNext()) {
-            StepExecution stepChecker = (StepExecution)it.next();
-            if (stepChecker.getStepName().equals("step1")) {
-                stepExecution = stepChecker;
-                break;
-            }
-        }
-
-        if (stepExecution != null) {
-            executionDTO.setRecordsRead(stepExecution.getReadCount());
-            executionDTO.setExpectedRecord(jobExecution.getExecutionContext().getInt("expected_record", 0));
-            if (stepExecution.getJobExecution().getStatus().isUnsuccessful()) {
-                executionDTO.setRecordsWritten(0);
-            } else {
-                executionDTO.setRecordsWritten(stepExecution.getWriteCount());
-            }
-        }
     }
 
     private String fetchSpringProfilesActive(String profile) {
@@ -451,29 +354,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
 
     private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
         TaskProgressDto progressDto = null;
-        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
-
-        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(jobExecution.getJobInstance().getJobName()))) {
-            StepExecution stepExecution = null;
-
-            Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-            Iterator it = executionSteps.iterator();
-            while(it.hasNext()) {
-                StepExecution stepChecker = (StepExecution)it.next();
-                if (stepChecker.getStepName().equals("step1")) {
-                    stepExecution = stepChecker;
-                    break;
-                }
-            }
-
-            if (stepExecution != null) {
-                if (stepExecution.getStepName().equals("step1")) {
-                    progressDto = processStepProgress(stepExecution, "Importing Data", null);
-                }
-            }
-            taskExecutionDto.setProgress(progressDto);
-
-        } else if (!jobExecution.getStepExecutions().isEmpty()) {
+        if (!jobExecution.getStepExecutions().isEmpty()) {
             StepExecution runningStep = jobExecution.getStepExecutions().parallelStream()
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))

@@ -15,7 +15,7 @@ public class TaskProgressDto {
     }
 
     public Long getExecutedCount() {
-        return executedCount;
+        return executedCount == null ? 0 : executedCount;
     }
 
     public void setExecutedCount(Long executedCount) {
@@ -23,7 +23,7 @@ public class TaskProgressDto {
     }
 
     public Long getTotalCount() {
-        return totalCount;
+        return totalCount == null ? 0 : totalCount;
     }
 
     public void setTotalCount(Long totalCount) {

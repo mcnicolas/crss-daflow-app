@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.service.MtrTaskExecutionService;
-import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
@@ -36,8 +35,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static java.util.Comparator.comparing;
@@ -128,6 +125,14 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
                             } else if (taskExecutionDto.getMtrStatus() == BatchStatus.COMPLETED) {
                                 taskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(mtrJobExecution));
                             }
+                        }
+
+                        if (taskExecutionDto.getMtrStatus().isRunning()) {
+                            calculateProgress(jobExecution, taskExecutionDto);
+                        } else if (taskExecutionDto.getMtrStatus().isUnsuccessful()) {
+                            taskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
+                        } else if (taskExecutionDto.getMtrStatus() == BatchStatus.COMPLETED) {
+                            taskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));
                         }
 
                         return taskExecutionDto;
@@ -236,5 +241,31 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
         if (stepExecution != null && stepExecution.getStepName().endsWith("Step")) {
             stepExecution.setExecutionContext(ecDao.getExecutionContext(stepExecution));
         }
+    }
+
+    private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
+        TaskProgressDto progressDto = null;
+        if (!jobExecution.getStepExecutions().isEmpty()) {
+            StepExecution runningStep = jobExecution.getStepExecutions().parallelStream()
+                    .filter(stepExecution -> stepExecution.getStatus().isRunning())
+                    .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
+                    .findFirst().get();
+            if (runningStep.getStepName().equals("generateMtrStep")) {
+                progressDto = processStepProgress(runningStep, "Generate MTR", "mtrPartitionerTotal");
+            }
+        }
+        taskExecutionDto.setProgress(progressDto);
+    }
+
+    private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr, String key) {
+        TaskProgressDto progressDto = new TaskProgressDto();
+        progressDto.setRunningStep(stepStr);
+        Long stepProg = redisTemplate.opsForValue().get(String.valueOf(runningStep.getId()));
+        if (stepProg != null) {
+            progressDto.setTotalCount(redisTemplate.opsForValue().get(runningStep.getId() + "_total"));
+            progressDto.setExecutedCount(Math.min(stepProg,
+                    progressDto.getTotalCount()));
+        }
+        return progressDto;
     }
 }

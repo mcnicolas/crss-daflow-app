@@ -3,8 +3,8 @@ package com.pemc.crss.dataflow.app.dto;
 public class TaskProgressDto {
 
     private String runningStep;
-    private long executedCount;
-    private long totalCount;
+    private Long executedCount;
+    private Long totalCount;
 
     public String getRunningStep() {
         return runningStep;
@@ -14,19 +14,19 @@ public class TaskProgressDto {
         this.runningStep = runningStep;
     }
 
-    public long getExecutedCount() {
+    public Long getExecutedCount() {
         return executedCount;
     }
 
-    public void setExecutedCount(long executedCount) {
+    public void setExecutedCount(Long executedCount) {
         this.executedCount = executedCount;
     }
 
-    public long getTotalCount() {
+    public Long getTotalCount() {
         return totalCount;
     }
 
-    public void setTotalCount(long totalCount) {
+    public void setTotalCount(Long totalCount) {
         this.totalCount = totalCount;
     }
 }

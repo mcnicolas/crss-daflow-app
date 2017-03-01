@@ -81,6 +81,7 @@ configurations {
 }
 
 dependencies {
+    compile 'com.pemc.crss:crss-settlement-core-main:1.0.0.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-meterprocess-core-main:1.0.0.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-shared-core-dataflow:1.0.1.BUILD-SNAPSHOT'
     compile 'com.pemc.crss:crss-shared-core-nmms:1.0.1.BUILD-SNAPSHOT'

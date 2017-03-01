@@ -8,6 +8,7 @@ import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
 import com.pemc.crss.meterprocess.core.main.repository.BillingPeriodRepository;
+import com.pemc.crss.settlement.core.main.repository.config.BillingPeriodConfigRepository;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
@@ -34,7 +35,9 @@ import org.springframework.hateoas.ResourceSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
@@ -100,6 +103,9 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     private StepProgressRepository stepProgressRepository;
     @Autowired
     private Environment environment;
+
+    @Autowired
+    private BillingPeriodConfigRepository billingPeriodConfigRepository;
 
     @Value("${dataflow.url}")
     private String dataFlowUrl;
@@ -210,7 +216,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             jobName = "crss-settlement-task-calculation";
@@ -223,7 +229,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             } else if (MeterProcessType.FINAL.name().equals(type)) {
 //                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
@@ -234,14 +240,17 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             if (MeterProcessType.FINAL.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis())));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-            arguments.add(concatKeyValue(AMS_INVOICE_DATE, taskRunDto.getAmsInvoiceDate(), "date"));
-            arguments.add(concatKeyValue(AMS_DUE_DATE, taskRunDto.getAmsDueDate(), "date"));
-//            arguments.add(concatKeyValue(AMS_REMARKS, taskRunDto.getAmsRemarks(), "string"));
+//            arguments.add(concatKeyValue(AMS_INVOICE_DATE, taskRunDto.getAmsInvoiceDate(), "date"));
+//            arguments.add(concatKeyValue(AMS_DUE_DATE, taskRunDto.getAmsDueDate(), "date"));
+//            try {
+//                arguments.add(concatKeyValue(AMS_REMARKS, UriUtils.encode(taskRunDto.getAmsRemarks(), "UTF-8")));
+//            } catch (UnsupportedEncodingException e) {
+//            }
             jobName = "crss-settlement-task-invoice-generation";
         }
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);

@@ -49,7 +49,7 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskExecutionServiceImpl.class);
 
-    private static final String RUN_MTR_JOB_NAME  = "generateMTR";
+    private static final String RUN_MTR_JOB_NAME  = "generateMtr";
     private static final String DATE = "date";
     private static final String START_DATE = "startDate";
     private static final String END_DATE = "endDate";

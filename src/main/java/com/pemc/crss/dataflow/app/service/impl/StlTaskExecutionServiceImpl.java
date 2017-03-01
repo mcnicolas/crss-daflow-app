@@ -241,7 +241,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(AMS_INVOICE_DATE, taskRunDto.getAmsInvoiceDate(), "date"));
             arguments.add(concatKeyValue(AMS_DUE_DATE, taskRunDto.getAmsDueDate(), "date"));
-            arguments.add(concatKeyValue(AMS_REMARKS, taskRunDto.getAmsRemarks(), "string"));
+//            arguments.add(concatKeyValue(AMS_REMARKS, taskRunDto.getAmsRemarks(), "string"));
             jobName = "crss-settlement-task-invoice-generation";
         }
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);

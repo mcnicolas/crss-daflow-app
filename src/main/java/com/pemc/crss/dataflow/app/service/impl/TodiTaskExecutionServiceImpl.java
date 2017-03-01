@@ -44,7 +44,7 @@ import static java.util.stream.Collectors.toList;
 @Transactional(readOnly = true, value = "transactionManager")
 public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TaskExecutionServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TodiTaskExecutionServiceImpl.class);
 
     private static final String RUN_TODI_JOB_NAME = "import";
     private static final String START_DATE = "startDate";
@@ -52,7 +52,9 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
     private static final String QUOTE = "\"";
     private static final String MODE = "mode";
     private static final String RUN_ID = "run.id";
+    private static final String PROCESS_TYPE = "processType";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
+
 
     @Autowired
     private JobExplorer jobExplorer;
@@ -85,6 +87,7 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
     @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+        LOG.debug("Launching Data Interface Job....");
         Preconditions.checkNotNull(taskRunDto.getJobName());
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
@@ -98,11 +101,15 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(taskRunDto.getJobName()))) {
 
             if (!StringUtils.isEmpty(taskRunDto.getStartDate())) {
+                LOG.debug("Starting Manual Import........");
                 arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
                         ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
                         ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
+                arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
                 arguments.add(concatKeyValue(MODE, "Manual"));
+            } else {
+                LOG.debug("Starting Automatic Import........");
             }
 
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
@@ -260,7 +267,7 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
             }
             if (stepExecution != null) {
                 if (stepExecution.getStepName().equals("step1")) {
-                    progressDto = processStepProgress(stepExecution, "Importing Data", null);
+                    progressDto = processStepProgress(stepExecution, "Importing Data");
                 }
             }
             taskExecutionDto.setProgress(progressDto);
@@ -268,12 +275,12 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         taskExecutionDto.setProgress(progressDto);
     }
 
-    private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr, String key) {
+    private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr) {
         TaskProgressDto progressDto = new TaskProgressDto();
         progressDto.setRunningStep(stepStr);
         Long stepProg = redisTemplate.opsForValue().get(String.valueOf(runningStep.getId()));
         if (stepProg != null) {
-            progressDto.setExecutedCount(Math.min(stepProg, progressDto.getTotalCount()));
+            progressDto.setExecutedCount(stepProg);
             progressDto.setTotalCount(redisTemplate.opsForValue().get(runningStep.getId() + "_total"));
         }
 

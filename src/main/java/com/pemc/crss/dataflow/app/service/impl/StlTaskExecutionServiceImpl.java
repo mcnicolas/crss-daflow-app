@@ -250,12 +250,12 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
-            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+            arguments.add(concatKeyValue(START_DATE, "2017-06-26", "date"));
+            arguments.add(concatKeyValue(END_DATE, "2017-07-25", "date"));
 
             try {
-                LocalDateTime startDate = DateUtil.getStartRangeDate(taskRunDto.getStartDate());
-                LocalDateTime endDate = DateUtil.getStartRangeDate(taskRunDto.getEndDate());
+                LocalDateTime startDate = DateUtil.getStartRangeDate("2017-06-26");
+                LocalDateTime endDate = DateUtil.getStartRangeDate("2017-07-25");
 
                 BillingPeriodConfig billingPeriodConfig = billingPeriodConfigRepository
                         .findByBillingPeriodStartAndBillingPeriodEnd(startDate, endDate);

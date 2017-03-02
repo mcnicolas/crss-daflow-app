@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app;
 
-import com.pemc.crss.shared.core.config.redis.RedisConfig;
+import com.pemc.crss.shared.core.config.cache.CachingConfig;
 import com.pemc.crss.shared.core.dataflow.CrssDataflowDatasourceConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableDiscoveryClient
 @ComponentScan(basePackageClasses = {
         CrssDataflowDatasourceConfig.class,
-        RedisConfig.class,
+        CachingConfig.class,
         Application.class})
 
 public class Application {

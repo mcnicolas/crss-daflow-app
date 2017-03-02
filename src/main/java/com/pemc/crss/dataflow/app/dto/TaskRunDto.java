@@ -16,7 +16,8 @@ public class TaskRunDto {
     // FOR SETTLEMENT AMS OUTPUT GENERATION
     private String amsInvoiceDate;
     private String amsDueDate;
-    private String amsRemarks;
+    private String amsRemarksInv;
+    private String amsRemarksMf;
 
     public String getJobName() {
         return jobName;
@@ -90,21 +91,30 @@ public class TaskRunDto {
         this.amsDueDate = amsDueDate;
     }
 
-    public String getAmsRemarks() {
-        return amsRemarks;
+    public String getAmsRemarksInv() {
+        return amsRemarksInv;
     }
 
-    public void setAmsRemarks(final String amsRemarks) {
-        this.amsRemarks = amsRemarks;
+    public void setAmsRemarksInv(final String amsRemarksInv) {
+        this.amsRemarksInv = amsRemarksInv;
+    }
+
+    public String getAmsRemarksMf() {
+        return amsRemarksMf;
+    }
+
+    public void setAmsRemarksMf(final String amsRemarksMf) {
+        this.amsRemarksMf = amsRemarksMf;
     }
 
     public String toString() {
         return "jobName: " +  jobName + "\n" +
-               "startDate: " + startDate + "\n" +
-               "endDate: " + endDate + "\n" +
-               "marketInformationType: " + marketInformationType + "\n" +
-               "amsInvoiceDate: " + amsInvoiceDate + "\n" +
-               "amsDueDate: " + amsDueDate + "\n" +
-               "amsRemarks: " + amsRemarks + "\n";
+                "startDate: " + startDate + "\n" +
+                "endDate: " + endDate + "\n" +
+                "marketInformationType: " + marketInformationType + "\n" +
+                "amsInvoiceDate: " + amsInvoiceDate + "\n" +
+                "amsDueDate: " + amsDueDate + "\n" +
+                "amsRemarksInv: " + amsRemarksInv + "\n" +
+                "amsRemarksMf: " + amsRemarksMf + "\n";
     }
 }

@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app;
 
 import com.pemc.crss.meterprocess.core.main.CrssMainDatasourceConfig;
+import com.pemc.crss.settlement.core.main.CrssStlMainDatasourceConfig;
 import com.pemc.crss.shared.core.config.redis.RedisConfig;
 import com.pemc.crss.shared.core.dataflow.CrssDataflowDatasourceConfig;
 import com.pemc.crss.shared.core.nmms.CrssNmmsDatasourceConfig;
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @ComponentScan(basePackageClasses = {CrssMainDatasourceConfig.class,
+        CrssStlMainDatasourceConfig.class,
         CrssDataflowDatasourceConfig.class,
         CrssNmmsDatasourceConfig.class,
         RedisConfig.class,

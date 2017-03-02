@@ -1,22 +1,20 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
+import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.JobParameter;
-import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.repository.dao.ExecutionContextDao;
 import org.springframework.batch.core.repository.dao.JobExecutionDao;
@@ -33,27 +31,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
-import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
-import com.pemc.crss.dataflow.app.service.TaskExecutionService;
-import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
-import com.pemc.crss.meterprocess.core.main.repository.BillingPeriodRepository;
-import com.pemc.crss.settlement.core.main.entity.config.BillingPeriodConfig;
-import com.pemc.crss.settlement.core.main.repository.config.BillingPeriodConfigRepository;
-import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
-import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
-import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
-import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -76,10 +61,8 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     private static final String PROCESS_TYPE_DAILY = "DAILY";
     private static final String RUN_ID = "run.id";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
-
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
     private DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
-
     @Autowired
     private JobExplorer jobExplorer;
     @Autowired
@@ -91,28 +74,15 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     @Autowired
     private ExecutionContextDao ecDao;
     @Autowired
-    EnergyPriceSchedRepository energyPriceSchedRepository;
-    @Autowired
-    ReservePriceSchedRepository reservePriceSchedRepository;
-
-    @Autowired
     private RestTemplate restTemplate;
 
-    /**
-     * Need to evaluate where to retrieve billing period.
-     * Currently located at meterprocess db.
-     */
-    @Autowired
-    private BillingPeriodRepository billingPeriodRepository;
+
     @Autowired
     private BatchJobRunLockRepository batchJobRunLockRepository;
     @Autowired
     private StepProgressRepository stepProgressRepository;
     @Autowired
     private Environment environment;
-
-    @Autowired
-    private BillingPeriodConfigRepository billingPeriodConfigRepository;
 
     @Value("${dataflow.url}")
     private String dataFlowUrl;
@@ -132,7 +102,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                     }
                     JobInstance parentJob = jobExplorer.getJobInstance(Long.parseLong(parentId));
                     JobExecution parentExecutions = getJobExecutions(parentJob).iterator().next();
-                    
+
                     TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
                     taskExecutionDto.setId(parentJob.getId());
                     taskExecutionDto.setRunDateTime(parentExecutions.getStartTime());
@@ -188,11 +158,6 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                 }).collect(toList());
 
         return new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size());
-    }
-
-    @Override
-    public List<BillingPeriod> findBillingPeriods() {
-        return billingPeriodRepository.findAll();
     }
 
     @Override
@@ -257,7 +222,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                 LocalDateTime startDate = DateUtil.getStartRangeDate(taskRunDto.getStartDate());
                 LocalDateTime endDate = DateUtil.getStartRangeDate(taskRunDto.getEndDate());
 
-                BillingPeriodConfig billingPeriodConfig = billingPeriodConfigRepository
+                /*BillingPeriodConfig billingPeriodConfig = billingPeriodConfigRepository
                         .findByBillingPeriodStartAndBillingPeriodEnd(startDate, endDate);
 
                 if (billingPeriodConfig != null) {
@@ -266,7 +231,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                     billingPeriodConfig.setRemarksInv(taskRunDto.getAmsRemarksInv());
                     billingPeriodConfig.setRemarksMarketFee(taskRunDto.getAmsRemarksMf());
                     billingPeriodConfigRepository.save(billingPeriodConfig);
-                }
+                }*/
             } catch (ParseException e) {
             }
             jobName = "crss-settlement-task-invoice-generation";

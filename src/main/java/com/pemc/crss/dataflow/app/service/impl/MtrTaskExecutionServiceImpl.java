@@ -12,8 +12,6 @@ import com.pemc.crss.dataflow.app.service.MtrTaskExecutionService;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
-import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
-import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,12 +54,9 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
     private static final String END_DATE = "endDate";
     private static final String PROCESS_TYPE_DAILY = "DAILY";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
+
     @Autowired
-    EnergyPriceSchedRepository energyPriceSchedRepository;
-    @Autowired
-    ReservePriceSchedRepository reservePriceSchedRepository;
-    @Autowired
-    ExecutionParamRepository executionParamRepository;
+    private ExecutionParamRepository executionParamRepository;
     @Autowired
     private JobExplorer jobExplorer;
     @Autowired

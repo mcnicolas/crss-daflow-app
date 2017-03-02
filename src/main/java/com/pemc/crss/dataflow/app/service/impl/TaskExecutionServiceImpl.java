@@ -6,17 +6,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
-import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
-import com.pemc.crss.meterprocess.core.main.reference.MeterType;
-import com.pemc.crss.meterprocess.core.main.repository.BillingPeriodRepository;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
-import com.pemc.crss.shared.core.nmms.repository.EnergyPriceSchedRepository;
-import com.pemc.crss.shared.core.nmms.repository.ReservePriceSchedRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +38,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -71,9 +67,9 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private static final String QUOTE = "\"";
     private static final String RUN_ID = "run.id";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
-
+    @Autowired
+    private ExecutionParamRepository executionParamRepository;
     private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
-
     @Autowired
     private JobExplorer jobExplorer;
     @Autowired
@@ -85,21 +81,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     @Autowired
     private ExecutionContextDao ecDao;
     @Autowired
-    EnergyPriceSchedRepository energyPriceSchedRepository;
-    @Autowired
-    ReservePriceSchedRepository reservePriceSchedRepository;
-    @Autowired
-    ExecutionParamRepository executionParamRepository;
-
-    @Autowired
     private RestTemplate restTemplate;
-
-    /**
-     * Need to evaluate where to retrieve billing period.
-     * Currently located at meterprocess db.
-     */
-    @Autowired
-    private BillingPeriodRepository billingPeriodRepository;
     @Autowired
     private BatchJobRunLockRepository batchJobRunLockRepository;
     @Autowired
@@ -207,12 +189,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         return new PageImpl<>(taskExecutionDtos, pageable, count);
     }
 
-    @Override
-    public List<BillingPeriod> findBillingPeriods() {
-        return billingPeriodRepository.findAll();
-    }
-
-
 
     @Override
     @Transactional(value = "transactionManager")
@@ -244,7 +220,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
             }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
-            arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_WESM.name()));
+            arguments.add(concatKeyValue(METER_TYPE, "MIRF_MT_WESM"));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
@@ -259,7 +235,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             }
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             if (RUN_RCOA_JOB_NAME.equals(taskRunDto.getJobName())) {
-                arguments.add(concatKeyValue(METER_TYPE, MeterType.MIRF_MT_RCOA.name()));
+                arguments.add(concatKeyValue(METER_TYPE, "MIRF_MT_RCOA"));
                 if (isDaily) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
                 } else {

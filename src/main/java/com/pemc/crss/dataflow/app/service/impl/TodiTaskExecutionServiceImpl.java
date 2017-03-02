@@ -4,9 +4,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
-import com.pemc.crss.meterprocess.core.main.entity.BillingPeriod;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
@@ -15,7 +17,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.*;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.NoSuchJobException;
 import org.springframework.batch.core.repository.dao.ExecutionContextDao;
@@ -67,7 +72,7 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
     @Autowired
     private ExecutionContextDao ecDao;
     @Autowired
-    ExecutionParamRepository executionParamRepository;
+    private ExecutionParamRepository executionParamRepository;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -166,9 +171,9 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
 
                         LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
-                        Date tradingDayStart = !mode.equals("AUTOMATIC")?(Date)jobParameters.get("startDate")
+                        Date tradingDayStart = !mode.equals("AUTOMATIC") ? (Date) jobParameters.get("startDate")
                                 : runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
-                        Date tradingDayEnd = !mode.equals("AUTOMATIC") ? (Date)jobParameters.get("endDate")
+                        Date tradingDayEnd = !mode.equals("AUTOMATIC") ? (Date) jobParameters.get("endDate")
                                 : runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
 
                         dataInterfaceExecutionDTO.setId(jobInstance.getId());
@@ -200,10 +205,6 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         return Integer.valueOf(this.dispatchInterval);
     }
 
-    @Override
-    public List<BillingPeriod> findBillingPeriods() {
-        return null;
-    }
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -216,8 +217,8 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
 
         Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
         Iterator it = executionSteps.iterator();
-        while(it.hasNext()) {
-            StepExecution stepChecker = (StepExecution)it.next();
+        while (it.hasNext()) {
+            StepExecution stepChecker = (StepExecution) it.next();
             if (stepChecker.getStepName().equals("step1")) {
                 stepExecution = stepChecker;
                 break;
@@ -258,8 +259,8 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
             StepExecution stepExecution = null;
             Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
             Iterator it = executionSteps.iterator();
-            while(it.hasNext()) {
-                StepExecution stepChecker = (StepExecution)it.next();
+            while (it.hasNext()) {
+                StepExecution stepChecker = (StepExecution) it.next();
                 if (stepChecker.getStepName().equals("step1")) {
                     stepExecution = stepChecker;
                     break;

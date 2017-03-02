@@ -25,6 +25,14 @@ spring:
         driverClassName: org.postgresql.Driver
         connectionTimeout: 10000
         maxPoolSize: 5
+  crss-stl:
+      datasource:
+        jdbcUrl: jdbc:postgresql://192.168.236.2:5432/crss_settlement
+        username: postgres
+        password: postgres
+        driverClassName: org.postgresql.Driver
+        connectionTimeout: 10000
+        maxPoolSize: 5
   jpa:
     show-sql: true
     generate-ddl: false

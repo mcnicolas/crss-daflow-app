@@ -35,6 +35,16 @@ spring:
       maxPoolSize: 5
       test-on-borrow: true
       validation-query: SELECT 1
+  crss-stl:
+    datasource:
+      jdbcUrl: jdbc:postgresql://postgresql.marathon.l4lb.thisdcos.directory:5432/crss_settlement
+      username: postgres
+      password: postgres
+      driverClassName: org.postgresql.Driver
+      connectionTimeout: 10000
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
 
   jpa:
     show-sql: false

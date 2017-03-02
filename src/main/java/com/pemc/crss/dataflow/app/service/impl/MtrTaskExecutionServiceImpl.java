@@ -4,7 +4,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
 import com.pemc.crss.dataflow.app.service.MtrTaskExecutionService;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
@@ -35,7 +38,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -46,13 +50,18 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskExecutionServiceImpl.class);
 
-    private static final String RUN_MTR_JOB_NAME  = "generateMtr";
+    private static final String RUN_MTR_JOB_NAME = "generateMtr";
     private static final String DATE = "date";
     private static final String START_DATE = "startDate";
     private static final String END_DATE = "endDate";
     private static final String PROCESS_TYPE_DAILY = "DAILY";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
-
+    @Autowired
+    EnergyPriceSchedRepository energyPriceSchedRepository;
+    @Autowired
+    ReservePriceSchedRepository reservePriceSchedRepository;
+    @Autowired
+    ExecutionParamRepository executionParamRepository;
     @Autowired
     private JobExplorer jobExplorer;
     @Autowired
@@ -63,13 +72,6 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
     private StepExecutionDao stepExecutionDao;
     @Autowired
     private ExecutionContextDao ecDao;
-    @Autowired
-    EnergyPriceSchedRepository energyPriceSchedRepository;
-    @Autowired
-    ReservePriceSchedRepository reservePriceSchedRepository;
-    @Autowired
-    ExecutionParamRepository executionParamRepository;
-
     @Autowired
     private RestTemplate restTemplate;
 
@@ -88,7 +90,7 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
     private String dataFlowUrl;
 
     @Override
-    public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
+    public Page<MtrTaskExecutionDto> findJobInstances(Pageable pageable) {
         int count = 0;
 
         try {
@@ -98,48 +100,30 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
             LOG.error("Exception: " + e);
         }
 
-        List<TaskExecutionDto> taskExecutionDtos = Lists.newArrayList();
+        List<MtrTaskExecutionDto> mtrTaskExecutionDtos = Lists.newArrayList();
 
         if (count > 0) {
-            taskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_MTR_JOB_NAME.concat("*"),
+            mtrTaskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_MTR_JOB_NAME.concat("*"),
                     pageable.getOffset(), pageable.getPageSize()).stream()
                     .map((JobInstance jobInstance) -> {
 
                         JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
-                        TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
-                        taskExecutionDto.setId(jobInstance.getId());
-                        taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                        taskExecutionDto.setParams(Maps.transformValues(
+                        MtrTaskExecutionDto mtrTaskExecutionDto = new MtrTaskExecutionDto();
+                        mtrTaskExecutionDto.setId(jobInstance.getId());
+                        mtrTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+                        mtrTaskExecutionDto.setParams(Maps.transformValues(
                                 jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-
-                        List<JobInstance> mtrJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_MTR_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
-
-                        if (!mtrJobs.isEmpty()) {
-                            JobExecution mtrJobExecution = getJobExecutions(mtrJobs.get(0)).iterator().next();
-                            taskExecutionDto.setMtrStatus(mtrJobExecution.getStatus());
-
-                            if (taskExecutionDto.getMtrStatus().isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(mtrJobExecution));
-                            } else if (taskExecutionDto.getMtrStatus() == BatchStatus.COMPLETED) {
-                                taskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(mtrJobExecution));
-                            }
+                        mtrTaskExecutionDto.setStatus(jobExecution.getStatus().toString());
+                        if (jobExecution.getStatus().isUnsuccessful()) {
+                            mtrTaskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
+                        } else if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+                            mtrTaskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));
                         }
-
-                        if (taskExecutionDto.getMtrStatus().isRunning()) {
-                            calculateProgress(jobExecution, taskExecutionDto);
-                        } else if (taskExecutionDto.getMtrStatus().isUnsuccessful()) {
-                            taskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
-                        } else if (taskExecutionDto.getMtrStatus() == BatchStatus.COMPLETED) {
-                            taskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));
-                        }
-
-                        return taskExecutionDto;
-
+                        return mtrTaskExecutionDto;
                     }).collect(toList());
         }
-        return new PageImpl<>(taskExecutionDtos, pageable, count);
+        return new PageImpl<>(mtrTaskExecutionDtos, pageable, count);
     }
 
     @Override
@@ -243,7 +227,7 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
         }
     }
 
-    private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
+    private void calculateProgress(JobExecution jobExecution, MtrTaskExecutionDto taskExecutionDto) {
         TaskProgressDto progressDto = null;
         if (!jobExecution.getStepExecutions().isEmpty()) {
             StepExecution runningStep = jobExecution.getStepExecutions().parallelStream()

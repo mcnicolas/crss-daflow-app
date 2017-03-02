@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app.resource;
 
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.MtrTaskExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class MtrTaskExecutionResource {
     private MtrTaskExecutionService taskExecutionService;
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Page<TaskExecutionDto>> findAllJobInstances(Pageable pageable) {
+    public ResponseEntity<Page<MtrTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable), HttpStatus.OK);
     }
 

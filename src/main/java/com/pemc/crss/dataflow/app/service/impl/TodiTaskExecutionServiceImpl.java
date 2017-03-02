@@ -14,6 +14,7 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -177,19 +178,27 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
                         Date automaticTradngDayStart = null;
                         Date automaticTradingDayEnd = null;
 
-                        //todo remove default new Date() once db data has been clean.temporarily sets old data automatic trading day = new Date
-                        if (mode.equals("AUTOMATIC")) {
-                            String automaticStart = jobExecution.getExecutionContext().getString("startDate", new Date().toString());
-                            String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
+                        //todo remove if(runDate.isBefore(temporaryFlag)) once data has been clean
+                        LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
+                        LocalDateTime temporaryFlag = new LocalDateTime("2017-03-02T23:03:23.885");
 
-                            if (StringUtils.isEmpty(automaticEnd)) {
-                                automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
-                                        .parseDateTime(automaticStart))).toDate();
+                        if (mode.equals("AUTOMATIC")) {
+                            if (runDate.isBefore(temporaryFlag)) {
+                                automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                                automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
                             } else {
-                                automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
-                                        .parseDateTime(automaticStart))).toDate();
-                                automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
-                                        .parseDateTime(automaticEnd))).toDate();
+                                String automaticStart = jobExecution.getExecutionContext().getString("startDate");
+                                String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
+
+                                if (StringUtils.isEmpty(automaticEnd)) {
+                                    automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
+                                            .parseDateTime(automaticStart))).toDate();
+                                } else {
+                                    automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                            .parseDateTime(automaticStart))).toDate();
+                                    automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                            .parseDateTime(automaticEnd))).toDate();
+                                }
                             }
                         }
 

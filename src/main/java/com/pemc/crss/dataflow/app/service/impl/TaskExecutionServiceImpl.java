@@ -11,7 +11,6 @@ import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
-import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +83,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private RestTemplate restTemplate;
     @Autowired
     private BatchJobRunLockRepository batchJobRunLockRepository;
-    @Autowired
-    private StepProgressRepository stepProgressRepository;
     @Autowired
     private Environment environment;
     @Autowired

@@ -1,20 +1,21 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.*;
-import com.pemc.crss.dataflow.app.service.TaskExecutionService;
-import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
-import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.*;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.repository.dao.ExecutionContextDao;
 import org.springframework.batch.core.repository.dao.JobExecutionDao;
@@ -31,14 +32,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
+import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -60,29 +69,39 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     private static final String PARENT_JOB = "parentJob";
     private static final String PROCESS_TYPE_DAILY = "DAILY";
     private static final String RUN_ID = "run.id";
+    private static final String AMS_INVOICE_DATE = "amsInvoiceDate";
+    private static final String AMS_DUE_DATE = "amsDueDate";
+    private static final String AMS_REMARKS_INV = "amsRemarksInv";
+    private static final String AMS_REMARKS_MF = "amsRemarksMf";
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
-    private DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
     private DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
+
     @Autowired
     private JobExplorer jobExplorer;
+
     @Autowired
     private JobInstanceDao jobInstanceDao;
+
     @Autowired
     private JobExecutionDao jobExecutionDao;
+
     @Autowired
     private StepExecutionDao stepExecutionDao;
+
     @Autowired
     private ExecutionContextDao ecDao;
+
     @Autowired
     private RestTemplate restTemplate;
 
-
     @Autowired
     private BatchJobRunLockRepository batchJobRunLockRepository;
-    @Autowired
-    private StepProgressRepository stepProgressRepository;
+
     @Autowired
     private Environment environment;
+
+    @Autowired
+    private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Value("${dataflow.url}")
     private String dataFlowUrl;
@@ -212,26 +231,42 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
             if (MeterProcessType.FINAL.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
+            final Long runId = System.currentTimeMillis();
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
 
             try {
-                LocalDateTime startDate = DateUtil.getStartRangeDate(taskRunDto.getStartDate());
-                LocalDateTime endDate = DateUtil.getStartRangeDate(taskRunDto.getEndDate());
+                BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+                batchJobAddtlParamsInvoiceDate.setRunId(runId);
+                batchJobAddtlParamsInvoiceDate.setType("DATE");
+                batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
+                batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
+                batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
 
-                /*BillingPeriodConfig billingPeriodConfig = billingPeriodConfigRepository
-                        .findByBillingPeriodStartAndBillingPeriodEnd(startDate, endDate);
+                BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+                batchJobAddtlParamsDueDate.setRunId(runId);
+                batchJobAddtlParamsDueDate.setType("DATE");
+                batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
+                batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
+                batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
 
-                if (billingPeriodConfig != null) {
-                    billingPeriodConfig.setInvoiceDate(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
-                    billingPeriodConfig.setDueDate(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
-                    billingPeriodConfig.setRemarksInv(taskRunDto.getAmsRemarksInv());
-                    billingPeriodConfig.setRemarksMarketFee(taskRunDto.getAmsRemarksMf());
-                    billingPeriodConfigRepository.save(billingPeriodConfig);
-                }*/
+                BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+                batchJobAddtlParamsRemarksInv.setRunId(runId);
+                batchJobAddtlParamsRemarksInv.setType("STRING");
+                batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+                batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
+                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+
+                BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
+                batchJobAddtlParamsRemarksMf.setRunId(runId);
+                batchJobAddtlParamsRemarksMf.setType("STRING");
+                batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
+                batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksMf());
+                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+
             } catch (ParseException e) {
             }
             jobName = "crss-settlement-task-invoice-generation";

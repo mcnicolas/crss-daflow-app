@@ -38,6 +38,7 @@ spring:
     generate-ddl: false
     properties:
       hibernate:
+        generate_statistics: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         ddl-auto: none
         hbm2ddl:
@@ -101,6 +102,7 @@ logging:
     org.springframework.cloud: DEBUG
     org.apache.http: DEBUG
     org.hibernate.type: trace
+    org.hibernate.stat: debug
 
 dataflow:
   url: http://spring-cloud-data-flow.marathon.l4lb.thisdcos.directory:9393

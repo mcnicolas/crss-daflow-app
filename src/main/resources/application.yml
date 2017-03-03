@@ -36,6 +36,7 @@ spring:
     generate-ddl: false
     properties:
       hibernate:
+        generate_statistics: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         ddl-auto: none
         hbm2ddl:
@@ -93,6 +94,7 @@ logging:
     com.netflix: DEBUG
     org.springframework.cloud: DEBUG
     org.apache.http: DEBUG
+    org.hibernate.stat: debug
 
 dataflow:
   url: http://localhost:9393

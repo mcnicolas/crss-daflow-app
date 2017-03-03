@@ -264,7 +264,7 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
                 batchJobAddtlParamsRemarksMf.setRunId(runId);
                 batchJobAddtlParamsRemarksMf.setType("STRING");
                 batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
-                batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksMf());
+                batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
                 batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
 
             } catch (ParseException e) {

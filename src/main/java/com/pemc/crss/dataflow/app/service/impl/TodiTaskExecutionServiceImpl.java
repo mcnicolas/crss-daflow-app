@@ -178,15 +178,11 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
                         Date automaticTradngDayStart = null;
                         Date automaticTradingDayEnd = null;
 
-                        //todo remove if(runDate.isBefore(temporaryFlag)) once data has been clean
+                        //todo handle exceptions, temporarily revert to original behavior when startDate is null
                         LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
-                        LocalDateTime temporaryFlag = new LocalDateTime("2017-03-02T23:03:23.885");
 
                         if (mode.equals("AUTOMATIC")) {
-                            if (runDate.isBefore(temporaryFlag)) {
-                                automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
-                                automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
-                            } else {
+                            try {
                                 String automaticStart = jobExecution.getExecutionContext().getString("startDate");
                                 String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
 
@@ -199,6 +195,9 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
                                     automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
                                             .parseDateTime(automaticEnd))).toDate();
                                 }
+                            } catch (Exception e) {
+                                automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                                automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
                             }
                         }
 

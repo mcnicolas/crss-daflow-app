@@ -11,7 +11,6 @@ import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
-import com.pemc.crss.shared.core.dataflow.repository.StepProgressRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +83,6 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
     private RestTemplate restTemplate;
     @Autowired
     private BatchJobRunLockRepository batchJobRunLockRepository;
-    @Autowired
-    private StepProgressRepository stepProgressRepository;
     @Autowired
     private Environment environment;
     @Autowired
@@ -210,9 +207,7 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                 if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
                     String processBefore = processType.equalsIgnoreCase(MeterProcessType.FINAL.name()) ?
                             MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
-                    String errMsq = "Must run " + processBefore + " first!";
-                    Preconditions.checkState(executionParamRepository.countMonthlyRun(taskRunDto.getStartDate(),
-                            taskRunDto.getEndDate(), processBefore) > 0, errMsq);
+                    checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
                 }
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
@@ -245,12 +240,16 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
-                } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjusted")));
                 } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelim")));
                 } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinal")));
+                } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjusted")));
                 }
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
@@ -278,6 +277,11 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
                 batchJobRunLockRepository.save(batchJobRunLock);
             }
         }
+    }
+
+    private void checkProcessTypeState(String process, String startDate, String endDate, String jobName) {
+        String errMsq = "Must run " + process + " first!";
+        Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate , process, jobName) > 0, errMsq);
     }
 
     @Override

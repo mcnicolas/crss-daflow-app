@@ -172,12 +172,40 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
                         String jobName = jobExecution.getJobInstance().getJobName();
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC"));
 
+                        DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
+                        DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
+                        DateTimeFormatter displayFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+
+                        Date automaticTradngDayStart = null;
+                        Date automaticTradingDayEnd = null;
+
+                        //todo handle exceptions, temporarily revert to original behavior when startDate is null
                         LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
+                        if (mode.equals("AUTOMATIC")) {
+                            try {
+                                String automaticStart = jobExecution.getExecutionContext().getString("startDate");
+                                String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
+
+                                if (StringUtils.isEmpty(automaticEnd)) {
+                                    automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
+                                            .parseDateTime(automaticStart))).toDate();
+                                } else {
+                                    automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                            .parseDateTime(automaticStart))).toDate();
+                                    automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                            .parseDateTime(automaticEnd))).toDate();
+                                }
+                            } catch (Exception e) {
+                                automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                                automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
+                            }
+                        }
+
                         Date tradingDayStart = !mode.equals("AUTOMATIC") ? (Date) jobParameters.get("startDate")
-                                : runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                                : automaticTradngDayStart;
                         Date tradingDayEnd = !mode.equals("AUTOMATIC") ? (Date) jobParameters.get("endDate")
-                                : runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
+                                : automaticTradingDayEnd;
 
                         dataInterfaceExecutionDTO.setId(jobInstance.getId());
                         dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
@@ -217,7 +245,6 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
     public void deleteJob(long jobId) {
         //nothing here.
     }
-
 
 
     @Override

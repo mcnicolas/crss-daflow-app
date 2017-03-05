@@ -295,6 +295,12 @@ public class TaskExecutionServiceImpl implements TaskExecutionService {
         return Integer.valueOf(this.dispatchInterval);
     }
 
+    @Override
+    @Transactional(value = "transactionManager")
+    public void deleteJob(long jobId) {
+        executionParamRepository.deleteCascadeJob(jobId);
+    }
+
     private String fetchSpringProfilesActive(String profile) {
         List<String> profiles = Lists.newArrayList(environment.getActiveProfiles());
         profiles.add(profile);

@@ -235,6 +235,11 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         return Integer.valueOf(this.dispatchInterval);
     }
 
+    @Override
+    public void deleteJob(long jobId) {
+        //nothing here.
+    }
+
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {

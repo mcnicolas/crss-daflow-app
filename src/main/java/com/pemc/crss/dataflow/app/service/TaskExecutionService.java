@@ -21,4 +21,5 @@ public interface TaskExecutionService {
 
     int getDispatchInterval();
 
+    void deleteJob(long jobId);
 }

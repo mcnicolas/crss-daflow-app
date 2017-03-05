@@ -294,6 +294,11 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
     }
 
     @Override
+    public void deleteJob(long jobId) {
+        //nothing here.
+    }
+
+    @Override
     public Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
         return null;
     }

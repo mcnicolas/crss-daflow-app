@@ -111,7 +111,9 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
                         mtrTaskExecutionDto.setParams(Maps.transformValues(
                                 jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
                         mtrTaskExecutionDto.setStatus(jobExecution.getStatus().toString());
-                        if (jobExecution.getStatus().isUnsuccessful()) {
+                        if (jobExecution.getStatus().isRunning()) {
+                            calculateProgress(jobExecution, mtrTaskExecutionDto);
+                        } else if (jobExecution.getStatus().isUnsuccessful()) {
                             mtrTaskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
                         } else if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
                             mtrTaskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));

@@ -39,6 +39,7 @@ import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.List;
 
+import static com.pemc.crss.shared.commons.util.TaskUtil.RUN_ID;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
@@ -141,6 +142,7 @@ public class MtrTaskExecutionServiceImpl implements MtrTaskExecutionService {
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMtr")));
             }
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             jobName = "crss-meterprocess-task-mtr";
         }
 

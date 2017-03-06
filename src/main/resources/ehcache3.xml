@@ -20,4 +20,5 @@
 
     <cache name="SeinParticipantMappingRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
+    <cache name="MTNModelConfigRepository" maxEntriesLocalHeap="10000" eternal="true" memoryStoreEvictionPolicy="FIFO"/>
 </ehcache>

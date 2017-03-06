@@ -1,33 +1,23 @@
 <ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="true" monitoring="autodetect" dynamicConfig="true">
 
-    <cache name="DailyMqItemRepository_findAllBySeinAndChannelConfigAndReadingDateTimeAndVersion" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="DailyMqItemRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="DailyMqItemRepository_findBySeinAndChannelConfigAndReadingDateTimeAndVersion" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="DailySSLARepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="DailySSLARepository_findBySeinAndChannelConfigAndReadingDateTimeAndVersion" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="MonthlyMqItemRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="MonthlyMqItemRepository_findAllBySeinAndChannelConfigAndReadingDateTimeAndVersion" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="MonthlySSLARepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="MonthlyMqItemRepository_findBySeinAndReadingDateTimeAndVersion" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="MTNModelGroupScheduleRepositoryCustom" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="MonthlySSLARepository_findBySeinAndChannelConfigAndReadingDateTimeAndVersion" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="RcoaMeteringPointChannelConfigRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="MTNModelGroupScheduleRepositoryCustom_findGroupBySeinAndDate" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="CounterpartyRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="RcoaMeteringPointChannelConfigRepository_findBySein" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="MarketTradingNodeRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="MTNServiceImpl_findMTNMeteringPointByDateAndSein" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="RegistrationRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
-    <cache name="MarketTradingNodeRepository_findByName" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
-
-    <cache name="SeinParticipantMappingRepository_findMappingBySeinAndReadingDate" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
-
-    <cache name="CounterpartyRepository_findCounterpartyContractByReadingDateAndTpId" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
-
-    <cache name="CounterpartyRepository_findAllConfirmedByIndirectParticipantId" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
-
-    <cache name="RegistrationRepository_findBySein" maxEntriesLocalHeap="1000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
-
-    <cache name="MTNModelConfigRepository_findByMtnConfigName" maxEntriesLocalHeap="1000" eternal="true" memoryStoreEvictionPolicy="FIFO"/>
+    <cache name="SeinParticipantMappingRepository" maxEntriesLocalHeap="10000" timeToIdleSeconds="1" timeToLiveSeconds="1" memoryStoreEvictionPolicy="FIFO"/>
 
 </ehcache>

@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app.service;
 
-import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -15,12 +15,15 @@ import java.util.List;
  */
 public interface TaskExecutionService {
 
-    Page<TaskExecutionDto> findJobInstances(Pageable pageable);
-
-    Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable);
+    Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable);
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 
+    /**
+     * This method should be revisited once its finalized where to get dispatch interval.
+     * Currently being used in sow7. But should be used in all execution services
+     * @return
+     */
     int getDispatchInterval();
 
     List<BatchJobSkipLog> getBatchJobSkipLogs(int stepId);

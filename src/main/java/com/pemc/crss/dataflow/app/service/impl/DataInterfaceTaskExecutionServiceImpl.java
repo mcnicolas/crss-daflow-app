@@ -1,19 +1,12 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
-import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
-import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -24,73 +17,27 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.NoSuchJobException;
-import org.springframework.batch.core.repository.dao.ExecutionContextDao;
-import org.springframework.batch.core.repository.dao.JobExecutionDao;
-import org.springframework.batch.core.repository.dao.JobInstanceDao;
-import org.springframework.batch.core.repository.dao.StepExecutionDao;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.hateoas.ResourceSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
-@Service("todiTaskExecutionServiceImpl")
+@Service("dataInterfaceTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
-public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
+public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TodiTaskExecutionServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DataInterfaceTaskExecutionServiceImpl.class);
 
     private static final String RUN_TODI_JOB_NAME = "import";
-    private static final String START_DATE = "startDate";
-    private static final String END_DATE = "endDate";
-    private static final String QUOTE = "\"";
     private static final String MODE = "mode";
-    private static final String RUN_ID = "run.id";
-    private static final String PROCESS_TYPE = "processType";
-    private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
-
-    @Autowired
-    private JobExplorer jobExplorer;
-    @Autowired
-    private JobInstanceDao jobInstanceDao;
-    @Autowired
-    private JobExecutionDao jobExecutionDao;
-    @Autowired
-    private StepExecutionDao stepExecutionDao;
-    @Autowired
-    private ExecutionContextDao ecDao;
-    @Autowired
-    private ExecutionParamRepository executionParamRepository;
-
-    @Autowired
-    private RestTemplate restTemplate;
-    @Autowired
-    private BatchJobRunLockRepository batchJobRunLockRepository;
-    @Autowired
-    private Environment environment;
-    @Autowired
-    private RedisTemplate<String, Long> redisTemplate;
-
-    @Value("${dataflow.url}")
-    private String dataFlowUrl;
-
-    @Value("${todi-config.dispatch-interval}")
-    private String dispatchInterval;
 
     @Override
     @Transactional(value = "transactionManager")
@@ -130,24 +77,15 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         if (jobName != null) {
-            ResourceSupport resourceSupport = restTemplate.getForObject(new URI(dataFlowUrl), ResourceSupport.class);
-            restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref()
-                    .concat("?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments",
-                    StringUtils.join(arguments, ","), "properties", StringUtils.join(properties, ",")));
-            if (batchJobRunLockRepository.lockJob(taskRunDto.getJobName()) == 0) {
-                BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
-                batchJobRunLock.setLocked(true);
-                batchJobRunLock.setLockedDate(new Date());
-                batchJobRunLock.setJobName(taskRunDto.getJobName());
-                batchJobRunLockRepository.save(batchJobRunLock);
-            }
+            LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+            doLaunchAndLockJob(taskRunDto, jobName, properties, arguments);
         }
     }
 
-    @Override
-    public Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
-        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
+    @Override
+    public Page<DataInterfaceExecutionDTO> findJobInstances(Pageable pageable) {
+        List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
         int count = 0;
 
         try {
@@ -236,23 +174,6 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         return Integer.valueOf(this.dispatchInterval);
     }
 
-    @Override
-    public List<BatchJobSkipLog> getBatchJobSkipLogs(int stepId) {
-        return null;
-    }
-
-    @Override
-    public void deleteJob(long jobId) {
-        //nothing here.
-    }
-
-
-    @Override
-    public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
-        return null;
-    }
-
-
     private void setLogs(DataInterfaceExecutionDTO executionDTO, JobExecution jobExecution) {
         StepExecution stepExecution = null;
 
@@ -279,77 +200,4 @@ public class TodiTaskExecutionServiceImpl implements TaskExecutionService {
         }
     }
 
-    private String fetchSpringProfilesActive(String profile) {
-        List<String> profiles = Lists.newArrayList(environment.getActiveProfiles());
-        profiles.add(profile);
-        return StringUtils.join(profiles, ",");
-    }
-
-    private String concatKeyValue(String key, String value, String dataType) {
-        return key.concat(dataType != null ? "(".concat(dataType).concat(")") : "").concat("=").concat(value);
-    }
-
-    private String concatKeyValue(String key, String value) {
-        return concatKeyValue(key, value, null);
-    }
-
-    private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
-        TaskProgressDto progressDto = null;
-        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
-        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(jobExecution.getJobInstance().getJobName()))) {
-            StepExecution stepExecution = null;
-            Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
-            Iterator it = executionSteps.iterator();
-            while (it.hasNext()) {
-                StepExecution stepChecker = (StepExecution) it.next();
-                if (stepChecker.getStepName().equals("step1")) {
-                    stepExecution = stepChecker;
-                    break;
-                }
-            }
-            if (stepExecution != null) {
-                if (stepExecution.getStepName().equals("step1")) {
-                    progressDto = processStepProgress(stepExecution, "Importing Data");
-                }
-            }
-            taskExecutionDto.setProgress(progressDto);
-        }
-        taskExecutionDto.setProgress(progressDto);
-    }
-
-    private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr) {
-        TaskProgressDto progressDto = new TaskProgressDto();
-        progressDto.setRunningStep(stepStr);
-        Long stepProg = redisTemplate.opsForValue().get(String.valueOf(runningStep.getId()));
-        if (stepProg != null) {
-            progressDto.setExecutedCount(stepProg);
-            progressDto.setTotalCount(redisTemplate.opsForValue().get(runningStep.getId() + "_total"));
-        }
-
-        return progressDto;
-    }
-
-    private List<JobExecution> getJobExecutions(JobInstance jobInstance) {
-        List<JobExecution> executions = jobExecutionDao.findJobExecutions(jobInstance);
-        for (JobExecution jobExecution : executions) {
-            getJobExecutionDependencies(jobExecution);
-            for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
-                getStepExecutionDependencies(stepExecution);
-            }
-        }
-        return executions;
-    }
-
-    private void getJobExecutionDependencies(JobExecution jobExecution) {
-        JobInstance jobInstance = jobInstanceDao.getJobInstance(jobExecution);
-        stepExecutionDao.addStepExecutions(jobExecution);
-        jobExecution.setJobInstance(jobInstance);
-        jobExecution.setExecutionContext(ecDao.getExecutionContext(jobExecution));
-    }
-
-    private void getStepExecutionDependencies(StepExecution stepExecution) {
-        if (stepExecution != null && stepExecution.getStepName().endsWith("Step")) {
-            stepExecution.setExecutionContext(ecDao.getExecutionContext(stepExecution));
-        }
-    }
 }

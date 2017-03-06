@@ -1,14 +1,14 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,96 +16,37 @@ import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameter;
-import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.explore.JobExplorer;
-import org.springframework.batch.core.repository.dao.ExecutionContextDao;
-import org.springframework.batch.core.repository.dao.JobExecutionDao;
-import org.springframework.batch.core.repository.dao.JobInstanceDao;
-import org.springframework.batch.core.repository.dao.StepExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.hateoas.ResourceSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
-import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
-import com.pemc.crss.dataflow.app.service.TaskExecutionService;
-import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
+import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
 
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
-@Service("stlTaskExecutionServiceImpl")
+@Service("settlementTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
-public class StlTaskExecutionServiceImpl implements TaskExecutionService {
+public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TaskExecutionServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SettlementTaskExecutionServiceImpl.class);
 
     private static final String RUN_COMPUTE_STL_JOB_NAME = "computeSettlement";
     private static final String RUN_GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
     private static final String RUN_FINALIZE_STL_JOB_NAME = "finalizeSettlement";
-
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
-    private static final String START_DATE = "startDate";
-    private static final String END_DATE = "endDate";
-    private static final String PROCESS_TYPE = "processType";
-    private static final String PARENT_JOB = "parentJob";
-    private static final String PROCESS_TYPE_DAILY = "DAILY";
-    private static final String RUN_ID = "run.id";
     private static final String AMS_INVOICE_DATE = "amsInvoiceDate";
     private static final String AMS_DUE_DATE = "amsDueDate";
     private static final String AMS_REMARKS_INV = "amsRemarksInv";
     private static final String AMS_REMARKS_MF = "amsRemarksMf";
-    private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
-    private DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
-
-    @Autowired
-    private JobExplorer jobExplorer;
-
-    @Autowired
-    private JobInstanceDao jobInstanceDao;
-
-    @Autowired
-    private JobExecutionDao jobExecutionDao;
-
-    @Autowired
-    private StepExecutionDao stepExecutionDao;
-
-    @Autowired
-    private ExecutionContextDao ecDao;
-
-    @Autowired
-    private RestTemplate restTemplate;
-
-    @Autowired
-    private BatchJobRunLockRepository batchJobRunLockRepository;
-
-    @Autowired
-    private Environment environment;
 
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
-
-    @Value("${dataflow.url}")
-    private String dataFlowUrl;
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -275,131 +216,10 @@ public class StlTaskExecutionServiceImpl implements TaskExecutionService {
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         if (jobName != null) {
-            ResourceSupport resourceSupport = restTemplate.getForObject(new URI(dataFlowUrl), ResourceSupport.class);
-            restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref().concat(
-                    "?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments", StringUtils.join(arguments, ","),
-                    "properties", StringUtils.join(properties, ",")));
-            if (batchJobRunLockRepository.lockJob(taskRunDto.getJobName()) == 0) {
-                BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
-                batchJobRunLock.setJobName(taskRunDto.getJobName());
-                batchJobRunLock.setLocked(true);
-                batchJobRunLock.setLockedDate(new Date());
-                batchJobRunLockRepository.save(batchJobRunLock);
-            }
+            LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+            doLaunchAndLockJob(taskRunDto, jobName, properties, arguments);
         }
     }
 
-    @Override
-    public int getDispatchInterval() {
-        return 0;
-    }
 
-    @Override
-    public List<BatchJobSkipLog> getBatchJobSkipLogs(int stepId) {
-        return null;
-    }
-
-    @Override
-    public void deleteJob(long jobId) {
-        //nothing here.
-    }
-
-    @Override
-    public Page<DataInterfaceExecutionDTO> findDataInterfaceInstances(Pageable pageable) {
-        return null;
-    }
-
-    private String fetchSpringProfilesActive(String profile) {
-        List<String> profiles = Lists.newArrayList(environment.getActiveProfiles());
-        profiles.add(profile);
-        return StringUtils.join(profiles, ",");
-    }
-
-    private String concatKeyValue(String key, String value, String dataType) {
-        return key.concat(dataType != null ? "(".concat(dataType).concat(")") : "").concat("=").concat(value);
-    }
-
-    private String concatKeyValue(String key, String value) {
-        return concatKeyValue(key, value, null);
-    }
-
-    private String processFailedMessage(JobExecution jobExecution) {
-        return jobExecution.getStepExecutions().parallelStream()
-                .filter(stepExecution -> stepExecution.getStepName().matches("(.*)StepPartition(.*)"))
-                .filter(stepExecution -> stepExecution.getStatus().isUnsuccessful())
-                .findFirst().map(stepExecution -> stepExecution.getExitStatus().getExitDescription()).orElse(null);
-    }
-
-    private List<TaskSummaryDto> showSummary(JobExecution jobExecution) {
-        return jobExecution.getStepExecutions().parallelStream()
-                .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
-                .map(stepExecution -> {
-                    TaskSummaryDto taskSummaryDto = new TaskSummaryDto();
-                    taskSummaryDto.setStepName(stepExecution.getStepName());
-                    taskSummaryDto.setReadCount(stepExecution.getReadCount());
-                    taskSummaryDto.setWriteCount(stepExecution.getWriteCount());
-                    taskSummaryDto.setSkipCount(stepExecution.getSkipCount());
-                    taskSummaryDto.setStepId(stepExecution.getId());
-                    return taskSummaryDto;
-                })
-                .sorted(comparing(TaskSummaryDto::getStepId))
-                .collect(toList());
-    }
-
-    private void calculateProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
-        TaskProgressDto progressDto = null;
-        if (!jobExecution.getStepExecutions().isEmpty()) {
-            StepExecution runningStep = jobExecution.getStepExecutions().parallelStream()
-                    .filter(stepExecution -> stepExecution.getStatus().isRunning())
-                    .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
-                    .findFirst().get();
-            if (runningStep.getStepName().equals("computeMqStep")) {
-                progressDto = processStepProgress(runningStep, "Generate raw mq data", "mqPartitionerTotal");
-            } else if (runningStep.getStepName().equals("applySSLAStep")) {
-                progressDto = processStepProgress(runningStep, "Applying SSLA Computation", "sslaPartitionerTotal");
-            } else if (runningStep.getStepName().equals("generateReportStep")) {
-                progressDto = processStepProgress(runningStep, "Generate Report", "reportPartitionerTotal");
-            }
-        }
-        taskExecutionDto.setProgress(progressDto);
-    }
-
-    private String convertStatus(BatchStatus batchStatus, String suffix) {
-        return batchStatus.toString().concat("-").concat(suffix);
-    }
-
-    private TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr, String key) {
-        TaskProgressDto progressDto = new TaskProgressDto();
-        progressDto.setRunningStep(stepStr);
-        /*if (runningStep.getExecutionContext().containsKey(key)) {
-            progressDto.setTotalCount(runningStep.getExecutionContext().getLong(key));
-            progressDto.setExecutedCount(Math.min(stepProgressRepository.findByStepId(runningStep.getId()).map(StepProgress::getChunkCount).orElse(0L),
-                    progressDto.getTotalCount()));
-        }*/
-        return progressDto;
-    }
-
-    private List<JobExecution> getJobExecutions(JobInstance jobInstance) {
-        List<JobExecution> executions = jobExecutionDao.findJobExecutions(jobInstance);
-        for (JobExecution jobExecution : executions) {
-            getJobExecutionDependencies(jobExecution);
-            for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
-                getStepExecutionDependencies(stepExecution);
-            }
-        }
-        return executions;
-    }
-
-    private void getJobExecutionDependencies(JobExecution jobExecution) {
-        JobInstance jobInstance = jobInstanceDao.getJobInstance(jobExecution);
-        stepExecutionDao.addStepExecutions(jobExecution);
-        jobExecution.setJobInstance(jobInstance);
-        jobExecution.setExecutionContext(ecDao.getExecutionContext(jobExecution));
-    }
-
-    private void getStepExecutionDependencies(StepExecution stepExecution) {
-        if (stepExecution != null && stepExecution.getStepName().endsWith("Step")) {
-            stepExecution.setExecutionContext(ecDao.getExecutionContext(stepExecution));
-        }
-    }
 }

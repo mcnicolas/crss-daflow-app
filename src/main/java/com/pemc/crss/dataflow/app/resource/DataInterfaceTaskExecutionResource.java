@@ -45,14 +45,4 @@ public class DataInterfaceTaskExecutionResource {
         return taskExecutionService.getDispatchInterval();
     }
 
-    @RequestMapping(method = RequestMethod.DELETE)
-    public ResponseEntity deleteJob(@RequestParam(value = "jobId") long jobId) throws URISyntaxException {
-        taskExecutionService.deleteJob(jobId);
-        return new ResponseEntity(HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/get-batch-job-skip-logs", method = RequestMethod.GET)
-    public List<BatchJobSkipLog> getBatchJobSkipLogs(@RequestParam(value = "stepId") int stepId) {
-        return taskExecutionService.getBatchJobSkipLogs(stepId);
-    }
 }

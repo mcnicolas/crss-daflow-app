@@ -54,7 +54,9 @@ public class MeterprocessTaskExecutionResource {
     @RequestMapping(value = "/get-batch-job-skip-logs", method = RequestMethod.GET)
     public String getBatchJobSkipLogs(@RequestParam(value = "stepId") int stepId) {
         String retVal="";
-        taskExecutionService.getBatchJobSkipLogs(stepId).stream().forEach(o -> retVal.concat(o.getError().concat("\n")));
+        for (BatchJobSkipLog log : taskExecutionService.getBatchJobSkipLogs(stepId)) {
+            retVal = retVal.concat(log.getError()).concat("\n");
+        }
         return retVal;
     }
 }

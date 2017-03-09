@@ -27,10 +27,10 @@
             "privileged": false,
             "portMappings": [
                 {
-                    "containerPort": 8081,
+                    "containerPort": 8082,
                     "protocol": "tcp",
                     "labels": {
-                        "VIP_0": "/crss-dataflow-app:8081"
+                        "VIP_0": "/crss-dataflow-app:8082"
                     }
                 }
             ],

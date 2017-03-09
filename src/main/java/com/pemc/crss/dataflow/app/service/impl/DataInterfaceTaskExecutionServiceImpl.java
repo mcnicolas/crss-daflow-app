@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
+import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -158,7 +160,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                         setLogs(dataInterfaceExecutionDTO, jobExecution);
 
                         if (jobExecution.getStatus().isRunning()) {
-                            calculateProgress(jobExecution, dataInterfaceExecutionDTO);
+                            calculateDataInterfaceProgress(jobExecution, dataInterfaceExecutionDTO);
                         }
 
                         return dataInterfaceExecutionDTO;
@@ -198,6 +200,30 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                 executionDTO.setRecordsWritten(stepExecution.getWriteCount());
             }
         }
+    }
+
+    private void calculateDataInterfaceProgress(JobExecution jobExecution, TaskExecutionDto taskExecutionDto) {
+        TaskProgressDto progressDto = null;
+        List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
+        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(jobExecution.getJobInstance().getJobName()))) {
+            StepExecution stepExecution = null;
+            Collection<StepExecution> executionSteps = jobExecution.getStepExecutions();
+            Iterator it = executionSteps.iterator();
+            while (it.hasNext()) {
+                StepExecution stepChecker = (StepExecution) it.next();
+                if (stepChecker.getStepName().equals("step1")) {
+                    stepExecution = stepChecker;
+                    break;
+                }
+            }
+            if (stepExecution != null) {
+                if (stepExecution.getStepName().equals("step1")) {
+                    progressDto = processStepProgress(stepExecution, "Importing Data", "");
+                }
+            }
+            taskExecutionDto.setProgress(progressDto);
+        }
+        taskExecutionDto.setProgress(progressDto);
     }
 
 }

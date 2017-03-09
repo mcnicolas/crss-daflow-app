@@ -195,15 +195,15 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                arguments.remove(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
-                arguments.remove(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.remove(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-                arguments.remove(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMqReport")));
                 } else {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMqReport")));
                 }
+                arguments.remove(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
+                arguments.remove(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.remove(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                arguments.remove(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                 jobName = "crss-meterprocess-task-mqcomputation";
             }
         }

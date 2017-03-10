@@ -19,6 +19,12 @@ public class TaskRunDto {
     private String amsRemarksInv;
     private String amsRemarksMf;
 
+    // BILLING PERIOD INFOS
+    private Long billingPeriodId;
+    private Long billingPeriod;
+    private String supplyMonth;
+    private String billingPeriodName;
+
     public String getJobName() {
         return jobName;
     }
@@ -107,14 +113,56 @@ public class TaskRunDto {
         this.amsRemarksMf = amsRemarksMf;
     }
 
+    public Long getBillingPeriodId() {
+        return billingPeriodId;
+    }
+
+    public void setBillingPeriodId(Long billingPeriodId) {
+        this.billingPeriodId = billingPeriodId;
+    }
+
+    public Long getBillingPeriod() {
+        return billingPeriod;
+    }
+
+    public void setBillingPeriod(Long billingPeriod) {
+        this.billingPeriod = billingPeriod;
+    }
+
+    public String getSupplyMonth() {
+        return supplyMonth;
+    }
+
+    public void setSupplyMonth(String supplyMonth) {
+        this.supplyMonth = supplyMonth;
+    }
+
+    public String getBillingPeriodName() {
+        return billingPeriodName;
+    }
+
+    public void setBillingPeriodName(String billingPeriodName) {
+        this.billingPeriodName = billingPeriodName;
+    }
+
+    @Override
     public String toString() {
-        return "jobName: " +  jobName + "\n" +
-                "startDate: " + startDate + "\n" +
-                "endDate: " + endDate + "\n" +
-                "marketInformationType: " + marketInformationType + "\n" +
-                "amsInvoiceDate: " + amsInvoiceDate + "\n" +
-                "amsDueDate: " + amsDueDate + "\n" +
-                "amsRemarksInv: " + amsRemarksInv + "\n" +
-                "amsRemarksMf: " + amsRemarksMf + "\n";
+        return "TaskRunDto{" +
+                "jobName='" + jobName + '\'' +
+                ", parentJob='" + parentJob + '\'' +
+                ", meterProcessType='" + meterProcessType + '\'' +
+                ", tradingDate='" + tradingDate + '\'' +
+                ", startDate='" + startDate + '\'' +
+                ", endDate='" + endDate + '\'' +
+                ", marketInformationType='" + marketInformationType + '\'' +
+                ", amsInvoiceDate='" + amsInvoiceDate + '\'' +
+                ", amsDueDate='" + amsDueDate + '\'' +
+                ", amsRemarksInv='" + amsRemarksInv + '\'' +
+                ", amsRemarksMf='" + amsRemarksMf + '\'' +
+                ", billingPeriodId=" + billingPeriodId +
+                ", billingPeriod=" + billingPeriod +
+                ", supplyMonth='" + supplyMonth + '\'' +
+                ", billingPeriodName='" + billingPeriodName + '\'' +
+                '}';
     }
 }

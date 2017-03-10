@@ -6,10 +6,13 @@ import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.NoSuchJobException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -34,6 +38,13 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
     private static final String RUN_MQ_REPORT_JOB_NAME = "geneReport";
+    private static final String PARAMS_BILLING_PERIOD_ID = "billingPeriodId";
+    private static final String PARAMS_BILLING_PERIOD = "billingPeriod";
+    private static final String PARAMS_SUPPLY_MONTH = "supplyMonth";
+    private static final String PARAMS_BILLING_PERIOD_NAME = "billingPeriodName";
+
+    @Autowired
+    private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
 
     @Override
@@ -154,6 +165,41 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
+
+                //TODO: think of some ways to be get the parentJob
+                final Long runId = System.currentTimeMillis();
+                List<BatchJobAddtlParams> addtlParams = new ArrayList<>();
+
+                BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
+                paramsBillingPeriodId.setRunId(runId);
+                paramsBillingPeriodId.setType("LONG");
+                paramsBillingPeriodId.setKey(PARAMS_BILLING_PERIOD_ID);
+                paramsBillingPeriodId.setLongVal(taskRunDto.getBillingPeriodId());
+                addtlParams.add(paramsBillingPeriodId);
+
+                BatchJobAddtlParams paramsBillingPeriod = new BatchJobAddtlParams();
+                paramsBillingPeriod.setRunId(runId);
+                paramsBillingPeriod.setType("LONG");
+                paramsBillingPeriod.setKey(PARAMS_BILLING_PERIOD);
+                paramsBillingPeriod.setLongVal(taskRunDto.getBillingPeriod());
+                addtlParams.add(paramsBillingPeriod);
+
+                BatchJobAddtlParams paramsSupplyMonth = new BatchJobAddtlParams();
+                paramsSupplyMonth.setRunId(runId);
+                paramsSupplyMonth.setType("STRING");
+                paramsSupplyMonth.setKey(PARAMS_SUPPLY_MONTH);
+                paramsSupplyMonth.setStringVal(taskRunDto.getSupplyMonth());
+                addtlParams.add(paramsSupplyMonth);
+
+                BatchJobAddtlParams paramsBillingPeriodName = new BatchJobAddtlParams();
+                paramsBillingPeriodName.setRunId(runId);
+                paramsBillingPeriodName.setType("STRING");
+                paramsBillingPeriodName.setKey(PARAMS_BILLING_PERIOD_NAME);
+                paramsBillingPeriodName.setStringVal(taskRunDto.getBillingPeriodName());
+                addtlParams.add(paramsBillingPeriodName);
+
+                batchJobAddtlParamsRepository.save(addtlParams);
+
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
             }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));

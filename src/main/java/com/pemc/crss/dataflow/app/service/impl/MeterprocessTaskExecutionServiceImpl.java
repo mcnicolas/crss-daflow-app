@@ -152,6 +152,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         List<String> arguments = Lists.newArrayList();
 
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
+            final Long runId = System.currentTimeMillis();
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
@@ -166,8 +167,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
 
-                //TODO: think of some ways to be get the parentJob
-                final Long runId = System.currentTimeMillis();
                 List<BatchJobAddtlParams> addtlParams = new ArrayList<>();
 
                 BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
@@ -202,7 +201,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
             arguments.add(concatKeyValue(METER_TYPE, "MIRF_MT_WESM"));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {

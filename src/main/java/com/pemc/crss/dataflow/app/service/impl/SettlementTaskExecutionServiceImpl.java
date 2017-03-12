@@ -3,19 +3,22 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.PartialCalculationDto;
+import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
+import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
+import com.pemc.crss.shared.core.dataflow.entity.RunningAdjustmentLock;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
+import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,8 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
 import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -36,24 +41,38 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     private static final Logger LOG = LoggerFactory.getLogger(SettlementTaskExecutionServiceImpl.class);
 
-    private static final String RUN_COMPUTE_STL_JOB_NAME = "computeSettlement";
-    private static final String RUN_GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
-    private static final String RUN_FINALIZE_STL_JOB_NAME = "finalizeSettlement";
-    private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
+    // Job names
+    private static final String STL_READY_JOB_NAME = "processStlReady";
+    private static final String COMPUTE_STL_JOB_NAME = "computeSettlementStlAmts";
+    private static final String FINALIZE_STL_JOB_NAME = "tasAsOutputReadyStlAmts";
+    private static final String COMPUTE_GMRVAT_MFEE_JOB_NAME = "computeSettlementGmrVatMfee";
+    private static final String FINALIZE_GMRVAT_MFEE_JOB_NAME = "tasAsOutputReadyGmrVatMfee";
+    private static final String GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
+
     private static final String AMS_INVOICE_DATE = "amsInvoiceDate";
     private static final String AMS_DUE_DATE = "amsDueDate";
     private static final String AMS_REMARKS_INV = "amsRemarksInv";
     private static final String AMS_REMARKS_MF = "amsRemarksMf";
 
+    private static final String GROUP_ID = "groupId";
+
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
+    @Autowired
+    private BatchJobAdjRunRepository batchJobAdjRunRepository;
+
+    @Autowired
+    private RunningAdjustmentLockRepository runningAdjustmentLockRepository;
+
     @Override
-    public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
-        List<TaskExecutionDto> taskExecutionDtos = jobExplorer.findJobInstancesByJobName(RUN_STL_READY_JOB_NAME.concat("*"),
+    public Page<StlTaskExecutionDto> findJobInstances(Pageable pageable) {
+
+        List<StlTaskExecutionDto> taskExecutionDtos = jobExplorer.findJobInstancesByJobName(STL_READY_JOB_NAME.concat("*"),
                 pageable.getOffset(), pageable.getPageSize()).stream()
                 .map((JobInstance jobInstance) -> {
                     JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                    Long jobId = jobExecution.getJobId();
                     BatchStatus jobStatus = jobExecution.getStatus();
 
                     String parentId = jobInstance.getJobName().split("-")[1];
@@ -66,57 +85,190 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         parentJob = jobInstance;
                     }
                     JobExecution parentExecutions = getJobExecutions(parentJob).iterator().next();
+                    JobParameters jobParameters = parentExecutions.getJobParameters();
+                    Date startDate = jobParameters.getDate(START_DATE);
+                    Date endDate = jobParameters.getDate(END_DATE);
 
-                    TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
+                    StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
                     taskExecutionDto.setId(parentJob.getId());
                     taskExecutionDto.setRunDateTime(parentExecutions.getStartTime());
                     taskExecutionDto.setParams(Maps.transformValues(
-                            parentExecutions.getJobParameters().getParameters(), JobParameter::getValue));
+                            jobParameters.getParameters(), JobParameter::getValue));
                     taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));
-                    taskExecutionDto.setSettlementStatus(jobStatus);
+                    taskExecutionDto.setStlReadyStatus(jobStatus);
+//                    taskExecutionDto.setSettlementStatus(jobStatus);
 
-                    List<JobInstance> calculationJobs = jobExplorer.findJobInstancesByJobName(
-                            RUN_COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId), 0, 1);
-
-                    Date calculationEndTime = null;
-                    if (!calculationJobs.isEmpty()) {
-                        JobExecution calculationJobExecution = getJobExecutions(calculationJobs.get(0)).iterator().next();
-                        BatchStatus calculationStatus = calculationJobExecution.getStatus();
-                        calculationEndTime = calculationJobExecution.getEndTime();
-
-
-                        taskExecutionDto.setCalculationStatus(calculationStatus);
-
-                        if (calculationStatus.isUnsuccessful()) {
-                            taskExecutionDto.setExitMessage(processFailedMessage(calculationJobExecution));
-                        }
-                        if (!calculationStatus.isRunning() && calculationEndTime != null) {
-                            taskExecutionDto.setStatusDetails("Ended as of ".concat(dateTimeFormat.format(calculationEndTime)));
-                        }
-                        taskExecutionDto.setStatus(convertStatus(calculationStatus, "CALCULATION"));
+                    RunningAdjustmentLock runningAdjustmentLock = null;
+                    Long lockedGroupId = null;
+                    if (startDate != null && endDate != null) {
+                        Iterator<RunningAdjustmentLock> iterator = runningAdjustmentLockRepository
+                                .findByStartDateAndEndDateAndLockedIsTrue(startDate, endDate).iterator();
+                        lockedGroupId = iterator.hasNext() ? iterator.next().getGroupId() : null;
                     }
 
-                    List<JobInstance> generateInvoiceJobs = jobExplorer.findJobInstancesByJobName(
-                            RUN_GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(parentId), 0, 1);
+                    StlJobGroupDto parentStlJobGroupDto = new StlJobGroupDto();
+                    parentStlJobGroupDto.setGroupId(jobId);
+                    parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));
+                    Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+//                    Date recentJobEndTime = Date.from(Instant.MIN);
 
-                    if (!generateInvoiceJobs.isEmpty()) {
-                        JobExecution invoiceGenJobExecution = getJobExecutions(generateInvoiceJobs.get(0)).iterator().next();
-                        BatchStatus invoiceGenStatus = invoiceGenJobExecution.getStatus();
-                        Date invoiceGenEndDate = invoiceGenJobExecution.getEndTime();
+                    /* CALCULATION START */
+                    String calcStatusSuffix = "PARTIAL-CALCULATION";
+                    String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                    List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
+                    SortedSet<LocalDate> remainingDates = createRange(startDate, endDate);
+                    Iterator<JobInstance> calcStlIterator = calcStlJobInstances.iterator();
+                    while (calcStlIterator.hasNext()) {
+                        JobInstance calcStlJobInstance = calcStlIterator.next();
+                        String calcStlJobName = calcStlJobInstance.getJobName();
+                        JobExecution calcJobExecution = getJobExecutions(calcStlJobInstance).iterator().next();
+                        BatchStatus currentStatus = calcJobExecution.getStatus();
+                        JobParameters calcJobParameters = calcJobExecution.getJobParameters();
+                        Long groupId = calcJobParameters.getLong(GROUP_ID);
+                        Date calcStartDate = calcJobParameters.getDate(START_DATE);
+                        Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
-                        if (!invoiceGenEndDate.before(calculationEndTime)) {
-                            taskExecutionDto.setTaggingStatus(invoiceGenStatus);
+                        StlJobGroupDto stlJobGroupDto;
+                        if (stlJobGroupDtoMap.get(groupId) == null) {
+                            stlJobGroupDto = new StlJobGroupDto();
+                            stlJobGroupDto.setRemainingDates(new TreeSet<>(remainingDates));
+                        } else {
+                            stlJobGroupDto = stlJobGroupDtoMap.get(groupId);
+                        }
+//                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                        stlJobGroupDto.setHeader(jobId.equals(groupId));
+                        stlJobGroupDto.setRemainingDates(remainingDates);
 
-                            if (invoiceGenStatus.isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(invoiceGenJobExecution));
-                            }
-                            if (!invoiceGenStatus.isRunning() && invoiceGenEndDate != null) {
-                                taskExecutionDto.setStatusDetails("Ended as of ".concat(dateTimeFormat.format(invoiceGenEndDate)));
-                            }
-                            taskExecutionDto.setStatus(convertStatus(invoiceGenStatus, "TAGGING"));
+                        List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
+                        if (partialCalculationDtoList == null) {
+                            partialCalculationDtoList = Lists.newArrayList();
+                            stlJobGroupDto.setRunStartDateTime(calcStartDate);
+                            stlJobGroupDto.setRunEndDateTime(calcEndDate);
+                        }
+                        PartialCalculationDto dto = new PartialCalculationDto();
+                        dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
+                        dto.setBillingStart(calcStartDate);
+                        dto.setBillingEnd(calcEndDate);
+                        dto.setRunDate(calcJobExecution.getStartTime());
+                        dto.setRunEndDate(calcJobExecution.getEndTime());
+                        partialCalculationDtoList.add(dto);
+
+                        removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+
+                        stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
+                        stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));
+                        stlJobGroupDto.setGroupId(groupId);
+                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+                        if (stlJobGroupDto.isHeader()) {
+                            parentStlJobGroupDto = stlJobGroupDto;
                         }
                     }
+                    /* CALCULATION END */
 
+                    /* CALCULATION TAGGING START */
+                    String calcTagStatusSuffix = "CALCULATION-TAGGING";
+                    String calcTagQueryString = FINALIZE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                    List<JobInstance> calcTagStlJobInstances = jobExplorer.findJobInstancesByJobName(calcTagQueryString, 0, Integer.MAX_VALUE);
+                    Iterator<JobInstance> calcTagStlIterator = calcTagStlJobInstances.iterator();
+                    while (calcTagStlIterator.hasNext()) {
+                        JobInstance calcTagStlJobInstance = calcTagStlIterator.next();
+                        String calcTagStlJobName = calcTagStlJobInstance.getJobName();
+                        JobExecution calcTagJobExecution = getJobExecutions(calcTagStlJobInstance).iterator().next();
+                        JobParameters calcTagJobParameters = calcTagJobExecution.getJobParameters();
+                        Long groupId = calcTagJobParameters.getLong(GROUP_ID);
+                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                        stlJobGroupDto.setHeader(jobId.equals(groupId));
+                        BatchStatus currentStatus = calcTagJobExecution.getStatus();
+                        stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
+                        stlJobGroupDto.setStlAmtTaggingStatus(currentStatus);
+                        stlJobGroupDto.setGroupId(groupId);
+                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                        if (stlJobGroupDto.isHeader()) {
+                            parentStlJobGroupDto = stlJobGroupDto;
+                        }
+                    }
+                    /* CALCULATION TAGGING END */
+
+                    /* CALCULATION GMR START */
+                    String calcGmrStatusSuffix = "CALCULATION-GMR";
+                    String calcGmrQueryString = COMPUTE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                    List<JobInstance> calcGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(calcGmrQueryString, 0, Integer.MAX_VALUE);
+                    Iterator<JobInstance> calcGmrStlIterator = calcGmrStlJobInstances.iterator();
+                    while (calcGmrStlIterator.hasNext()) {
+                        JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
+                        String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
+                        JobExecution calcGmrJobExecution = getJobExecutions(calcGmrStlJobInstance).iterator().next();
+                        JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
+                        Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
+                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                        stlJobGroupDto.setHeader(jobId.equals(groupId));
+                        BatchStatus currentStatus = calcGmrJobExecution.getStatus();
+                        stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
+                        stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
+                        stlJobGroupDto.setGroupId(groupId);
+                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                        if (stlJobGroupDto.isHeader()) {
+                            parentStlJobGroupDto = stlJobGroupDto;
+                        }
+                    }
+                    /* CALCULATION GMR END */
+
+                    /* TAGGING GMR START */
+                    String tagGmrStatusSuffix = "TAGGING-GMR";
+                    String tagGmrQueryString = FINALIZE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                    List<JobInstance> tagGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(tagGmrQueryString, 0, Integer.MAX_VALUE);
+                    Iterator<JobInstance> tagGmrStlIterator = tagGmrStlJobInstances.iterator();
+                    while (tagGmrStlIterator.hasNext()) {
+                        JobInstance tagGmrStlJobInstance = tagGmrStlIterator.next();
+                        String tagGmrStlJobName = tagGmrStlJobInstance.getJobName();
+                        JobExecution tagGmrJobExecution = getJobExecutions(tagGmrStlJobInstance).iterator().next();
+                        JobParameters tagGmrJobParameters = tagGmrJobExecution.getJobParameters();
+                        Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
+                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                        stlJobGroupDto.setHeader(jobId.equals(groupId));
+                        BatchStatus currentStatus = tagGmrJobExecution.getStatus();
+                        stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
+                        stlJobGroupDto.setGmrVatMFeeTaggingStatus(currentStatus);
+                        stlJobGroupDto.setGroupId(groupId);
+                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                        if (stlJobGroupDto.isHeader()) {
+                            parentStlJobGroupDto = stlJobGroupDto;
+                        }
+                    }
+                    /* TAGGING GMR END */
+
+                    /* OUTPUT GENERATION START */
+                    String generationStatusSuffix = "TAGGING-GMR";
+                    String generationQueryString = GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                    List<JobInstance> generationStlJobInstances = jobExplorer.findJobInstancesByJobName(generationQueryString, 0, Integer.MAX_VALUE);
+                    Iterator<JobInstance> generationStlIterator = generationStlJobInstances.iterator();
+                    while (generationStlIterator.hasNext()) {
+                        JobInstance generationStlJobInstance = generationStlIterator.next();
+                        String generationStlJobName = generationStlJobInstance.getJobName();
+                        JobExecution generationJobExecution = getJobExecutions(generationStlJobInstance).iterator().next();
+                        JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+                        Long groupId = generationJobParameters.getLong(GROUP_ID);
+                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                        stlJobGroupDto.setHeader(jobId.equals(groupId));
+                        BatchStatus currentStatus = generationJobExecution.getStatus();
+                        stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
+                        stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
+                        stlJobGroupDto.setGroupId(groupId);
+                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                        if (stlJobGroupDto.isHeader()) {
+                            parentStlJobGroupDto = stlJobGroupDto;
+                        }
+                    }
+                    /* OUTPUT GENERATION END */
+
+                    taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
+                    taskExecutionDto.setParentStlJobGroupDto(parentStlJobGroupDto);
                     return taskExecutionDto;
 
                 }).collect(toList());
@@ -134,89 +286,178 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         String jobName = null;
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
+        Long timestamp = System.currentTimeMillis();
 
-        if (RUN_COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+        arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
+        arguments.add(concatKeyValue(RUN_ID, String.valueOf(timestamp), "long"));
+
+        Long groupId = taskRunDto.isNewGroup() ? timestamp : Long.parseLong(taskRunDto.getGroupId());
+        arguments.add(concatKeyValue(GROUP_ID, groupId.toString(), "long"));
+
+        Date start = null;
+        Date end = null;
+
+        if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
             if (type == null) {
                 type = PROCESS_TYPE_DAILY;
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyCalculation")));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyStlAmtsCalculation")));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
             } else {
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedCalculation")));
+                    boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
+                    LocalDateTime baseStartDate = null;
+                    LocalDateTime baseEndDate = null;
+                    try {
+                        baseStartDate = DateUtil.getStartRangeDate(taskRunDto.getBaseStartDate());
+                        baseEndDate = DateUtil.getStartRangeDate(taskRunDto.getBaseEndDate());
+                    } catch (ParseException e) {
+                        LOG.warn("Unable to parse billing date", e);
+                    }
+
+                    if (taskRunDto.isHeader() && batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {
+                        BatchJobAdjRun first = new BatchJobAdjRun();
+                        first.setBillingPeriodStart(baseStartDate);
+                        first.setBillingPeriodEnd(baseEndDate);
+                        first.setGroupId(taskRunDto.getGroupId());
+                        first.setJobId(taskRunDto.getParentJob());
+                        first.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
+                        batchJobAdjRunRepository.save(first);
+                    }
+                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                        BatchJobAdjRun latest = new BatchJobAdjRun();
+                        latest.setBillingPeriodStart(baseStartDate);
+                        latest.setBillingPeriodEnd(baseEndDate);
+                        latest.setGroupId(groupId.toString());
+                        latest.setJobId(taskRunDto.getParentJob());
+                        latest.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
+                        batchJobAdjRunRepository.save(latest);
+                    }
+
+                    if (finalBased) {
+                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlAmtsMtrFinCalculation")));
+                    } else {
+                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlAmtsMtrAdjCalculation")));
+                    }
                 } else if (MeterProcessType.PRELIMINARY.name().equals(type) || MeterProcessType.PRELIM.name().equals(type)) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimCalculation")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimStlAmtsCalculation")));
                 } else if (MeterProcessType.FINAL.name().equals(type)) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalCalculation")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlAmtsCalculation")));
                 }
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
-            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
+//            taskRunDto.setJobName(COMPUTE_STL_JOB_NAME);
             jobName = "crss-settlement-task-calculation";
-        } else if (RUN_GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+        } else if (FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+            String type = taskRunDto.getMeterProcessType();
+            if (type == null) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyStlAmtsTagging")));
+            } else if (MeterProcessType.ADJUSTED.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlAmtsTagging")));
+            } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimStlAmtsTagging")));
+            } else if (MeterProcessType.FINAL.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlAmtsTagging")));
+            }
+            arguments.add(concatKeyValue(PROCESS_TYPE, type));
+            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+//            taskRunDto.setJobName(FINALIZE_STL_JOB_NAME);
+            jobName = "crss-settlement-task-calculation";
+        } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
+            String type = taskRunDto.getMeterProcessType();
+            Preconditions.checkState(type != null, "Cannot run GMR/Market Fee calculation job on daily basis.");
+            if (MeterProcessType.ADJUSTED.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedGmrVatMfeeCalculation")));
+            } else if (MeterProcessType.PRELIMINARY.name().equals(type) || MeterProcessType.PRELIM.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimGmrVatMfeeCalculation")));
+            } else if (MeterProcessType.FINAL.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalGmrVatMfeeCalculation")));
+            }
+
+            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+            arguments.add(concatKeyValue(PROCESS_TYPE, type));
+//            taskRunDto.setJobName(COMPUTE_GMRVAT_MFEE_JOB_NAME);
+            jobName = "crss-settlement-task-calculation";
+        } else if (FINALIZE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
+            String type = taskRunDto.getMeterProcessType();
+            Preconditions.checkState(type != null, "Cannot run GMR/Market Fee tagging job on daily basis.");
+            if (MeterProcessType.ADJUSTED.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedGmrVatMfeeTagging")));
+            } else if (MeterProcessType.PRELIMINARY.name().equals(type) || MeterProcessType.PRELIM.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimGmrVatMfeeTagging")));
+            } else if (MeterProcessType.FINAL.name().equals(type)) {
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalGmrVatMfeeTagging")));
+            }
+
+            arguments.add(concatKeyValue(PROCESS_TYPE, type));
+            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+//            taskRunDto.setJobName(FINALIZE_GMRVAT_MFEE_JOB_NAME);
+            jobName = "crss-settlement-task-calculation";
+        } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedInvoiceGeneration")));
             } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimInvoiceGeneration")));
             } else if (MeterProcessType.FINAL.name().equals(type)) {
-//                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
-            }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
-            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
-            arguments.add(concatKeyValue(PROCESS_TYPE, type));
-            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-            jobName = "crss-settlement-task-invoice-generation";
-        } else if (RUN_FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-            String type = taskRunDto.getMeterProcessType();
-            if (MeterProcessType.FINAL.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
+                final Long runId = System.currentTimeMillis();
+
+                try {
+                    BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+                    batchJobAddtlParamsInvoiceDate.setRunId(runId);
+                    batchJobAddtlParamsInvoiceDate.setType("DATE");
+                    batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
+                    batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
+                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
+
+                    BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+                    batchJobAddtlParamsDueDate.setRunId(runId);
+                    batchJobAddtlParamsDueDate.setType("DATE");
+                    batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
+                    batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
+                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
+
+                    BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+                    batchJobAddtlParamsRemarksInv.setRunId(runId);
+                    batchJobAddtlParamsRemarksInv.setType("STRING");
+                    batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+                    batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
+                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+
+                    BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
+                    batchJobAddtlParamsRemarksMf.setRunId(runId);
+                    batchJobAddtlParamsRemarksMf.setType("STRING");
+                    batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
+                    batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
+                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+                } catch (ParseException e) {
+                }
             }
-            final Long runId = System.currentTimeMillis();
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-
-            try {
-                BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
-                batchJobAddtlParamsInvoiceDate.setRunId(runId);
-                batchJobAddtlParamsInvoiceDate.setType("DATE");
-                batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
-                batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
-                batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
-
-                BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
-                batchJobAddtlParamsDueDate.setRunId(runId);
-                batchJobAddtlParamsDueDate.setType("DATE");
-                batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
-                batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
-                batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
-
-                BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
-                batchJobAddtlParamsRemarksInv.setRunId(runId);
-                batchJobAddtlParamsRemarksInv.setType("STRING");
-                batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
-                batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
-                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
-
-                BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
-                batchJobAddtlParamsRemarksMf.setRunId(runId);
-                batchJobAddtlParamsRemarksMf.setType("STRING");
-                batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
-                batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
-                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
-
-            } catch (ParseException e) {
-            }
+//            taskRunDto.setJobName(GENERATE_INVOICE_STL_JOB_NAME);
             jobName = "crss-settlement-task-invoice-generation";
         }
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        if ((MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
+                || MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType()))
+                && (runningAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0)) {
+            RunningAdjustmentLock lock = new RunningAdjustmentLock();
+            lock.setLocked(true);
+            lock.setGroupId(groupId);
+            lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
+            lock.setStartDate(start);
+            lock.setEndDate(end);
+            runningAdjustmentLockRepository.save(lock);
+        }
 
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
@@ -224,5 +465,30 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         }
     }
 
+    private SortedSet<LocalDate> createRange(Date start, Date end) {
+        if (start == null || end == null) {
+            return null;
+        }
+        SortedSet<LocalDate> localDates = new TreeSet<>();
+        LocalDate currentDate = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
+        while (!currentDate.isAfter(endDate)) {
+            localDates.add(currentDate);
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return localDates;
+    }
+
+    private void removeDateRangeFrom(SortedSet<LocalDate> remainingDates, Date calcStartDate, Date calcEndDate) {
+        LocalDate startDate = calcStartDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = calcEndDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        LocalDate ctrDate = startDate;
+        while (ctrDate.isBefore(endDate) || ctrDate.isEqual(endDate)) {
+            remainingDates.remove(ctrDate);
+            ctrDate = ctrDate.plusDays(1);
+        }
+    }
 }

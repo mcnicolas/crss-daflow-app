@@ -2,10 +2,9 @@ package com.pemc.crss.dataflow.app.resource;
 
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
-import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.service.DataFlowTaskExecutionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -15,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/task-executions/datainterface")
@@ -25,12 +23,16 @@ public class DataInterfaceTaskExecutionResource {
 
     @Autowired
     @Qualifier("dataInterfaceTaskExecutionService")
-    private TaskExecutionService taskExecutionService;
+    private DataFlowTaskExecutionService taskExecutionService;
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Page<? extends BaseTaskExecutionDto>> findDataInterfaceJobInstances(Pageable pageable) {
+    public ResponseEntity<Page<? extends BaseTaskExecutionDto>> findDataInterfaceJobInstances(
+            Pageable pageable, @RequestParam String type, @RequestParam String status, @RequestParam String mode,
+            @RequestParam String runStartDate, @RequestParam String runEndDate, @RequestParam String tradingStartDate,
+            @RequestParam String tradingEndDate) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
-        return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable), HttpStatus.OK);
+        return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable, type, status, mode,
+                runStartDate, runEndDate, tradingStartDate, tradingEndDate), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)

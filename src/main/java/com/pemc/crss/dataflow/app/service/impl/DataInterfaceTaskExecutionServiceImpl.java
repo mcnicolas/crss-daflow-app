@@ -8,7 +8,6 @@ import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -33,7 +32,7 @@ import static java.util.stream.Collectors.toList;
 
 @Service("dataInterfaceTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
-public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecutionService {
+public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskExecutionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataInterfaceTaskExecutionServiceImpl.class);
 
@@ -84,29 +83,29 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-
     @Override
-    public Page<DataInterfaceExecutionDTO> findJobInstances(Pageable pageable) {
+    public Page<DataInterfaceExecutionDTO> findJobInstances(Pageable pageable, String type,
+                                                            String status, String filterMode,
+                                                            String runStartDate, String runEndDate,
+                                                            String tradingStartDate, String tradingEndDate) {
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
+
         int count = 0;
 
         try {
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("EnergyPriceSchedJob"));
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("ReservePriceSchedJob"));
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("ReserveBCQ"));
-            count += jobExplorer.getJobInstanceCount(RUN_TODI_JOB_NAME.concat("RTUJob"));
+            count += dataFlowJdbcJobExecutionDao.getJobInstanceCount(type, status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate);
         } catch (NoSuchJobException e) {
             LOG.error("Exception: " + e);
         }
 
         if (count > 0) {
             dataInterfaceExecutionDTOs
-                    = jobExplorer.findJobInstancesByJobName(RUN_TODI_JOB_NAME.concat("*"),
-                    pageable.getOffset(), pageable.getPageSize())
+                    = dataFlowJdbcJobExecutionDao.findJobInstancesByName(type,
+                    pageable.getOffset(), pageable.getPageSize(), status, filterMode, runStartDate, runEndDate,tradingStartDate, tradingEndDate)
                     .stream().map((JobInstance jobInstance) -> {
 
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
-                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                        JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate).iterator().next();
 
                         Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                         String jobName = jobExecution.getJobInstance().getJobName();

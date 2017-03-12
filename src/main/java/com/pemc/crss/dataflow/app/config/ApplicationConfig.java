@@ -4,6 +4,7 @@ package com.pemc.crss.dataflow.app.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
@@ -143,6 +144,16 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     @Bean
     public JobExecutionDao jobExecutionDao(JdbcOperations jdbcOperations) throws Exception {
         JdbcJobExecutionDao dao = new JdbcJobExecutionDao();
+        dao.setJdbcTemplate(jdbcOperations);
+        dao.setJobExecutionIncrementer(incrementer);
+        dao.setTablePrefix(tablePrefix);
+        dao.afterPropertiesSet();
+        return dao;
+    }
+
+    @Bean
+    public DataFlowJdbcJobExecutionDao dataFlowJobExecutionDao(JdbcOperations jdbcOperations) throws Exception {
+        DataFlowJdbcJobExecutionDao dao = new DataFlowJdbcJobExecutionDao();
         dao.setJdbcTemplate(jdbcOperations);
         dao.setJobExecutionIncrementer(incrementer);
         dao.setTablePrefix(tablePrefix);

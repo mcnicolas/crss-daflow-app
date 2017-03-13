@@ -109,7 +109,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
                         Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                         String jobName = jobExecution.getJobInstance().getJobName();
-                        String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "AUTOMATIC"));
+                        String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
 
                         DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
                         DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
@@ -121,7 +121,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         //todo handle exceptions, temporarily revert to original behavior when startDate is null
                         LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
-                        if (mode.equals("AUTOMATIC")) {
+                        if (mode.equals("automatic")) {
                             try {
                                 String automaticStart = jobExecution.getExecutionContext().getString("startDate");
                                 String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
@@ -135,15 +135,16 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                                     automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
                                             .parseDateTime(automaticEnd))).toDate();
                                 }
+
                             } catch (Exception e) {
                                 automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
                                 automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
                             }
                         }
 
-                        Date tradingDayStart = !mode.equals("AUTOMATIC") ? (Date) jobParameters.get("startDate")
+                        Date tradingDayStart = !mode.equals("automatic") ? (Date) jobParameters.get("startDate")
                                 : automaticTradngDayStart;
-                        Date tradingDayEnd = !mode.equals("AUTOMATIC") ? (Date) jobParameters.get("endDate")
+                        Date tradingDayEnd = !mode.equals("automatic") ? (Date) jobParameters.get("endDate")
                                 : automaticTradingDayEnd;
 
                         dataInterfaceExecutionDTO.setId(jobInstance.getId());

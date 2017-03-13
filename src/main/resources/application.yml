@@ -51,7 +51,7 @@ spring:
 #  change-log: classpath:/db/db.changelog-master.xml
 
 server:
-  port: 8082
+  port: 8083
   undertow:
     accesslog:
       dir: target
@@ -75,18 +75,18 @@ eureka:
 #    leaseRenewalIntervalInSeconds: 1
 #    leaseExpirationDurationInSeconds: 2
 
-#security:
-#  oauth2:
-#    client:
-#      accessTokenUri: http://localhost:8082/oauth/access_token
-#      userAuthorizationUri: http://localhost:8082/oauth/authorize
-#      clientId: crss
-#      clientSecret: crsssecret
-#      authorized-grant-types: authorization_code,refresh_token,password
-#      scope: openid
-#      access-token-validity-seconds: 3600
-#    resource:
-#      userInfoUri: http://localhost:8082/user
+security:
+  oauth2:
+    client:
+      accessTokenUri: http://localhost:8082/oauth/access_token
+      userAuthorizationUri: http://localhost:8082/oauth/authorize
+      clientId: crss
+      clientSecret: crsssecret
+      authorized-grant-types: authorization_code,refresh_token,password
+      scope: openid
+      access-token-validity-seconds: 3600
+    resource:
+      userInfoUri: http://localhost:8082/user
 
 logging:
   level:

@@ -4,6 +4,7 @@ package com.pemc.crss.dataflow.app.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.pemc.crss.dataflow.app.listener.TaskRetryListener;
 import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -55,10 +60,14 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     @Autowired
     private JpaProperties properties;
 
+    @Autowired
+    private JedisConnectionFactory jedisConnectionFactory;
+
     @Bean
     public BatchConfigurer configurer(DataSource dataSource) {
         return new DefaultBatchConfigurer(dataSource);
     }
+
 
     @Bean
     public JpaVendorAdapter jpaVendorAdapter() {
@@ -169,6 +178,26 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
         dao.setTablePrefix(tablePrefix);
         dao.afterPropertiesSet();
         return dao;
+    }
+
+    @Bean
+    public ChannelTopic topic() {
+        return new ChannelTopic("pubsub:retryQueue");
+    }
+
+    @Bean
+    public MessageListenerAdapter messageListener() {
+        return new MessageListenerAdapter(new TaskRetryListener());
+    }
+
+    @Bean
+    public RedisMessageListenerContainer redisContainer() {
+        final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+
+        container.setConnectionFactory(jedisConnectionFactory);
+        container.addMessageListener(messageListener(), topic());
+
+        return container;
     }
 
 }

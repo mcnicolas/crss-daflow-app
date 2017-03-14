@@ -62,6 +62,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         parentId = String.valueOf(jobInstance.getInstanceId());
                     }
                     JobInstance parentJob = jobExplorer.getJobInstance(Long.parseLong(parentId));
+                    if (parentJob == null) {
+                        parentJob = jobInstance;
+                    }
                     JobExecution parentExecutions = getJobExecutions(parentJob).iterator().next();
 
                     TaskExecutionDto taskExecutionDto = new TaskExecutionDto();

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.pemc.crss.dataflow.app.listener.TaskRetryListener;
+import com.pemc.crss.dataflow.app.service.DataFlowTaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +16,13 @@ import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.dao.*;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -187,7 +190,12 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public MessageListenerAdapter messageListener() {
-        return new MessageListenerAdapter(new TaskRetryListener());
+        return new MessageListenerAdapter(taskRetryListener());
+    }
+
+    @Bean
+    public MessageListener taskRetryListener(){
+        return new TaskRetryListener();
     }
 
     @Bean

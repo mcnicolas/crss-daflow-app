@@ -98,11 +98,6 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                                                             String status, String filterMode,
                                                             String runStartDate, String runEndDate,
                                                             String tradingStartDate, String tradingEndDate) {
-        try {
-            this.relaunchFailedJob(new Long(1)); //todo remove this
-        } catch (Exception e) {
-            System.out.println(e);
-        }
 
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
@@ -192,13 +187,18 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
         return Integer.valueOf(this.dispatchInterval);
     }
 
-    public void relaunchFailedJob(Long jobId) throws URISyntaxException {
-        JobExecution failedJobExecution = jobExplorer.getJobExecution(new Long(223));
+    @Override
+    @Transactional(readOnly = false)
+    public void relaunchFailedJob(long jobId) throws URISyntaxException {
+        JobExecution failedJobExecution = jobExplorer.getJobExecution(jobId);
         Map jobParameters = Maps.transformValues(failedJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
 
-        if(mode.equalsIgnoreCase("automatic")) {
-            if(this.checkIfRetryLimitReached(jobId)) {
+        boolean test = this.checkIfRetryLimitReached(jobId);
+        System.out.println("test");
+
+        /*if(mode.equalsIgnoreCase("automatic")) {*/
+            if(test) {
                 List<String> properties = Lists.newArrayList();
                 List<String> arguments = Lists.newArrayList();
                 String jobName;
@@ -223,22 +223,26 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 int retryAttempt = batchJobRetryAttemptRepository.findByJobExecutionId(jobId).get(0).getRetryAttempt();
                 batchJobRetryAttemptRepository.updateRetryAttempt(jobId, retryAttempt+1);
             }
-        }
+        /*}*/
     }
 
     private boolean checkIfRetryLimitReached(Long jobId) {
         //todo put retry limit in property file
-        boolean isRetryable;
+        boolean isRetryable = false;
         List<BatchJobRetryAttempt> batchJobRetryAttempt = batchJobRetryAttemptRepository.findByJobExecutionId(jobId);
         if(batchJobRetryAttempt.size() <= 0) {
             /*BatchJobRetryAttempt firstRetryAttempt = new BatchJobRetryAttempt();
             firstRetryAttempt.setRetryAttempt(0);
-            firstRetryAttempt.setId(jobId);
+            firstRetryAttempt.setJobExecutionId(jobId);
             batchJobRetryAttemptRepository.save(firstRetryAttempt);*/
 
             dataflowJdbcTemplate.update("insert into batch_job_retry_attempt(job_execution_id, retry_attempt) values(?, ?)", jobId, 0);
+            System.out.println("test");
         }
-        isRetryable = batchJobRetryAttemptRepository.findByJobExecutionId(jobId).get(0).getRetryAttempt() < 3;
+
+        List<BatchJobRetryAttempt> batchJobRetryAttempt2 = batchJobRetryAttemptRepository.findByJobExecutionId(jobId);
+        System.out.println(batchJobRetryAttempt2);
+        /*isRetryable = batchJobRetryAttemptRepository.findByJobExecutionId(jobId).get(0).getRetryAttempt() < 3;*/
         return isRetryable;
     }
 

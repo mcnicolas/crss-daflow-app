@@ -31,4 +31,6 @@ public interface DataFlowTaskExecutionService {
     List<BatchJobSkipLog> getBatchJobSkipLogs(int stepId);
 
     void deleteJob(long jobId);
+
+    void relaunchFailedJob(long jobId) throws URISyntaxException;
 }

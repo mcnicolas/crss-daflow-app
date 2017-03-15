@@ -117,6 +117,11 @@ public abstract class DataFlowAbstractTaskExecutionService implements DataFlowTa
         return executionParamRepository.getBatchJobSkipLogs(stepId);
     }
 
+    @Override
+    @Transactional(readOnly = false)
+    public void relaunchFailedJob(long jobId) throws URISyntaxException {
+    }
+
     protected String convertStatus(BatchStatus batchStatus, String suffix) {
         return batchStatus.toString().concat("-").concat(suffix);
     }

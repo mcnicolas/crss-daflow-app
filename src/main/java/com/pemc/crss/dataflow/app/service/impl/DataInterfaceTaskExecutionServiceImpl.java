@@ -67,6 +67,15 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 arguments.add(concatKeyValue(MODE, MANUAL_MODE));
             } else {
                 LOG.debug("Starting Automatic Import........");
+                DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+                String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+                String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+
+                arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
+                        ? QUOTE + startDate + QUOTE : startDate, "date"));
+                arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
+                        ? QUOTE + endDate + QUOTE : endDate, "date"));
+                arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
             }
 

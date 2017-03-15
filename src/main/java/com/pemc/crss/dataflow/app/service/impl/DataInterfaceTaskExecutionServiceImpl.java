@@ -36,9 +36,10 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
     private static final Logger LOG = LoggerFactory.getLogger(DataInterfaceTaskExecutionServiceImpl.class);
 
-    private static final String RUN_TODI_JOB_NAME = "import";
     private static final String MODE = "mode";
     private static final String RETRY_ATTEMPT = "retryAttempt";
+    private static final String MANUAL_MODE = "manual";
+    private static final String AUTOMATIC_MODE = "automatic";
 
     @Override
     @Transactional(value = "transactionManager")
@@ -63,9 +64,10 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
                         ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
                 arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
-                arguments.add(concatKeyValue(MODE, "Manual"));
+                arguments.add(concatKeyValue(MODE, MANUAL_MODE));
             } else {
                 LOG.debug("Starting Automatic Import........");
+                arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
             }
 
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
@@ -110,6 +112,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
                         Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                         String jobName = jobExecution.getJobInstance().getJobName();
+
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
 
                         DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
@@ -122,7 +125,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         //todo handle exceptions, temporarily revert to original behavior when startDate is null
                         LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
-                        if (mode.equals("automatic")) {
+                        if (mode.equalsIgnoreCase("automatic")) {
                             try {
                                 String automaticStart = jobExecution.getExecutionContext().getString("startDate");
                                 String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
@@ -196,6 +199,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
                 arguments.add(concatKeyValue(RETRY_ATTEMPT, String.valueOf(retryAttempt + 1)));
+                arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
                         .getByJobName(taskRunDto.getJobName()).getProfileName())));
 

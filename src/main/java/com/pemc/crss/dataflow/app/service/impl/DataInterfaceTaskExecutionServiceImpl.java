@@ -199,6 +199,10 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
         if(mode.equalsIgnoreCase("automatic")) {
             if(retryAttempt < 3) {
+
+                String startDate = (String)jobParameters.get(START_DATE);
+                String endDate = (String)jobParameters.get(END_DATE);
+
                 List<String> properties = Lists.newArrayList();
                 List<String> arguments = Lists.newArrayList();
                 String jobName;
@@ -208,6 +212,11 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
                 arguments.add(concatKeyValue(RETRY_ATTEMPT, String.valueOf(retryAttempt + 1)));
+                arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
+                        ? QUOTE + startDate + QUOTE : startDate, "date"));
+                arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
+                        ? QUOTE + endDate + QUOTE : endDate, "date"));
+                arguments.add(concatKeyValue(PROCESS_TYPE, MarketInfoType.getByJobName(taskRunDto.getJobName()).getLabel()));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
                         .getByJobName(taskRunDto.getJobName()).getProfileName())));

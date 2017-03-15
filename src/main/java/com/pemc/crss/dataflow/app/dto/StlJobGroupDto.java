@@ -15,6 +15,7 @@ public class StlJobGroupDto {
     private BatchStatus invoiceGenerationStatus;
     private String status;
     private boolean currentlyRunning;
+    private boolean latestAdjustment;
     private boolean header;
     private Long groupId;
     private Date runStartDateTime;
@@ -70,6 +71,14 @@ public class StlJobGroupDto {
 
     public void setCurrentlyRunning(boolean currentlyRunning) {
         this.currentlyRunning = currentlyRunning;
+    }
+
+    public boolean isLatestAdjustment() {
+        return latestAdjustment;
+    }
+
+    public void setLatestAdjustment(boolean latestAdjustment) {
+        this.latestAdjustment = latestAdjustment;
     }
 
     public List<PartialCalculationDto> getPartialCalculationDtos() {

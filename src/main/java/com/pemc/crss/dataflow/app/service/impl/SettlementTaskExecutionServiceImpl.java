@@ -79,6 +79,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
                     Long jobId = jobExecution.getJobId();
                     BatchStatus jobStatus = jobExecution.getStatus();
+                    LOG.debug("Processing processStlReady jobId {}", jobId);
 
                     String parentId = jobInstance.getJobName().split("-")[1];
                     if (StringUtils.isEmpty(parentId)) {
@@ -93,6 +94,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     JobParameters jobParameters = parentExecutions.getJobParameters();
                     Date startDate = jobParameters.getDate(START_DATE);
                     Date endDate = jobParameters.getDate(END_DATE);
+                    LOG.debug("Date Range -> from {} to {}", startDate, endDate);
 
                     StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
                     taskExecutionDto.setId(parentJob.getId());
@@ -101,11 +103,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             jobParameters.getParameters(), JobParameter::getValue));
                     taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));
                     taskExecutionDto.setStlReadyStatus(jobStatus);
-//                    taskExecutionDto.setSettlementStatus(jobStatus);
 
-                    LatestAdjustmentLock latestAdjustmentLock = null;
                     Long latestGroupId = null;
-                    RunningAdjustmentLock runningAdjustmentLock = null;
                     Long lockedGroupId = null;
                     if (startDate != null && endDate != null) {
                         Iterator<RunningAdjustmentLock> iteratorRunning = runningAdjustmentLockRepository

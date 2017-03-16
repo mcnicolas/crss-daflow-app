@@ -95,6 +95,8 @@ dependencies {
     compile 'org.springframework.cloud:spring-cloud-starter-eureka:1.1.4.RELEASE'
     compile 'org.springframework.cloud:spring-cloud-starter-config'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda'
+    compile 'org.springframework.security.oauth:spring-security-oauth2'
+    compile 'org.springframework.cloud:spring-cloud-security'
 
     compile'org.springframework.boot:spring-boot-starter-data-redis:1.4.1.RELEASE'
 

@@ -1,0 +1,122 @@
+spring:
+  crss-main:
+    datasource:
+      jdbcUrl: jdbc:postgresql://192.168.233.9:5432/crss_meterprocess
+      username: crss_meterprocess
+      password: crss_meterprocess
+      driverClassName: org.postgresql.Driver
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
+  crss-dataflow:
+    datasource:
+      jdbcUrl: jdbc:postgresql://192.168.233.9:5432/crss_dataflow
+      username: crss_dataflow
+      password: crss_dataflow
+      driverClassName: org.postgresql.Driver
+      maxPoolSize: 5
+      test-on-borrow: true
+      validation-query: SELECT 1
+  crss-nmms:
+      datasource:
+        jdbcUrl: jdbc:postgresql://192.168.233.9:5432/todi_crss_nmms
+        username: todi_crss_nmms
+        password: todi_crss_nmms
+        driverClassName: org.postgresql.Driver
+        connectionTimeout: 10000
+        maxPoolSize: 5
+  crss-stl:
+      datasource:
+        jdbcUrl: jdbc:postgresql://192.168.233.9:5432/crss_settlement
+        username: crss_settlement
+        password: crss_settlement
+        driverClassName: org.postgresql.Driver
+        connectionTimeout: 10000
+        maxPoolSize: 5
+  jpa:
+    show-sql: true
+    generate-ddl: false
+    properties:
+      hibernate:
+        generate_statistics: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        ddl-auto: none
+        hbm2ddl:
+          import_files:
+
+  # prevent batch job from running on app start
+  batch:
+    job:
+      enabled: false
+
+  redis:
+    host: redis.marathon.l4lb.thisdcos.directory
+    port: 6379
+
+#liquibase:
+#  change-log: classpath:/db/db.changelog-master.xml
+
+server:
+  port: 8082
+  undertow:
+    accesslog:
+      dir: target
+      enabled: true
+      pattern: combined
+  compression:
+    enabled: true
+    min-response-size: 1
+
+eureka:
+  instance:
+    prefer-ip-address: false
+    hostname: crss-dataflow-app.marathon.l4lb.thisdcos.directory
+  client:
+    serviceUrl:
+      defaultZone: http://crss-discovery.marathon.l4lb.thisdcos.directory:8761/eureka/
+#          healthcheck:
+#            enabled: true
+#    lease:
+#      duration: 5
+#  instance:
+#    leaseRenewalIntervalInSeconds: 1
+#    leaseExpirationDurationInSeconds: 2
+
+#security:
+#  oauth2:
+#    client:
+#      accessTokenUri: http://localhost:8082/oauth/access_token
+#      userAuthorizationUri: http://localhost:8082/oauth/authorize
+#      clientId: crss
+#      clientSecret: crsssecret
+#      authorized-grant-types: authorization_code,refresh_token,password
+#      scope: openid
+#      access-token-validity-seconds: 3600
+#    resource:
+#      userInfoUri: http://localhost:8082/user
+
+logging:
+  level:
+    com.pemc: DEBUG
+    com.netflix: DEBUG
+    org.springframework.cloud: DEBUG
+    org.apache.http: DEBUG
+    org.hibernate.type: trace
+    org.hibernate.stat: debug
+
+dataflow:
+  url: http://spring-cloud-data-flow.marathon.l4lb.thisdcos.directory:9393
+
+sftp:
+  credentials:
+    username: pemc
+    password: 123qwe
+    host: pemc-storage.southeastasia.cloudapp.azure.com
+    port: 22
+    workingDirectory: /home/pemc/upload
+    privateKey:
+
+# temporary todi-config, to be moved to general config
+todi-config:
+  dispatch-interval: 5
+

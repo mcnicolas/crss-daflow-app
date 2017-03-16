@@ -1,7 +1,7 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
-def allowableProfiles = ['dev', 'qa']
+def allowableProfiles = ['dev', 'qa', 'dev2']
 
 if (project.hasProperty('env') && !allowableProfiles.contains(project.env)) {
     throw new IllegalArgumentException("Unknown environment supplied: ${project.env}")
@@ -16,6 +16,11 @@ ext {
         case 'dev':
             marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps"
             appProfile = "dev"
+            break
+
+        case 'dev2':
+            marathonUrl = "http://crss-master.pemc.exist.com/marathon/v2/apps"
+            appProfile = "dev2"
             break
 
         case 'qa':

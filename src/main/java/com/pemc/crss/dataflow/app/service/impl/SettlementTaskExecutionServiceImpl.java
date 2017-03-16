@@ -86,19 +86,14 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         LOG.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
                         parentId = String.valueOf(jobInstance.getInstanceId());
                     }
-                    JobInstance parentJob = jobExplorer.getJobInstance(Long.parseLong(parentId));
-                    if (parentJob == null) {
-                        parentJob = jobInstance;
-                    }
-                    JobExecution parentExecutions = getJobExecutions(parentJob).iterator().next();
-                    JobParameters jobParameters = parentExecutions.getJobParameters();
+                    JobParameters jobParameters = jobExecution.getJobParameters();
                     Date startDate = jobParameters.getDate(START_DATE);
                     Date endDate = jobParameters.getDate(END_DATE);
                     LOG.debug("Date Range -> from {} to {}", startDate, endDate);
 
                     StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
-                    taskExecutionDto.setId(parentJob.getId());
-                    taskExecutionDto.setRunDateTime(parentExecutions.getStartTime());
+                    taskExecutionDto.setId(Long.parseLong(parentId));
+                    taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
                     taskExecutionDto.setParams(Maps.transformValues(
                             jobParameters.getParameters(), JobParameter::getValue));
                     taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));

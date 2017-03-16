@@ -166,7 +166,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         dto.setRunEndDate(calcJobExecution.getEndTime());
                         partialCalculationDtoList.add(dto);
 
-                        removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                        if (!isDaily) {
+                            removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                        }
 
                         stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
                         stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));

@@ -89,7 +89,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     JobParameters jobParameters = jobExecution.getJobParameters();
                     Date startDate = jobParameters.getDate(START_DATE);
                     Date endDate = jobParameters.getDate(END_DATE);
-                    LOG.debug("Date Range -> from {} to {}", startDate, endDate);
+                    Date date = jobParameters.getDate(DATE);
+                    boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
+                    LOG.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
 
                     StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
                     taskExecutionDto.setId(Long.parseLong(parentId));
@@ -122,7 +124,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     String calcStatusSuffix = "PARTIAL-CALCULATION";
                     String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                     List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
-                    SortedSet<LocalDate> remainingDates = createRange(startDate, endDate);
+                    SortedSet<LocalDate> remainingDates = new TreeSet<>();
+                    if (!isDaily) {
+                        remainingDates = createRange(startDate, endDate);
+                    }
                     Iterator<JobInstance> calcStlIterator = calcStlJobInstances.iterator();
                     while (calcStlIterator.hasNext()) {
                         JobInstance calcStlJobInstance = calcStlIterator.next();
@@ -478,7 +483,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     private SortedSet<LocalDate> createRange(Date start, Date end) {
         if (start == null || end == null) {
-            return null;
+            return new TreeSet<>();
         }
         SortedSet<LocalDate> localDates = new TreeSet<>();
         LocalDate currentDate = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();

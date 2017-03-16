@@ -37,7 +37,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private static final String RUN_WESM_JOB_NAME = "computeWesmMq";
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
     private static final String RUN_STL_READY_JOB_NAME = "processStlReady";
-    private static final String RUN_MQ_REPORT_JOB_NAME = "geneReport";
+    private static final String RUN_MQ_REPORT_JOB_NAME = "genReport";
     private static final String PARAMS_BILLING_PERIOD_ID = "billingPeriodId";
     private static final String PARAMS_BILLING_PERIOD = "billingPeriod";
     private static final String PARAMS_SUPPLY_MONTH = "supplyMonth";

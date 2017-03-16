@@ -45,10 +45,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     // Job names
     private static final String STL_READY_JOB_NAME = "processStlReady";
-    private static final String COMPUTE_STL_JOB_NAME = "computeSettlementStlAmts";
-    private static final String FINALIZE_STL_JOB_NAME = "tasAsOutputReadyStlAmts";
-    private static final String COMPUTE_GMRVAT_MFEE_JOB_NAME = "computeSettlementGmrVatMfee";
-    private static final String FINALIZE_GMRVAT_MFEE_JOB_NAME = "tasAsOutputReadyGmrVatMfee";
+    private static final String COMPUTE_STL_JOB_NAME = "computeSettlementSTL_AMT";
+    private static final String FINALIZE_STL_JOB_NAME = "tasAsOutputReadySTL_AMT";
+    private static final String COMPUTE_GMRVAT_MFEE_JOB_NAME = "computeSettlementGMR_MFEE";
+    private static final String FINALIZE_GMRVAT_MFEE_JOB_NAME = "tasAsOutputReadyGMR_MFEE";
     private static final String GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
 
     private static final String AMS_INVOICE_DATE = "amsInvoiceDate";
@@ -366,7 +366,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
-//            taskRunDto.setJobName(COMPUTE_STL_JOB_NAME);
             jobName = "crss-settlement-task-calculation";
         } else if (FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
@@ -382,7 +381,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-//            taskRunDto.setJobName(FINALIZE_STL_JOB_NAME);
             jobName = "crss-settlement-task-calculation";
         } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
@@ -398,7 +396,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
-//            taskRunDto.setJobName(COMPUTE_GMRVAT_MFEE_JOB_NAME);
             jobName = "crss-settlement-task-calculation";
         } else if (FINALIZE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
@@ -414,7 +411,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-//            taskRunDto.setJobName(FINALIZE_GMRVAT_MFEE_JOB_NAME);
             jobName = "crss-settlement-task-calculation";
         } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
@@ -460,7 +456,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-//            taskRunDto.setJobName(GENERATE_INVOICE_STL_JOB_NAME);
             jobName = "crss-settlement-task-invoice-generation";
         }
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);

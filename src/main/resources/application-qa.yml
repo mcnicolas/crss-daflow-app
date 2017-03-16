@@ -80,21 +80,6 @@ server:
     enabled: true
     min-response-size: 1
 
-eureka:
-  instance:
-    prefer-ip-address: false
-    hostname: crss-dataflow-app.marathon.l4lb.thisdcos.directory
-  client:
-    serviceUrl:
-      defaultZone: http://crss-discovery.marathon.l4lb.thisdcos.directory:8761/eureka/
-#          healthcheck:
-#            enabled: true
-#    lease:
-#      duration: 5
-#  instance:
-#    leaseRenewalIntervalInSeconds: 1
-#    leaseExpirationDurationInSeconds: 2
-
 #security:
 #  oauth2:
 #    client:

@@ -5,12 +5,10 @@ import com.pemc.crss.shared.core.config.cache.redis.RedisConfig;
 import com.pemc.crss.shared.core.dataflow.CrssDataflowDatasourceConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 
 
 @SpringBootApplication
-@EnableDiscoveryClient
 @ComponentScan(basePackageClasses = {
         CrssDataflowDatasourceConfig.class,
         CachingConfig.class,

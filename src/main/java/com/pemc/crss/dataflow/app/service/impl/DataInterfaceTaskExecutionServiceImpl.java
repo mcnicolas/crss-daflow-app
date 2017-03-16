@@ -191,12 +191,14 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
 
     @Override
     public void relaunchFailedJob(long jobId) throws URISyntaxException {
+        LOG.debug("Executing relaunch failed job....");
         JobExecution failedJobExecution = jobExplorer.getJobExecution(jobId);
         Map jobParameters = Maps.transformValues(failedJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
         String stringRetryAttempt = (String)jobParameters.getOrDefault(RETRY_ATTEMPT, "0");
+        String failedJobName = failedJobExecution.getJobInstance().getJobName();
         int retryAttempt = Integer.valueOf(stringRetryAttempt);
-
+        LOG.debug("jobId={}, jobName={}, mode={}, retryAttempt={}", jobId, failedJobName, mode, retryAttempt);
         if(mode.equalsIgnoreCase("automatic")) {
             if(retryAttempt < 3) {
 
@@ -208,7 +210,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 String jobName;
 
                 TaskRunDto taskRunDto = new TaskRunDto();
-                taskRunDto.setJobName(failedJobExecution.getJobInstance().getJobName());
+                taskRunDto.setJobName(failedJobName);
 
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
                 arguments.add(concatKeyValue(RETRY_ATTEMPT, String.valueOf(retryAttempt + 1)));
@@ -216,10 +218,10 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         ? QUOTE + startDate + QUOTE : startDate, "date"));
                 arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
                         ? QUOTE + endDate + QUOTE : endDate, "date"));
-                arguments.add(concatKeyValue(PROCESS_TYPE, MarketInfoType.getByJobName(taskRunDto.getJobName()).getLabel()));
+                arguments.add(concatKeyValue(PROCESS_TYPE, MarketInfoType.getByJobName(failedJobName).getLabel()));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
-                        .getByJobName(taskRunDto.getJobName()).getProfileName())));
+                        .getByJobName(failedJobName).getProfileName())));
 
                 jobName = "crss-datainterface-task-ingest";
 

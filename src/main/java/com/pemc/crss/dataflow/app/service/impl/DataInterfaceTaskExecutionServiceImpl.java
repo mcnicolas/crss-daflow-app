@@ -41,6 +41,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
     private static final String MANUAL_MODE = "manual";
     private static final String AUTOMATIC_MODE = "automatic";
 
+    DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+
     @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
@@ -69,7 +71,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 LOG.debug("Starting Automatic Import........");
                 DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
                 String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
-                String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+                String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
                 arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
                         ? QUOTE + startDate + QUOTE : startDate, "date"));
@@ -202,8 +204,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
         if(mode.equalsIgnoreCase("automatic")) {
             if(retryAttempt < 3) {
 
-                String startDate = (String)jobParameters.get(START_DATE);
-                String endDate = (String)jobParameters.get(END_DATE);
+                String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+                String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
                 List<String> properties = Lists.newArrayList();
                 List<String> arguments = Lists.newArrayList();

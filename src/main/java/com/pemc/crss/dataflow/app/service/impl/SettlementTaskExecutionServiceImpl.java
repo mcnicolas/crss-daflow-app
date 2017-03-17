@@ -316,22 +316,23 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         Date end = null;
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+            LocalDateTime baseStartDate = null;
+            LocalDateTime baseEndDate = null;
             String type = taskRunDto.getMeterProcessType();
             if (type == null) {
                 type = PROCESS_TYPE_DAILY;
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyStlAmtsCalculation")));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
             } else {
+                try {
+                    baseStartDate = DateUtil.getStartRangeDate(taskRunDto.getBaseStartDate());
+                    baseEndDate = DateUtil.getStartRangeDate(taskRunDto.getBaseEndDate());
+                } catch (ParseException e) {
+                    LOG.warn("Unable to parse billing date", e);
+                }
+
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
-                    LocalDateTime baseStartDate = null;
-                    LocalDateTime baseEndDate = null;
-                    try {
-                        baseStartDate = DateUtil.getStartRangeDate(taskRunDto.getBaseStartDate());
-                        baseEndDate = DateUtil.getStartRangeDate(taskRunDto.getBaseEndDate());
-                    } catch (ParseException e) {
-                        LOG.warn("Unable to parse billing date", e);
-                    }
 
                     if (taskRunDto.isHeader() && batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun first = new BatchJobAdjRun();
@@ -367,6 +368,18 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             jobName = "crss-settlement-task-calculation";
+
+            if ((MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
+                    || MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType()))
+                    && (runningAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0)) {
+                RunningAdjustmentLock lock = new RunningAdjustmentLock();
+                lock.setLocked(true);
+                lock.setGroupId(groupId);
+                lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
+                lock.setStartDate(Date.from(baseStartDate.atZone(ZoneId.systemDefault()).toInstant()));
+                lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
+                runningAdjustmentLockRepository.save(lock);
+            }
         } else if (FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
             if (type == null) {
@@ -459,18 +472,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             jobName = "crss-settlement-task-invoice-generation";
         }
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
-
-        if ((MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
-                || MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType()))
-                && (runningAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0)) {
-            RunningAdjustmentLock lock = new RunningAdjustmentLock();
-            lock.setLocked(true);
-            lock.setGroupId(groupId);
-            lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
-            lock.setStartDate(start);
-            lock.setEndDate(end);
-            runningAdjustmentLockRepository.save(lock);
-        }
 
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);

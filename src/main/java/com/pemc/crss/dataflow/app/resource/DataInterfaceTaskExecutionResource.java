@@ -11,12 +11,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/task-executions/datainterface")
@@ -63,8 +63,8 @@ public class DataInterfaceTaskExecutionResource {
         if (principal != null) {
             if (principal instanceof OAuth2Authentication) {
                 OAuth2Authentication auth = (OAuth2Authentication) principal;
-                UserDetails userDetails = (UserDetails) auth.getPrincipal();
-                return userDetails.getUsername();
+                LinkedHashMap<String, Object> userDetails = (LinkedHashMap<String, Object>) auth.getPrincipal();
+                return (String) userDetails.get("name");
             }
         }
         return currentUser;

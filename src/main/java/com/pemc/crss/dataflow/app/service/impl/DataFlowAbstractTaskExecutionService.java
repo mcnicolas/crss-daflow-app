@@ -90,6 +90,9 @@ public abstract class DataFlowAbstractTaskExecutionService implements DataFlowTa
     @Value("${todi-config.dispatch-interval}")
     protected String dispatchInterval;
 
+    @Value("${todi-config.max-retry}")
+    protected int maxRetry;
+
     @Override
     public abstract Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status,
                                                                           String mode, String runStartDate, String runEndDate,

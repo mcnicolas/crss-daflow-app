@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
@@ -62,7 +63,7 @@ public class DataInterfaceTaskExecutionResource {
     private String getCurrentUser(Principal principal) {
         String currentUser = ANONYMOUS;
         if (principal != null && StringUtils.isNotEmpty(principal.getName())) {
-            return ((UserDetails) ((OAuth2Authentication) principal).getDetails()).getUsername();
+            return ((OAuth2Authentication) principal).getPrincipal().toString();
         }
         return currentUser;
     }

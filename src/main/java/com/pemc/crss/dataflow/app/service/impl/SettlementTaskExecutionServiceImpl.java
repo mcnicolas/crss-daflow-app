@@ -474,7 +474,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
-            doLaunchAndLockJob(taskRunDto, jobName, properties, arguments);
+            launchJob(jobName, properties, arguments);
+            lockJob(taskRunDto);
         }
     }
 

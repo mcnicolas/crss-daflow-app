@@ -94,7 +94,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
-            doLaunchAndLockJob(taskRunDto, jobName, properties, arguments);
+            launchJob(jobName, properties, arguments);
         }
 
     }

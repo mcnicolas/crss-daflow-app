@@ -218,6 +218,11 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref().concat(
                 "?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments", StringUtils.join(arguments, ","),
                 "properties", StringUtils.join(properties, ",")));
+
+        if (!taskRunDto.getJobName().equals("generateMtr")) {
+            return;
+        }
+
         if (batchJobRunLockRepository.lockJob(taskRunDto.getJobName()) == 0) {
             BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
             batchJobRunLock.setJobName(taskRunDto.getJobName());

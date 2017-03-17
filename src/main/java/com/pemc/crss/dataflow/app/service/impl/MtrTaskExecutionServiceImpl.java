@@ -74,8 +74,6 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getJobName());
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
-                "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;
         List<String> properties = Lists.newArrayList();

@@ -70,10 +70,10 @@ server:
 security:
   oauth2:
     client:
-      accessTokenUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080
-      userAuthorizationUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080
+      accessTokenUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080/oauth/access_token
+      userAuthorizationUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080/oauth/authorize
     resource:
-      userInfoUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080
+      userInfoUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080/user
 
 
 logging:

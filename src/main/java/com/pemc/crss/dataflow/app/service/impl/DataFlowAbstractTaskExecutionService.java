@@ -58,6 +58,8 @@ public abstract class DataFlowAbstractTaskExecutionService implements DataFlowTa
     protected static final String PARENT_JOB = "parentJob";
     protected static final String METER_TYPE = "meterType";
     protected static final String PROCESS_TYPE = "processType";
+    protected static final String USERNAME = "username";
+
     protected DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
     protected DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
 

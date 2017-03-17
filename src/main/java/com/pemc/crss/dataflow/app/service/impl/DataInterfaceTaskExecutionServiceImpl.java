@@ -66,6 +66,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
                         ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
                 arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
+                arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
                 arguments.add(concatKeyValue(MODE, MANUAL_MODE));
             } else {
                 LOG.debug("Starting Automatic Import........");
@@ -78,6 +79,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                 arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
                         ? QUOTE + endDate + QUOTE : endDate, "date"));
                 arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
+                arguments.add(concatKeyValue(USERNAME, "system"));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
             }
 

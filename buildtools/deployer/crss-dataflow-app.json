@@ -5,7 +5,6 @@
     "args": null,
     "user": null,
     "env": {
-        "SPRING_APPLICATION_JSON": "{\"spring.cloud.config.enabled\":\"false\"}",
         "SPRING_PROFILES_ACTIVE": "qa,skipSSLA"
     },
     "instances": 1,

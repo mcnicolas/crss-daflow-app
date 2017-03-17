@@ -17,7 +17,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers("/health");
+        web.ignoring().antMatchers("/health", "/task-executions/datainterface/auto");
+
     }
 
     @Override

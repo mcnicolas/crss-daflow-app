@@ -47,6 +47,11 @@ public class DataInterfaceTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/auto", method = RequestMethod.POST)
+    public ResponseEntity runAutomaticJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        return runJob(taskRunDto, principal);
+    }
+
     @RequestMapping(value = "/get-dispatch-interval", method = RequestMethod.GET)
     public int getDispatchInterval() {
         return taskExecutionService.getDispatchInterval();

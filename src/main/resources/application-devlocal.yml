@@ -98,3 +98,4 @@ sftp:
 # temporary todi-config, to be moved to general config
 todi-config:
   dispatch-interval: 5
+  max-retry: 2

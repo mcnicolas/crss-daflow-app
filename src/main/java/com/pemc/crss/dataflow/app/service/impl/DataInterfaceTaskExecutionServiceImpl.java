@@ -125,6 +125,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         String jobName = jobExecution.getJobInstance().getJobName();
 
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
+                        int retryAttempt = Integer.valueOf((String)jobParameters.getOrDefault(RETRY_ATTEMPT, "0"));
 
                         DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
                         DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
@@ -168,7 +169,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
                         dataInterfaceExecutionDTO.setParams(jobParameters);
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                        dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
+                            dataInterfaceExecutionDTO.setType(String.valueOf(retryAttempt));
                         dataInterfaceExecutionDTO.setMode(mode);
                         dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
                         dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
@@ -202,9 +203,9 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
         int retryAttempt = Integer.valueOf(stringRetryAttempt);
         LOG.debug("jobId={}, jobName={}, mode={}, retryAttempt={}", jobId, failedJobName, mode, retryAttempt);
         if(mode.equalsIgnoreCase("automatic")) {
-            if(retryAttempt < 3) {
+            if(retryAttempt < maxRetry) {
 
-                String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+                String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));
                 String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
                 List<String> properties = Lists.newArrayList();

@@ -67,18 +67,14 @@ server:
     enabled: true
     min-response-size: 1
 
-#security:
-#  oauth2:
-#    client:
-#      accessTokenUri: http://localhost:8082/oauth/access_token
-#      userAuthorizationUri: http://localhost:8082/oauth/authorize
-#      clientId: crss
-#      clientSecret: crsssecret
-#      authorized-grant-types: authorization_code,refresh_token,password
-#      scope: openid
-#      access-token-validity-seconds: 3600
-#    resource:
-#      userInfoUri: http://localhost:8082/user
+security:
+  oauth2:
+    client:
+      accessTokenUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080
+      userAuthorizationUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080
+    resource:
+      userInfoUri: http://crssadmin-service.marathon.l4lb.thisdcos.directory:8080
+
 
 logging:
   level:

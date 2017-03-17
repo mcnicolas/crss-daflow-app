@@ -127,7 +127,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         String jobName = jobExecution.getJobInstance().getJobName();
 
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
-                        String user = (String)jobParameters.getOrDefault(MODE, "");
+                        String user = (String)jobParameters.getOrDefault(USERNAME, "");
 
                         DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
                         DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");

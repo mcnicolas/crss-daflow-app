@@ -3,15 +3,24 @@ spring:
     name: crss-dataflow-app
   cloud:
     config:
-      discovery:
-        enabled: false
-        service-id: config-server
-      fail-fast: false
-
+      fail-fast: true
+      username: crssconfig
+      password: crssconfigpassword
+---
+spring:
+  profiles: dev
+  cloud:
+    config:
+      uri: http://crssconfig-server.marathon.l4lb.thisdcos.directory:8080
+---
+spring:
+  profiles: dev2
+  cloud:
+    config:
+      uri: http://crssconfig-server.marathon.l4lb.thisdcos.directory:8080
 ---
 spring:
   profiles: qa
   cloud:
     config:
-      uri: http://config-server.marathon.l4lb.thisdcos.directory:8080
-      label: crss2
+      uri: http://crssconfig-server.marathon.l4lb.thisdcos.directory:8080

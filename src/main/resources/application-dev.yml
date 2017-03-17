@@ -106,3 +106,7 @@ todi-config:
   dispatch-interval: 5
   max-retry: 2
 
+
+security:
+  basic:
+    enabled: false

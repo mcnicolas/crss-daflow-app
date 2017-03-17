@@ -169,7 +169,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
                         dataInterfaceExecutionDTO.setParams(jobParameters);
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                            dataInterfaceExecutionDTO.setType(String.valueOf(retryAttempt));
+                            dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
                         dataInterfaceExecutionDTO.setMode(mode);
                         dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
                         dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);

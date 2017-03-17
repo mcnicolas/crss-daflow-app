@@ -206,6 +206,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                 progressDto = processStepProgress(runningStep, "Applying SSLA Computation", "sslaPartitionerTotal");
             } else if (runningStep.getStepName().equals("generateReportStep")) {
                 progressDto = processStepProgress(runningStep, "Generate Report", "reportPartitionerTotal");
+            } else if (runningStep.getStepName().equals("generateMtrStep")) {
+                progressDto = processStepProgress(runningStep, "Generate MTR", "mtrPartitionerTotal");
             }
         }
         taskExecutionDto.setProgress(progressDto);

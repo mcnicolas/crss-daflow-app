@@ -20,6 +20,7 @@ public class StlJobGroupDto {
     private Long groupId;
     private Date runStartDateTime;
     private Date runEndDateTime;
+    private Long runId;
 
     private List<PartialCalculationDto> partialCalculationDtos;
 
@@ -127,5 +128,13 @@ public class StlJobGroupDto {
 
     public void setRunEndDateTime(Date runEndDateTime) {
         this.runEndDateTime = runEndDateTime;
+    }
+
+    public Long getRunId() {
+        return runId;
+    }
+
+    public void setRunId(Long runId) {
+        this.runId = runId;
     }
 }

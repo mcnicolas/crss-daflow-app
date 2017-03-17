@@ -278,6 +278,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
                         stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
                         stlJobGroupDto.setGroupId(groupId);
+                        stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
                         stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
                         if (stlJobGroupDto.isHeader()) {
                             parentStlJobGroupDto = stlJobGroupDto;

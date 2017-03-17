@@ -5,7 +5,7 @@
     "args": null,
     "user": null,
     "env": {
-        "SPRING_APPLICATION_JSON": "{\"spring.cloud.config.enabled\":\"false\",\"eureka.instance.hostname\":\"crss-dataflow-app.marathon.l4lb.thisdcos.directory\",\"eureka.instance.prefer-ip-address\":\"false\"}",
+        "SPRING_APPLICATION_JSON": "{\"spring.cloud.config.enabled\":\"false\"}",
         "SPRING_PROFILES_ACTIVE": "qa,skipSSLA"
     },
     "instances": 1,

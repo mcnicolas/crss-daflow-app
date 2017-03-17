@@ -226,6 +226,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         ? QUOTE + endDate + QUOTE : endDate, "date"));
                 arguments.add(concatKeyValue(PROCESS_TYPE, MarketInfoType.getByJobName(failedJobName).getLabel()));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
+                arguments.add(concatKeyValue(USERNAME, "system"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
                         .getByJobName(failedJobName).getProfileName())));
 

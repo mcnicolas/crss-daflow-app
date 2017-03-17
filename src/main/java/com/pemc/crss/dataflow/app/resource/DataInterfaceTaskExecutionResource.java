@@ -3,7 +3,6 @@ package com.pemc.crss.dataflow.app.resource;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.DataFlowTaskExecutionService;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
@@ -62,8 +60,12 @@ public class DataInterfaceTaskExecutionResource {
 
     private String getCurrentUser(Principal principal) {
         String currentUser = ANONYMOUS;
-        if (principal != null && StringUtils.isNotEmpty(principal.getName())) {
-            return ((OAuth2Authentication) principal).getPrincipal().toString();
+        if (principal != null) {
+            if (principal instanceof OAuth2Authentication) {
+                OAuth2Authentication auth = (OAuth2Authentication) principal;
+                UserDetails userDetails = (UserDetails) auth.getPrincipal();
+                return userDetails.getUsername();
+            }
         }
         return currentUser;
     }

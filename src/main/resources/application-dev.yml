@@ -110,3 +110,4 @@ todi-config:
 security:
   basic:
     enabled: false
+  ignored: /**

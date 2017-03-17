@@ -24,6 +24,7 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
     private int recordsWritten;
     private int recordsRead;
     private int expectedRecord;
+    private String user;
 
     public Long getId() {
         return id;
@@ -151,5 +152,13 @@ public class DataInterfaceExecutionDTO extends TaskExecutionDto {
 
     public void setStacktrace(String stacktrace) {
         this.stacktrace = stacktrace;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 }

@@ -127,7 +127,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         String jobName = jobExecution.getJobInstance().getJobName();
 
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
-                        int retryAttempt = Integer.valueOf((String)jobParameters.getOrDefault(RETRY_ATTEMPT, "0"));
+                        String user = (String)jobParameters.getOrDefault(MODE, "");
 
                         DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
                         DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
@@ -175,6 +175,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         dataInterfaceExecutionDTO.setMode(mode);
                         dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
                         dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
+                        dataInterfaceExecutionDTO.setUser(user);
                         setLogs(dataInterfaceExecutionDTO, jobExecution);
 
                         if (jobExecution.getStatus().isRunning()) {

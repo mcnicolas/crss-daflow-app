@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.resource;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.DataFlowTaskExecutionService;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,13 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/task-executions/datainterface")
 public class DataInterfaceTaskExecutionResource {
 
+    public static final String ANONYMOUS = "anonymous";
     private static final Logger LOG = LoggerFactory.getLogger(DataInterfaceTaskExecutionResource.class);
-
     @Autowired
     @Qualifier("dataInterfaceTaskExecutionService")
     private DataFlowTaskExecutionService taskExecutionService;
@@ -36,8 +38,11 @@ public class DataInterfaceTaskExecutionResource {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto) throws URISyntaxException {
-        LOG.debug("Running job request. taskRunDto={}", taskRunDto);
+    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        String currentUser = getCurrentUser(principal);
+        LOG.debug("Running job request. taskRunDto={}, user={}", taskRunDto, currentUser);
+        taskRunDto.setCurrentUser(currentUser);
+
         taskExecutionService.launchJob(taskRunDto);
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -45,6 +50,15 @@ public class DataInterfaceTaskExecutionResource {
     @RequestMapping(value = "/get-dispatch-interval", method = RequestMethod.GET)
     public int getDispatchInterval() {
         return taskExecutionService.getDispatchInterval();
+    }
+
+    private String getCurrentUser(Principal principal) {
+        String currentUser = ANONYMOUS;
+        if (principal != null && StringUtils.isNotEmpty(principal.getName())) {
+            return principal.getName();
+        }
+        return currentUser;
+
     }
 
 }

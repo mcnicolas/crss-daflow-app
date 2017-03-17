@@ -18,6 +18,7 @@ public class TaskRunDto {
     private boolean newGroup;
     private boolean header;
     private String baseType;
+    private String currentUser;
 
     // FOR SETTLEMENT AMS OUTPUT GENERATION
     private String amsInvoiceDate;
@@ -218,5 +219,13 @@ public class TaskRunDto {
                 ", supplyMonth='" + supplyMonth + '\'' +
                 ", billingPeriodName='" + billingPeriodName + '\'' +
                 '}';
+    }
+
+    public String getCurrentUser() {
+        return currentUser;
+    }
+
+    public void setCurrentUser(String currentUser) {
+        this.currentUser = currentUser;
     }
 }

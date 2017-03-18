@@ -47,15 +47,15 @@ spring:
       validation-query: SELECT 1
 
   jpa:
-    show-sql: false
-    generate-ddl: false
+    show-sql: true
+    generate-ddl: true
     properties:
       hibernate:
-        generate_statistics: true
+        #generate_statistics: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         ddl-auto: none
         hbm2ddl:
-          import_files:
+          auto: none
 
   # prevent batch job from running on app start
   batch:
@@ -93,7 +93,6 @@ logging:
     com.pemc: DEBUG
     com.netflix: DEBUG
     org.springframework.cloud: DEBUG
-    org.hibernate.stat: debug
 
 dataflow:
   url: http://spring-cloud-data-flow.marathon.l4lb.thisdcos.directory:9393

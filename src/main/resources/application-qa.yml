@@ -51,7 +51,6 @@ spring:
     generate-ddl: true
     properties:
       hibernate:
-        #generate_statistics: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         ddl-auto: none
         hbm2ddl:

@@ -1,38 +1,14 @@
 spring:
-  crss-main:
-    datasource:
-      jdbcUrl: jdbc:postgresql://192.168.233.9:5432/crss_meterprocess
-      username: crss_meterprocess
-      password: crss_meterprocess
-      driverClassName: org.postgresql.Driver
-      maxPoolSize: 5
-      test-on-borrow: true
-      validation-query: SELECT 1
   crss-dataflow:
     datasource:
       jdbcUrl: jdbc:postgresql://192.168.233.9:5432/crss_dataflow
       username: crss_dataflow
       password: crss_dataflow
       driverClassName: org.postgresql.Driver
-      maxPoolSize: 5
+      maxPoolSize: 20
+      connectionTimeout: 10000
       test-on-borrow: true
       validation-query: SELECT 1
-  crss-nmms:
-      datasource:
-        jdbcUrl: jdbc:postgresql://192.168.233.9:5432/todi_crss_nmms
-        username: todi_crss_nmms
-        password: todi_crss_nmms
-        driverClassName: org.postgresql.Driver
-        connectionTimeout: 10000
-        maxPoolSize: 5
-  crss-stl:
-      datasource:
-        jdbcUrl: jdbc:postgresql://192.168.233.9:5432/crss_settlement
-        username: crss_settlement
-        password: crss_settlement
-        driverClassName: org.postgresql.Driver
-        connectionTimeout: 10000
-        maxPoolSize: 5
   jpa:
     show-sql: true
     generate-ddl: false

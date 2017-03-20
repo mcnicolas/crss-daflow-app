@@ -109,3 +109,7 @@ security:
   basic:
     enabled: false
   ignored: /**
+
+management:
+  security:
+    enabled: false

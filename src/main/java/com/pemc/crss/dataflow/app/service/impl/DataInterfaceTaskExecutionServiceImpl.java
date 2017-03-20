@@ -115,9 +115,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
         }
 
         if (count > 0) {
-            dataInterfaceExecutionDTOs
-                    = dataFlowJdbcJobExecutionDao.findJobInstancesByName(type,
-                    pageable.getOffset(), pageable.getPageSize(), status, filterMode, runStartDate, runEndDate,tradingStartDate, tradingEndDate)
+            dataInterfaceExecutionDTOs = dataFlowJdbcJobExecutionDao.findJobInstancesByName(type,
+                    pageable.getOffset(), pageable.getPageSize(), status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate)
                     .stream().map((JobInstance jobInstance) -> {
 
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
@@ -127,7 +126,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         String jobName = jobExecution.getJobInstance().getJobName();
 
                         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
-                        String user = (String)jobParameters.getOrDefault(USERNAME, "");
+                        String user = (String) jobParameters.getOrDefault(USERNAME, "");
 
                         DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
                         DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
@@ -171,7 +170,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
                         dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
                         dataInterfaceExecutionDTO.setParams(jobParameters);
                         dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                            dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
+                        dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
                         dataInterfaceExecutionDTO.setMode(mode);
                         dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
                         dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
@@ -201,14 +200,14 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
         JobExecution failedJobExecution = jobExplorer.getJobExecution(jobId);
         Map jobParameters = Maps.transformValues(failedJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
         String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
-        String stringRetryAttempt = (String)jobParameters.getOrDefault(RETRY_ATTEMPT, "0");
+        String stringRetryAttempt = (String) jobParameters.getOrDefault(RETRY_ATTEMPT, "0");
         String failedJobName = failedJobExecution.getJobInstance().getJobName();
         int retryAttempt = Integer.valueOf(stringRetryAttempt);
         LOG.debug("jobId={}, jobName={}, mode={}, retryAttempt={}", jobId, failedJobName, mode, retryAttempt);
-        if(mode.equalsIgnoreCase("automatic")) {
-            if(retryAttempt < maxRetry) {
+        if (mode.equalsIgnoreCase("automatic")) {
+            if (retryAttempt < maxRetry) {
 
-                String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));
+                String startDate = df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));
                 String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
                 List<String> properties = Lists.newArrayList();

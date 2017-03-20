@@ -47,8 +47,6 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class AbstractTaskExecutionService implements TaskExecutionService {
 
-
-    protected static final String QUOTE = "\"";
     protected static final String RUN_ID = "run.id";
     protected static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
     protected static final String DATE = "date";
@@ -58,7 +56,6 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String PARENT_JOB = "parentJob";
     protected static final String METER_TYPE = "meterType";
     protected static final String PROCESS_TYPE = "processType";
-    protected DateFormat dateTimeFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATETIME_FORMAT);
     protected DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
 
     @Autowired

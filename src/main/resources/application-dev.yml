@@ -25,6 +25,8 @@ spring:
         driverClassName: org.postgresql.Driver
         connectionTimeout: 10000
         maxPoolSize: 5
+        test-on-borrow: true
+        validation-query: SELECT 1
   crss-stl:
       datasource:
         jdbcUrl: jdbc:postgresql://192.168.236.2:5432/crss_settlement
@@ -33,12 +35,13 @@ spring:
         driverClassName: org.postgresql.Driver
         connectionTimeout: 10000
         maxPoolSize: 5
+        test-on-borrow: true
+        validation-query: SELECT 1
   jpa:
     show-sql: true
     generate-ddl: false
     properties:
       hibernate:
-        generate_statistics: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         ddl-auto: none
         hbm2ddl:

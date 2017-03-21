@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -66,76 +67,81 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     pageable.getOffset(), pageable.getPageSize()).stream()
                     .map((JobInstance jobInstance) -> {
 
-                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                        if (getJobExecutions(jobInstance).iterator().hasNext()) {
+                            JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
-                        TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
-                        taskExecutionDto.setId(jobInstance.getId());
-                        taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                        taskExecutionDto.setParams(Maps.transformValues(
-                                jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-                        taskExecutionDto.setWesmStatus(jobExecution.getStatus());
+                            TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
+                            taskExecutionDto.setId(jobInstance.getId());
+                            taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+                            taskExecutionDto.setParams(Maps.transformValues(
+                                    jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+                            taskExecutionDto.setWesmStatus(jobExecution.getStatus());
 
-                        if (taskExecutionDto.getWesmStatus().isRunning()) {
-                            calculateProgress(jobExecution, taskExecutionDto);
-                        } else if (taskExecutionDto.getWesmStatus().isUnsuccessful()) {
-                            taskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
-                        } else if (taskExecutionDto.getWesmStatus() == BatchStatus.COMPLETED) {
-                            taskExecutionDto.getSummary().put(RUN_WESM_JOB_NAME, showSummary(jobExecution));
-                        }
-
-                        taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getWesmStatus(), "WESM"));
-
-                        List<JobInstance> rcoaJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_RCOA_JOB_NAME.concat("*-")
-                                        .concat(jobInstance.getId().toString()), 0, 1);
-
-                        if (!rcoaJobs.isEmpty()) {
-                            JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
-                            taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
-
-                            if (taskExecutionDto.getRcoaStatus().isRunning()) {
-                                calculateProgress(rcoaJobExecution, taskExecutionDto);
-                            } else if (taskExecutionDto.getRcoaStatus().isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(rcoaJobExecution));
-                            } else if (taskExecutionDto.getRcoaStatus() == BatchStatus.COMPLETED) {
-                                taskExecutionDto.getSummary().put(RUN_RCOA_JOB_NAME, showSummary(rcoaJobExecution));
+                            if (taskExecutionDto.getWesmStatus().isRunning()) {
+                                calculateProgress(jobExecution, taskExecutionDto);
+                            } else if (taskExecutionDto.getWesmStatus().isUnsuccessful()) {
+                                taskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
+                            } else if (taskExecutionDto.getWesmStatus() == BatchStatus.COMPLETED) {
+                                taskExecutionDto.getSummary().put(RUN_WESM_JOB_NAME, showSummary(jobExecution));
                             }
 
-                            taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getRcoaStatus(), "RCOA"));
-                        }
+                            taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getWesmStatus(), "WESM"));
 
-                        List<JobInstance> mqReportJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_MQ_REPORT_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+                            List<JobInstance> rcoaJobs = jobExplorer.findJobInstancesByJobName(
+                                    RUN_RCOA_JOB_NAME.concat("*-")
+                                            .concat(jobInstance.getId().toString()), 0, 1);
 
-                        if (!mqReportJobs.isEmpty()) {
-                            JobExecution mqReportJobExecution = getJobExecutions(mqReportJobs.get(0)).iterator().next();
-                            taskExecutionDto.setMqReportStatus(mqReportJobExecution.getStatus());
+                            if (!rcoaJobs.isEmpty()) {
+                                JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
+                                taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
 
-                            if (taskExecutionDto.getMqReportStatus().isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(mqReportJobExecution));
-                            } else if (taskExecutionDto.getMqReportStatus() == BatchStatus.COMPLETED) {
-                                taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution));
+                                if (taskExecutionDto.getRcoaStatus().isRunning()) {
+                                    calculateProgress(rcoaJobExecution, taskExecutionDto);
+                                } else if (taskExecutionDto.getRcoaStatus().isUnsuccessful()) {
+                                    taskExecutionDto.setExitMessage(processFailedMessage(rcoaJobExecution));
+                                } else if (taskExecutionDto.getRcoaStatus() == BatchStatus.COMPLETED) {
+                                    taskExecutionDto.getSummary().put(RUN_RCOA_JOB_NAME, showSummary(rcoaJobExecution));
+                                }
+
+                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getRcoaStatus(), "RCOA"));
                             }
-                        }
 
-                        List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
-                                RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+                            List<JobInstance> mqReportJobs = jobExplorer.findJobInstancesByJobName(
+                                    RUN_MQ_REPORT_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
-                        if (!settlementJobs.isEmpty()) {
-                            JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
-                            taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
+                            if (!mqReportJobs.isEmpty()) {
+                                JobExecution mqReportJobExecution = getJobExecutions(mqReportJobs.get(0)).iterator().next();
+                                taskExecutionDto.setMqReportStatus(mqReportJobExecution.getStatus());
 
-                            if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
-                                taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
-                            } else if (taskExecutionDto.getSettlementStatus() == BatchStatus.COMPLETED) {
-                                taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
+                                if (taskExecutionDto.getMqReportStatus().isUnsuccessful()) {
+                                    taskExecutionDto.setExitMessage(processFailedMessage(mqReportJobExecution));
+                                } else if (taskExecutionDto.getMqReportStatus() == BatchStatus.COMPLETED) {
+                                    taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution));
+                                }
                             }
-                            taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "SETTLEMENT"));
+
+                            List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
+                                    RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+
+                            if (!settlementJobs.isEmpty()) {
+                                JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
+                                taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
+
+                                if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
+                                    taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
+                                } else if (taskExecutionDto.getSettlementStatus() == BatchStatus.COMPLETED) {
+                                    taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
+                                }
+                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "SETTLEMENT"));
+                            }
+
+                            return taskExecutionDto;
+                        } else {
+                            return null;
                         }
-
-                        return taskExecutionDto;
-
-                    }).collect(toList());
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(toList());
         }
         return new PageImpl<>(taskExecutionDtos, pageable, count);
     }

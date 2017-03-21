@@ -91,7 +91,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
 
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
-            doLaunchAndLockJob(taskRunDto, jobName, properties, arguments);
+            launchJob(jobName, properties, arguments);
+            lockJob(taskRunDto);
         }
     }
 
@@ -235,7 +236,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
 
                 if (jobName != null) {
                     LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
-                    doLaunchAndLockJob(taskRunDto, jobName, properties, arguments);
+                    launchJob(jobName, properties, arguments);
+                    lockJob(taskRunDto);
                 }
             } else {
                 LOG.debug("Retry Attempt for failed job already reached limit, limit = {}", retryAttempt);

@@ -248,21 +248,4 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
             batchJobRunLockRepository.save(batchJobRunLock);
         }
     }
-
-    protected void doLaunchAndLockJob(TaskRunDto taskRunDto, String jobName, List<String> properties, List<String> arguments) throws URISyntaxException {
-        ResourceSupport resourceSupport = restTemplate.getForObject(new URI(dataFlowUrl), ResourceSupport.class);
-        restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref().concat(
-                "?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments", StringUtils.join(arguments, ","),
-                "properties", StringUtils.join(properties, ",")));
-        if (batchJobRunLockRepository.lockJob(taskRunDto.getJobName()) == 0) {
-            BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
-            batchJobRunLock.setJobName(taskRunDto.getJobName());
-            batchJobRunLock.setLocked(true);
-            batchJobRunLock.setLockedDate(new Date());
-            batchJobRunLockRepository.save(batchJobRunLock);
-        }
-
-    }
-
-
 }

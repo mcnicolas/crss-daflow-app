@@ -57,6 +57,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String METER_TYPE = "meterType";
     protected static final String PROCESS_TYPE = "processType";
     protected DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
+    protected static final String USERNAME = "username";
+    protected static final String QUOTE = "\"";
 
     @Autowired
     protected ExecutionParamRepository executionParamRepository;
@@ -78,12 +80,18 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected Environment environment;
     @Autowired
     protected RedisTemplate<String, Long> redisTemplate;
+    @Autowired
+    protected DataFlowJdbcJobExecutionDao dataFlowJdbcJobExecutionDao;
 
     @Value("${dataflow.url}")
     protected String dataFlowUrl;
 
     @Value("${todi-config.dispatch-interval}")
     protected String dispatchInterval;
+
+    @Value("${todi-config.max-retry}")
+    protected int maxRetry;
+
 
     @Override
     public abstract Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable);
@@ -124,6 +132,20 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                     progressDto.getTotalCount()));
         }
         return progressDto;
+    }
+
+    protected List<JobExecution> getJobExecutions(JobInstance jobInstance, String status, String mode,
+                                                  String runStartDate, String runEndDate,
+                                                  String tradingStartDate, String tradingEndDate) {
+        List<JobExecution> executions = dataFlowJdbcJobExecutionDao.findJobExecutions(jobInstance,
+                status, mode, runStartDate, runEndDate, tradingStartDate, tradingEndDate);
+        for (JobExecution jobExecution : executions) {
+            getJobExecutionDependencies(jobExecution);
+            for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
+                getStepExecutionDependencies(stepExecution);
+            }
+        }
+        return executions;
     }
 
     protected List<JobExecution> getJobExecutions(JobInstance jobInstance) {
@@ -225,6 +247,21 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
             batchJobRunLock.setLockedDate(new Date());
             batchJobRunLockRepository.save(batchJobRunLock);
         }
+    }
+
+    protected void doLaunchAndLockJob(TaskRunDto taskRunDto, String jobName, List<String> properties, List<String> arguments) throws URISyntaxException {
+        ResourceSupport resourceSupport = restTemplate.getForObject(new URI(dataFlowUrl), ResourceSupport.class);
+        restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref().concat(
+                "?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments", StringUtils.join(arguments, ","),
+                "properties", StringUtils.join(properties, ",")));
+        if (batchJobRunLockRepository.lockJob(taskRunDto.getJobName()) == 0) {
+            BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
+            batchJobRunLock.setJobName(taskRunDto.getJobName());
+            batchJobRunLock.setLocked(true);
+            batchJobRunLock.setLockedDate(new Date());
+            batchJobRunLockRepository.save(batchJobRunLock);
+        }
+
     }
 
 

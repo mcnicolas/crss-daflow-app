@@ -3,10 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.DataInterfaceExecutionDTO;
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
@@ -32,7 +29,7 @@ import static java.util.stream.Collectors.toList;
 
 @Service("dataInterfaceTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
-public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskExecutionService {
+public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataInterfaceTaskExecutionServiceImpl.class);
 
@@ -99,6 +96,10 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
     }
 
     @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable) {
+        return null;
+    }
+
     public Page<DataInterfaceExecutionDTO> findJobInstances(Pageable pageable, String type,
                                                             String status, String filterMode,
                                                             String runStartDate, String runEndDate,
@@ -194,7 +195,6 @@ public class DataInterfaceTaskExecutionServiceImpl extends DataFlowAbstractTaskE
         return Integer.valueOf(this.dispatchInterval);
     }
 
-    @Override
     public void relaunchFailedJob(long jobId) throws URISyntaxException {
         LOG.debug("Executing relaunch failed job....");
         JobExecution failedJobExecution = jobExplorer.getJobExecution(jobId);

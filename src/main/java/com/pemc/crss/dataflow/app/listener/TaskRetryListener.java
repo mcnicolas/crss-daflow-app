@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app.listener;
 
-import com.pemc.crss.dataflow.app.service.DataFlowTaskExecutionService;
+import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,9 +8,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
-
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 
 /**
  * Created by jdimayuga on 14/03/2017.
@@ -22,7 +19,7 @@ public class TaskRetryListener implements MessageListener {
 
     @Autowired
     @Qualifier("dataInterfaceTaskExecutionService")
-    private DataFlowTaskExecutionService taskExecutionService;
+    private TaskExecutionService taskExecutionService;
 
     @Override
     public void onMessage(Message message, byte[] bytes) {

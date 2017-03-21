@@ -2,7 +2,7 @@ package com.pemc.crss.dataflow.app.resource;
 
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
-import com.pemc.crss.dataflow.app.service.DataFlowTaskExecutionService;
+import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class DataInterfaceTaskExecutionResource {
     private static final Logger LOG = LoggerFactory.getLogger(DataInterfaceTaskExecutionResource.class);
     @Autowired
     @Qualifier("dataInterfaceTaskExecutionService")
-    private DataFlowTaskExecutionService taskExecutionService;
+    private TaskExecutionService taskExecutionService;
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends BaseTaskExecutionDto>> findDataInterfaceJobInstances(

@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import org.slf4j.Logger;
@@ -71,6 +72,11 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
     }
 
     @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String runEndDate, String tradingStartDate, String tradingEndDate) {
+        return null;
+    }
+
+    @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getJobName());
@@ -96,6 +102,11 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
         }
+
+    }
+
+    @Override
+    public void relaunchFailedJob(long jobId) throws URISyntaxException {
 
     }
 

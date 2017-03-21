@@ -3,10 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.PartialCalculationDto;
-import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
-import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
@@ -296,6 +293,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     }
 
     @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String runEndDate, String tradingStartDate, String tradingEndDate) {
+        return null;
+    }
+
+    @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getJobName());
@@ -479,6 +481,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
+    }
+
+    @Override
+    public void relaunchFailedJob(long jobId) throws URISyntaxException {
+
     }
 
     private SortedSet<LocalDate> createRange(Date start, Date end) {

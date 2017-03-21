@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -139,6 +140,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return new PageImpl<>(taskExecutionDtos, pageable, count);
     }
 
+    @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String runEndDate, String tradingStartDate, String tradingEndDate) {
+        return null;
+    }
+
 
     @Override
     @Transactional(value = "transactionManager")
@@ -257,6 +263,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
+    }
+
+    @Override
+    public void relaunchFailedJob(long jobId) throws URISyntaxException {
+
     }
 
 

@@ -1,7 +1,6 @@
 package com.pemc.crss.dataflow.app.service;
 
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.springframework.data.domain.Page;
@@ -17,6 +16,11 @@ public interface TaskExecutionService {
 
     Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable);
 
+    Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type,
+                                                          String status, String mode,
+                                                          String runStartDate, String runEndDate,
+                                                          String tradingStartDate, String tradingEndDate);
+
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 
     /**
@@ -29,4 +33,6 @@ public interface TaskExecutionService {
     List<BatchJobSkipLog> getBatchJobSkipLogs(int stepId);
 
     void deleteJob(long jobId);
+
+    void relaunchFailedJob(long jobId) throws URISyntaxException;
 }

@@ -28,6 +28,11 @@ ext {
             appProfile = "qa,skipSSLA"
             break
 
+        case 'pemc-uat':
+            marathonUrl = "http://master.uat.crss.wesm.ph/marathon/v2/apps"
+            appProfile = "pemc-uat,skipSSLA"
+            break
+
         default:
             break
     }

@@ -131,8 +131,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (calcStlIterator.hasNext()) {
                             JobInstance calcStlJobInstance = calcStlIterator.next();
                             String calcStlJobName = calcStlJobInstance.getJobName();
-                            if (getJobExecutions(calcStlJobInstance).iterator().hasNext()) {
-                                JobExecution calcJobExecution = getJobExecutions(calcStlJobInstance).iterator().next();
+                            Iterator<JobExecution> calcStlExecIterator = getJobExecutions(calcStlJobInstance).iterator();
+                            if (calcStlExecIterator.hasNext()) {
+                                JobExecution calcJobExecution = calcStlExecIterator.next();
                                 BatchStatus currentStatus = calcJobExecution.getStatus();
                                 JobParameters calcJobParameters = calcJobExecution.getJobParameters();
                                 Long groupId = calcJobParameters.getLong(GROUP_ID);
@@ -190,8 +191,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (calcTagStlIterator.hasNext()) {
                             JobInstance calcTagStlJobInstance = calcTagStlIterator.next();
                             String calcTagStlJobName = calcTagStlJobInstance.getJobName();
-                            if (getJobExecutions(calcTagStlJobInstance).iterator().hasNext()) {
-                                JobExecution calcTagJobExecution = getJobExecutions(calcTagStlJobInstance).iterator().next();
+                            Iterator<JobExecution> calcTagStlExecIterator = getJobExecutions(calcTagStlJobInstance).iterator();
+                            if (calcTagStlExecIterator.hasNext()) {
+                                JobExecution calcTagJobExecution = calcTagStlExecIterator.next();
                                 JobParameters calcTagJobParameters = calcTagJobExecution.getJobParameters();
                                 Long groupId = calcTagJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
@@ -218,8 +220,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (calcGmrStlIterator.hasNext()) {
                             JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
                             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
-                            if (getJobExecutions(calcGmrStlJobInstance).iterator().hasNext()) {
-                                JobExecution calcGmrJobExecution = getJobExecutions(calcGmrStlJobInstance).iterator().next();
+                            Iterator<JobExecution> calcGmrStlExecIterator = getJobExecutions(calcGmrStlJobInstance).iterator();
+                            if (calcGmrStlExecIterator.hasNext()) {
+                                JobExecution calcGmrJobExecution = calcGmrStlExecIterator.next();
                                 JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
                                 Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
@@ -246,8 +249,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (tagGmrStlIterator.hasNext()) {
                             JobInstance tagGmrStlJobInstance = tagGmrStlIterator.next();
                             String tagGmrStlJobName = tagGmrStlJobInstance.getJobName();
-                            if (getJobExecutions(tagGmrStlJobInstance).iterator().hasNext()) {
-                                JobExecution tagGmrJobExecution = getJobExecutions(tagGmrStlJobInstance).iterator().next();
+                            Iterator<JobExecution> tagGmrStlExecIterator = getJobExecutions(tagGmrStlJobInstance).iterator();
+                            if (tagGmrStlExecIterator.hasNext()) {
+                                JobExecution tagGmrJobExecution = tagGmrStlExecIterator.next();
                                 JobParameters tagGmrJobParameters = tagGmrJobExecution.getJobParameters();
                                 Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
@@ -274,8 +278,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (generationStlIterator.hasNext()) {
                             JobInstance generationStlJobInstance = generationStlIterator.next();
                             String generationStlJobName = generationStlJobInstance.getJobName();
-                            if (getJobExecutions(generationStlJobInstance).iterator().hasNext()) {
-                                JobExecution generationJobExecution = getJobExecutions(generationStlJobInstance).iterator().next();
+                            Iterator<JobExecution> generationStlExecIterator = getJobExecutions(generationStlJobInstance).iterator();
+                            if (generationStlExecIterator.hasNext()) {
+                                JobExecution generationJobExecution = generationStlExecIterator.next();
                                 JobParameters generationJobParameters = generationJobExecution.getJobParameters();
                                 Long groupId = generationJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());

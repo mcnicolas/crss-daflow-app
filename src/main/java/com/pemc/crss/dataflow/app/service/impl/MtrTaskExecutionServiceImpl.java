@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -50,23 +51,29 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                     pageable.getOffset(), pageable.getPageSize()).stream()
                     .map((JobInstance jobInstance) -> {
 
-                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                        if (getJobExecutions(jobInstance).iterator().hasNext()) {
+                            JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
-                        MtrTaskExecutionDto mtrTaskExecutionDto = new MtrTaskExecutionDto();
-                        mtrTaskExecutionDto.setId(jobInstance.getId());
-                        mtrTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                        mtrTaskExecutionDto.setParams(Maps.transformValues(
-                                jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
-                        mtrTaskExecutionDto.setStatus(jobExecution.getStatus().toString());
-                        if (jobExecution.getStatus().isRunning()) {
-                            calculateProgress(jobExecution, mtrTaskExecutionDto);
-                        } else if (jobExecution.getStatus().isUnsuccessful()) {
-                            mtrTaskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
-                        } else if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-                            mtrTaskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));
+                            MtrTaskExecutionDto mtrTaskExecutionDto = new MtrTaskExecutionDto();
+                            mtrTaskExecutionDto.setId(jobInstance.getId());
+                            mtrTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+                            mtrTaskExecutionDto.setParams(Maps.transformValues(
+                                    jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+                            mtrTaskExecutionDto.setStatus(jobExecution.getStatus().toString());
+                            if (jobExecution.getStatus().isRunning()) {
+                                calculateProgress(jobExecution, mtrTaskExecutionDto);
+                            } else if (jobExecution.getStatus().isUnsuccessful()) {
+                                mtrTaskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
+                            } else if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+                                mtrTaskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));
+                            }
+                            return mtrTaskExecutionDto;
+                        } else {
+                            return null;
                         }
-                        return mtrTaskExecutionDto;
-                    }).collect(toList());
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(toList());
         }
         return new PageImpl<>(mtrTaskExecutionDtos, pageable, count);
     }

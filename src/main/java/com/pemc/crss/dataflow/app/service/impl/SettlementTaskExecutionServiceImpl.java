@@ -73,221 +73,228 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         List<StlTaskExecutionDto> taskExecutionDtos = jobExplorer.findJobInstancesByJobName(STL_READY_JOB_NAME.concat("*"),
                 pageable.getOffset(), pageable.getPageSize()).stream()
                 .map((JobInstance jobInstance) -> {
-                    JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
-                    Long jobId = jobExecution.getJobId();
-                    BatchStatus jobStatus = jobExecution.getStatus();
-                    LOG.debug("Processing processStlReady jobId {}", jobId);
 
-                    String parentId = jobInstance.getJobName().split("-")[1];
-                    if (StringUtils.isEmpty(parentId)) {
-                        LOG.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
-                        parentId = String.valueOf(jobInstance.getInstanceId());
-                    }
-                    JobParameters jobParameters = jobExecution.getJobParameters();
-                    Date startDate = jobParameters.getDate(START_DATE);
-                    Date endDate = jobParameters.getDate(END_DATE);
-                    Date date = jobParameters.getDate(DATE);
-                    boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
-                    LOG.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
+                    if (getJobExecutions(jobInstance).iterator().hasNext()) {
+                        JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
+                        Long jobId = jobExecution.getJobId();
+                        BatchStatus jobStatus = jobExecution.getStatus();
+                        LOG.debug("Processing processStlReady jobId {}", jobId);
 
-                    StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
-                    taskExecutionDto.setId(Long.parseLong(parentId));
-                    taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                    taskExecutionDto.setParams(Maps.transformValues(
-                            jobParameters.getParameters(), JobParameter::getValue));
-                    taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));
-                    taskExecutionDto.setStlReadyStatus(jobStatus);
+                        String parentId = jobInstance.getJobName().split("-")[1];
+                        if (StringUtils.isEmpty(parentId)) {
+                            LOG.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
+                            parentId = String.valueOf(jobInstance.getInstanceId());
+                        }
+                        JobParameters jobParameters = jobExecution.getJobParameters();
+                        Date startDate = jobParameters.getDate(START_DATE);
+                        Date endDate = jobParameters.getDate(END_DATE);
+                        Date date = jobParameters.getDate(DATE);
+                        boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
+                        LOG.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
 
-                    Long latestGroupId = null;
-                    Long lockedGroupId = null;
-                    if (startDate != null && endDate != null) {
-                        Iterator<RunningAdjustmentLock> iteratorRunning = runningAdjustmentLockRepository
-                                .findByStartDateAndEndDateAndLockedIsTrue(startDate, endDate).iterator();
-                        lockedGroupId = iteratorRunning.hasNext() ? iteratorRunning.next().getGroupId() : null;
+                        StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
+                        taskExecutionDto.setId(Long.parseLong(parentId));
+                        taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+                        taskExecutionDto.setParams(Maps.transformValues(
+                                jobParameters.getParameters(), JobParameter::getValue));
+                        taskExecutionDto.setStatus(convertStatus(jobStatus, "SETTLEMENT"));
+                        taskExecutionDto.setStlReadyStatus(jobStatus);
 
-                        Iterator<LatestAdjustmentLock> iteratorLatest = latestAdjustmentLockRepository
-                                .findByStartDateAndEndDateAndLockedIsTrue(startDate, endDate).iterator();
-                        latestGroupId = iteratorLatest.hasNext() ? iteratorLatest.next().getGroupId() : null;
-                    }
+                        Long latestGroupId = null;
+                        Long lockedGroupId = null;
+                        if (startDate != null && endDate != null) {
+                            Iterator<RunningAdjustmentLock> iteratorRunning = runningAdjustmentLockRepository
+                                    .findByStartDateAndEndDateAndLockedIsTrue(startDate, endDate).iterator();
+                            lockedGroupId = iteratorRunning.hasNext() ? iteratorRunning.next().getGroupId() : null;
 
-                    StlJobGroupDto parentStlJobGroupDto = new StlJobGroupDto();
-                    parentStlJobGroupDto.setGroupId(jobId);
-                    parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));
-                    parentStlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                    Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+                            Iterator<LatestAdjustmentLock> iteratorLatest = latestAdjustmentLockRepository
+                                    .findByStartDateAndEndDateAndLockedIsTrue(startDate, endDate).iterator();
+                            latestGroupId = iteratorLatest.hasNext() ? iteratorLatest.next().getGroupId() : null;
+                        }
+
+                        StlJobGroupDto parentStlJobGroupDto = new StlJobGroupDto();
+                        parentStlJobGroupDto.setGroupId(jobId);
+                        parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));
+                        parentStlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                        Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
 //                    Date recentJobEndTime = Date.from(Instant.MIN);
 
                     /* CALCULATION START */
-                    String calcStatusSuffix = "PARTIAL-CALCULATION";
-                    String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
-                    List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
-                    SortedSet<LocalDate> remainingDates = new TreeSet<>();
-                    if (!isDaily) {
-                        remainingDates = createRange(startDate, endDate);
-                    }
-                    Iterator<JobInstance> calcStlIterator = calcStlJobInstances.iterator();
-                    while (calcStlIterator.hasNext()) {
-                        JobInstance calcStlJobInstance = calcStlIterator.next();
-                        String calcStlJobName = calcStlJobInstance.getJobName();
-                        JobExecution calcJobExecution = getJobExecutions(calcStlJobInstance).iterator().next();
-                        BatchStatus currentStatus = calcJobExecution.getStatus();
-                        JobParameters calcJobParameters = calcJobExecution.getJobParameters();
-                        Long groupId = calcJobParameters.getLong(GROUP_ID);
-                        Date calcStartDate = calcJobParameters.getDate(START_DATE);
-                        Date calcEndDate = calcJobParameters.getDate(END_DATE);
-
-                        StlJobGroupDto stlJobGroupDto;
-                        if (stlJobGroupDtoMap.get(groupId) == null) {
-                            stlJobGroupDto = new StlJobGroupDto();
-                            stlJobGroupDto.setRemainingDates(new TreeSet<>(remainingDates));
-                        } else {
-                            stlJobGroupDto = stlJobGroupDtoMap.get(groupId);
-                        }
-//                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                        stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                        stlJobGroupDto.setHeader(jobId.equals(groupId));
-                        stlJobGroupDto.setRemainingDates(remainingDates);
-
-                        List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
-                        if (partialCalculationDtoList == null) {
-                            partialCalculationDtoList = Lists.newArrayList();
-                            stlJobGroupDto.setRunStartDateTime(calcStartDate);
-                            stlJobGroupDto.setRunEndDateTime(calcEndDate);
-                        }
-                        PartialCalculationDto dto = new PartialCalculationDto();
-                        dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
-                        dto.setBillingStart(calcStartDate);
-                        dto.setBillingEnd(calcEndDate);
-                        dto.setRunDate(calcJobExecution.getStartTime());
-                        dto.setRunEndDate(calcJobExecution.getEndTime());
-                        partialCalculationDtoList.add(dto);
-
+                        String calcStatusSuffix = "PARTIAL-CALCULATION";
+                        String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                        List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
+                        SortedSet<LocalDate> remainingDates = new TreeSet<>();
                         if (!isDaily) {
-                            removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                            remainingDates = createRange(startDate, endDate);
                         }
+                        Iterator<JobInstance> calcStlIterator = calcStlJobInstances.iterator();
+                        while (calcStlIterator.hasNext()) {
+                            JobInstance calcStlJobInstance = calcStlIterator.next();
+                            String calcStlJobName = calcStlJobInstance.getJobName();
+                            JobExecution calcJobExecution = getJobExecutions(calcStlJobInstance).iterator().next();
+                            BatchStatus currentStatus = calcJobExecution.getStatus();
+                            JobParameters calcJobParameters = calcJobExecution.getJobParameters();
+                            Long groupId = calcJobParameters.getLong(GROUP_ID);
+                            Date calcStartDate = calcJobParameters.getDate(START_DATE);
+                            Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
-                        stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
-                        stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));
-                        stlJobGroupDto.setGroupId(groupId);
-                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                            StlJobGroupDto stlJobGroupDto;
+                            if (stlJobGroupDtoMap.get(groupId) == null) {
+                                stlJobGroupDto = new StlJobGroupDto();
+                                stlJobGroupDto.setRemainingDates(new TreeSet<>(remainingDates));
+                            } else {
+                                stlJobGroupDto = stlJobGroupDtoMap.get(groupId);
+                            }
+//                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                            stlJobGroupDto.setHeader(jobId.equals(groupId));
+                            stlJobGroupDto.setRemainingDates(remainingDates);
 
-                        if (stlJobGroupDto.isHeader()) {
-                            parentStlJobGroupDto = stlJobGroupDto;
+                            List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
+                            if (partialCalculationDtoList == null) {
+                                partialCalculationDtoList = Lists.newArrayList();
+                                stlJobGroupDto.setRunStartDateTime(calcStartDate);
+                                stlJobGroupDto.setRunEndDateTime(calcEndDate);
+                            }
+                            PartialCalculationDto dto = new PartialCalculationDto();
+                            dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
+                            dto.setBillingStart(calcStartDate);
+                            dto.setBillingEnd(calcEndDate);
+                            dto.setRunDate(calcJobExecution.getStartTime());
+                            dto.setRunEndDate(calcJobExecution.getEndTime());
+                            partialCalculationDtoList.add(dto);
+
+                            if (!isDaily) {
+                                removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                            }
+
+                            stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
+                            stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));
+                            stlJobGroupDto.setGroupId(groupId);
+                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+                            if (stlJobGroupDto.isHeader()) {
+                                parentStlJobGroupDto = stlJobGroupDto;
+                            }
                         }
-                    }
                     /* CALCULATION END */
 
                     /* CALCULATION TAGGING START */
-                    String calcTagStatusSuffix = "CALCULATION-TAGGING";
-                    String calcTagQueryString = FINALIZE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
-                    List<JobInstance> calcTagStlJobInstances = jobExplorer.findJobInstancesByJobName(calcTagQueryString, 0, Integer.MAX_VALUE);
-                    Iterator<JobInstance> calcTagStlIterator = calcTagStlJobInstances.iterator();
-                    while (calcTagStlIterator.hasNext()) {
-                        JobInstance calcTagStlJobInstance = calcTagStlIterator.next();
-                        String calcTagStlJobName = calcTagStlJobInstance.getJobName();
-                        JobExecution calcTagJobExecution = getJobExecutions(calcTagStlJobInstance).iterator().next();
-                        JobParameters calcTagJobParameters = calcTagJobExecution.getJobParameters();
-                        Long groupId = calcTagJobParameters.getLong(GROUP_ID);
-                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                        stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                        stlJobGroupDto.setHeader(jobId.equals(groupId));
-                        BatchStatus currentStatus = calcTagJobExecution.getStatus();
-                        stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
-                        stlJobGroupDto.setStlAmtTaggingStatus(currentStatus);
-                        stlJobGroupDto.setGroupId(groupId);
-                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                        if (stlJobGroupDto.isHeader()) {
-                            parentStlJobGroupDto = stlJobGroupDto;
+                        String calcTagStatusSuffix = "CALCULATION-TAGGING";
+                        String calcTagQueryString = FINALIZE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                        List<JobInstance> calcTagStlJobInstances = jobExplorer.findJobInstancesByJobName(calcTagQueryString, 0, Integer.MAX_VALUE);
+                        Iterator<JobInstance> calcTagStlIterator = calcTagStlJobInstances.iterator();
+                        while (calcTagStlIterator.hasNext()) {
+                            JobInstance calcTagStlJobInstance = calcTagStlIterator.next();
+                            String calcTagStlJobName = calcTagStlJobInstance.getJobName();
+                            JobExecution calcTagJobExecution = getJobExecutions(calcTagStlJobInstance).iterator().next();
+                            JobParameters calcTagJobParameters = calcTagJobExecution.getJobParameters();
+                            Long groupId = calcTagJobParameters.getLong(GROUP_ID);
+                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                            stlJobGroupDto.setHeader(jobId.equals(groupId));
+                            BatchStatus currentStatus = calcTagJobExecution.getStatus();
+                            stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
+                            stlJobGroupDto.setStlAmtTaggingStatus(currentStatus);
+                            stlJobGroupDto.setGroupId(groupId);
+                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                            if (stlJobGroupDto.isHeader()) {
+                                parentStlJobGroupDto = stlJobGroupDto;
+                            }
                         }
-                    }
                     /* CALCULATION TAGGING END */
 
                     /* CALCULATION GMR START */
-                    String calcGmrStatusSuffix = "CALCULATION-GMR";
-                    String calcGmrQueryString = COMPUTE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
-                    List<JobInstance> calcGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(calcGmrQueryString, 0, Integer.MAX_VALUE);
-                    Iterator<JobInstance> calcGmrStlIterator = calcGmrStlJobInstances.iterator();
-                    while (calcGmrStlIterator.hasNext()) {
-                        JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
-                        String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
-                        JobExecution calcGmrJobExecution = getJobExecutions(calcGmrStlJobInstance).iterator().next();
-                        JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
-                        Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
-                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                        stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                        stlJobGroupDto.setHeader(jobId.equals(groupId));
-                        BatchStatus currentStatus = calcGmrJobExecution.getStatus();
-                        stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
-                        stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
-                        stlJobGroupDto.setGroupId(groupId);
-                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                        if (stlJobGroupDto.isHeader()) {
-                            parentStlJobGroupDto = stlJobGroupDto;
+                        String calcGmrStatusSuffix = "CALCULATION-GMR";
+                        String calcGmrQueryString = COMPUTE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                        List<JobInstance> calcGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(calcGmrQueryString, 0, Integer.MAX_VALUE);
+                        Iterator<JobInstance> calcGmrStlIterator = calcGmrStlJobInstances.iterator();
+                        while (calcGmrStlIterator.hasNext()) {
+                            JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
+                            String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
+                            JobExecution calcGmrJobExecution = getJobExecutions(calcGmrStlJobInstance).iterator().next();
+                            JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
+                            Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
+                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                            stlJobGroupDto.setHeader(jobId.equals(groupId));
+                            BatchStatus currentStatus = calcGmrJobExecution.getStatus();
+                            stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
+                            stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
+                            stlJobGroupDto.setGroupId(groupId);
+                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                            if (stlJobGroupDto.isHeader()) {
+                                parentStlJobGroupDto = stlJobGroupDto;
+                            }
                         }
-                    }
                     /* CALCULATION GMR END */
 
                     /* TAGGING GMR START */
-                    String tagGmrStatusSuffix = "TAGGING-GMR";
-                    String tagGmrQueryString = FINALIZE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
-                    List<JobInstance> tagGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(tagGmrQueryString, 0, Integer.MAX_VALUE);
-                    Iterator<JobInstance> tagGmrStlIterator = tagGmrStlJobInstances.iterator();
-                    while (tagGmrStlIterator.hasNext()) {
-                        JobInstance tagGmrStlJobInstance = tagGmrStlIterator.next();
-                        String tagGmrStlJobName = tagGmrStlJobInstance.getJobName();
-                        JobExecution tagGmrJobExecution = getJobExecutions(tagGmrStlJobInstance).iterator().next();
-                        JobParameters tagGmrJobParameters = tagGmrJobExecution.getJobParameters();
-                        Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
-                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                        stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                        stlJobGroupDto.setHeader(jobId.equals(groupId));
-                        BatchStatus currentStatus = tagGmrJobExecution.getStatus();
-                        stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
-                        stlJobGroupDto.setGmrVatMFeeTaggingStatus(currentStatus);
-                        stlJobGroupDto.setGroupId(groupId);
-                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                        if (stlJobGroupDto.isHeader()) {
-                            parentStlJobGroupDto = stlJobGroupDto;
+                        String tagGmrStatusSuffix = "TAGGING-GMR";
+                        String tagGmrQueryString = FINALIZE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                        List<JobInstance> tagGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(tagGmrQueryString, 0, Integer.MAX_VALUE);
+                        Iterator<JobInstance> tagGmrStlIterator = tagGmrStlJobInstances.iterator();
+                        while (tagGmrStlIterator.hasNext()) {
+                            JobInstance tagGmrStlJobInstance = tagGmrStlIterator.next();
+                            String tagGmrStlJobName = tagGmrStlJobInstance.getJobName();
+                            JobExecution tagGmrJobExecution = getJobExecutions(tagGmrStlJobInstance).iterator().next();
+                            JobParameters tagGmrJobParameters = tagGmrJobExecution.getJobParameters();
+                            Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
+                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                            stlJobGroupDto.setHeader(jobId.equals(groupId));
+                            BatchStatus currentStatus = tagGmrJobExecution.getStatus();
+                            stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
+                            stlJobGroupDto.setGmrVatMFeeTaggingStatus(currentStatus);
+                            stlJobGroupDto.setGroupId(groupId);
+                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                            if (stlJobGroupDto.isHeader()) {
+                                parentStlJobGroupDto = stlJobGroupDto;
+                            }
                         }
-                    }
                     /* TAGGING GMR END */
 
                     /* OUTPUT GENERATION START */
-                    String generationStatusSuffix = "TAGGING-GMR";
-                    String generationQueryString = GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
-                    List<JobInstance> generationStlJobInstances = jobExplorer.findJobInstancesByJobName(generationQueryString, 0, Integer.MAX_VALUE);
-                    Iterator<JobInstance> generationStlIterator = generationStlJobInstances.iterator();
-                    while (generationStlIterator.hasNext()) {
-                        JobInstance generationStlJobInstance = generationStlIterator.next();
-                        String generationStlJobName = generationStlJobInstance.getJobName();
-                        JobExecution generationJobExecution = getJobExecutions(generationStlJobInstance).iterator().next();
-                        JobParameters generationJobParameters = generationJobExecution.getJobParameters();
-                        Long groupId = generationJobParameters.getLong(GROUP_ID);
-                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                        stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                        stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                        stlJobGroupDto.setHeader(jobId.equals(groupId));
-                        BatchStatus currentStatus = generationJobExecution.getStatus();
-                        stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
-                        stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
-                        stlJobGroupDto.setGroupId(groupId);
-                        stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
-                        stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                        if (stlJobGroupDto.isHeader()) {
-                            parentStlJobGroupDto = stlJobGroupDto;
+                        String generationStatusSuffix = "TAGGING-GMR";
+                        String generationQueryString = GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
+                        List<JobInstance> generationStlJobInstances = jobExplorer.findJobInstancesByJobName(generationQueryString, 0, Integer.MAX_VALUE);
+                        Iterator<JobInstance> generationStlIterator = generationStlJobInstances.iterator();
+                        while (generationStlIterator.hasNext()) {
+                            JobInstance generationStlJobInstance = generationStlIterator.next();
+                            String generationStlJobName = generationStlJobInstance.getJobName();
+                            JobExecution generationJobExecution = getJobExecutions(generationStlJobInstance).iterator().next();
+                            JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+                            Long groupId = generationJobParameters.getLong(GROUP_ID);
+                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                            stlJobGroupDto.setHeader(jobId.equals(groupId));
+                            BatchStatus currentStatus = generationJobExecution.getStatus();
+                            stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
+                            stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
+                            stlJobGroupDto.setGroupId(groupId);
+                            stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
+                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                            if (stlJobGroupDto.isHeader()) {
+                                parentStlJobGroupDto = stlJobGroupDto;
+                            }
                         }
-                    }
                     /* OUTPUT GENERATION END */
 
-                    taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
-                    taskExecutionDto.setParentStlJobGroupDto(parentStlJobGroupDto);
-                    return taskExecutionDto;
+                        taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
+                        taskExecutionDto.setParentStlJobGroupDto(parentStlJobGroupDto);
+                        return taskExecutionDto;
+                    } else {
+                        return null;
+                    }
 
-                }).collect(toList());
+                })
+                .filter(Objects::nonNull)
+                .collect(toList());
 
         return new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size());
     }

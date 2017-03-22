@@ -122,69 +122,75 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     .stream().map((JobInstance jobInstance) -> {
 
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
-                        JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate).iterator().next();
+                                if (getJobExecutions(jobInstance).iterator().hasNext()) {
+                                    JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate).iterator().next();
 
-                        Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                        String jobName = jobExecution.getJobInstance().getJobName();
+                                    Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                                    String jobName = jobExecution.getJobInstance().getJobName();
 
-                        String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
-                        String user = (String) jobParameters.getOrDefault(USERNAME, "");
+                                    String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
+                                    String user = (String) jobParameters.getOrDefault(USERNAME, "");
 
-                        DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
-                        DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
-                        DateTimeFormatter displayFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+                                    DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
+                                    DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
+                                    DateTimeFormatter displayFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
 
-                        Date automaticTradngDayStart = null;
-                        Date automaticTradingDayEnd = null;
+                                    Date automaticTradngDayStart = null;
+                                    Date automaticTradingDayEnd = null;
 
-                        //todo handle exceptions, temporarily revert to original behavior when startDate is null
-                        LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
+                                    //todo handle exceptions, temporarily revert to original behavior when startDate is null
+                                    LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
-                        if (mode.equalsIgnoreCase("automatic")) {
-                            try {
-                                String automaticStart = jobExecution.getExecutionContext().getString("startDate");
-                                String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
+                                    if (mode.equalsIgnoreCase("automatic")) {
+                                        try {
+                                            String automaticStart = jobExecution.getExecutionContext().getString("startDate");
+                                            String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
 
-                                if (StringUtils.isEmpty(automaticEnd)) {
-                                    automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
-                                            .parseDateTime(automaticStart))).toDate();
+                                            if (StringUtils.isEmpty(automaticEnd)) {
+                                                automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
+                                                        .parseDateTime(automaticStart))).toDate();
+                                            } else {
+                                                automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                                        .parseDateTime(automaticStart))).toDate();
+                                                automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                                        .parseDateTime(automaticEnd))).toDate();
+                                            }
+
+                                        } catch (Exception e) {
+                                            automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                                            automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
+                                        }
+                                    }
+
+                                    Date tradingDayStart = !mode.equals("automatic") ? (Date) jobParameters.get("startDate")
+                                            : automaticTradngDayStart;
+                                    Date tradingDayEnd = !mode.equals("automatic") ? (Date) jobParameters.get("endDate")
+                                            : automaticTradingDayEnd;
+
+                                    dataInterfaceExecutionDTO.setId(jobInstance.getId());
+                                    dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
+                                    dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
+                                    dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
+                                    dataInterfaceExecutionDTO.setParams(jobParameters);
+                                    dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
+                                    dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
+                                    dataInterfaceExecutionDTO.setMode(mode);
+                                    dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
+                                    dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
+                                    dataInterfaceExecutionDTO.setUser(user);
+                                    setLogs(dataInterfaceExecutionDTO, jobExecution);
+
+                                    if (jobExecution.getStatus().isRunning()) {
+                                        calculateDataInterfaceProgress(jobExecution, dataInterfaceExecutionDTO);
+                                    }
+
+                                    return dataInterfaceExecutionDTO;
                                 } else {
-                                    automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
-                                            .parseDateTime(automaticStart))).toDate();
-                                    automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
-                                            .parseDateTime(automaticEnd))).toDate();
+                                    return null;
                                 }
-
-                            } catch (Exception e) {
-                                automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
-                                automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
-                            }
-                        }
-
-                        Date tradingDayStart = !mode.equals("automatic") ? (Date) jobParameters.get("startDate")
-                                : automaticTradngDayStart;
-                        Date tradingDayEnd = !mode.equals("automatic") ? (Date) jobParameters.get("endDate")
-                                : automaticTradingDayEnd;
-
-                        dataInterfaceExecutionDTO.setId(jobInstance.getId());
-                        dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
-                        dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
-                        dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
-                        dataInterfaceExecutionDTO.setParams(jobParameters);
-                        dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                        dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
-                        dataInterfaceExecutionDTO.setMode(mode);
-                        dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
-                        dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
-                        dataInterfaceExecutionDTO.setUser(user);
-                        setLogs(dataInterfaceExecutionDTO, jobExecution);
-
-                        if (jobExecution.getStatus().isRunning()) {
-                            calculateDataInterfaceProgress(jobExecution, dataInterfaceExecutionDTO);
-                        }
-
-                        return dataInterfaceExecutionDTO;
-                    }).collect(toList());
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(toList());
         }
         Collections.reverse(dataInterfaceExecutionDTOs);
         return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);

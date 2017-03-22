@@ -293,7 +293,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
             }
             if (stepExecution != null) {
                 if (stepExecution.getStepName().equals("step1")) {
-                    progressDto = processStepProgress(stepExecution, "Importing Data", "");
+                    progressDto = processStepProgress(stepExecution, "Importing Data");
                 }
             }
             taskExecutionDto.setProgress(progressDto);

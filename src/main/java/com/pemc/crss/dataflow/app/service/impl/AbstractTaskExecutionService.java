@@ -122,7 +122,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         return batchStatus.toString().concat("-").concat(suffix);
     }
 
-    protected TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr, String key) {
+    protected TaskProgressDto processStepProgress(StepExecution runningStep, String stepStr) {
         TaskProgressDto progressDto = new TaskProgressDto();
         progressDto.setRunningStep(stepStr);
         Long stepProg = redisTemplate.opsForValue().get(String.valueOf(runningStep.getId()));
@@ -218,17 +218,17 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
                     .findFirst().get();
             if (runningStep.getStepName().equals("processGapStep")) {
-                progressDto = processStepProgress(runningStep, "Generate gap records", "gapPartitionerTotal");
+                progressDto = processStepProgress(runningStep, "Generate gap records");
             } else if (runningStep.getStepName().equals("computeMqStep")) {
-                progressDto = processStepProgress(runningStep, "Generate raw mq data", "mqPartitionerTotal");
+                progressDto = processStepProgress(runningStep, "Generate raw mq data");
             } else if (runningStep.getStepName().equals("applySSLAStep")) {
-                progressDto = processStepProgress(runningStep, "Applying SSLA Computation", "sslaPartitionerTotal");
+                progressDto = processStepProgress(runningStep, "Applying SSLA Computation");
             } else if (runningStep.getStepName().equals("generateReportStep")) {
-                progressDto = processStepProgress(runningStep, "Generate Report", "reportPartitionerTotal");
+                progressDto = processStepProgress(runningStep, "Generate Report");
             } else if (runningStep.getStepName().equals("processStlReadyStep")) {
-                progressDto = processStepProgress(runningStep, "Process STL Ready", "processStlReadyStepTotal");
+                progressDto = processStepProgress(runningStep, "Process STL Ready");
             } else if (runningStep.getStepName().equals("generateMtrStep")) {
-                progressDto = processStepProgress(runningStep, "Generate MTR", "mtrPartitionerTotal");
+                progressDto = processStepProgress(runningStep, "Generate MTR");
             }
         }
         taskExecutionDto.setProgress(progressDto);

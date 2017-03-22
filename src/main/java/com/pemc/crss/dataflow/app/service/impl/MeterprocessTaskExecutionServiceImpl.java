@@ -127,7 +127,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
                                 taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
 
-                                if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
+                                if (taskExecutionDto.getSettlementStatus().isRunning()) {
+                                    calculateProgress(settlementJobExecution, taskExecutionDto);
+                                } else if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
                                 } else if (taskExecutionDto.getSettlementStatus() == BatchStatus.COMPLETED) {
                                     taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));

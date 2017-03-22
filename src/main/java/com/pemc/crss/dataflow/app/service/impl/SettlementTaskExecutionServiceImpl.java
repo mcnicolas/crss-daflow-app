@@ -394,16 +394,26 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             jobName = "crss-settlement-task-calculation";
 
-            if ((MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
-                    || MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType()))
-                    && (runningAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0)) {
-                RunningAdjustmentLock lock = new RunningAdjustmentLock();
-                lock.setLocked(true);
-                lock.setGroupId(groupId);
-                lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
-                lock.setStartDate(Date.from(baseStartDate.atZone(ZoneId.systemDefault()).toInstant()));
-                lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
-                runningAdjustmentLockRepository.save(lock);
+            if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
+                    || MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
+                if (runningAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0) {
+                    RunningAdjustmentLock lock = new RunningAdjustmentLock();
+                    lock.setLocked(true);
+                    lock.setGroupId(groupId);
+                    lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
+                    lock.setStartDate(Date.from(baseStartDate.atZone(ZoneId.systemDefault()).toInstant()));
+                    lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
+                    runningAdjustmentLockRepository.save(lock);
+                }
+                if (latestAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0) {
+                    LatestAdjustmentLock lock = new LatestAdjustmentLock();
+                    lock.setLocked(true);
+                    lock.setGroupId(groupId);
+                    lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
+                    lock.setStartDate(Date.from(baseStartDate.atZone(ZoneId.systemDefault()).toInstant()));
+                    lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
+                    latestAdjustmentLockRepository.save(lock);
+                }
             }
         } else if (FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();

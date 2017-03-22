@@ -167,7 +167,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 dto.setRunEndDate(calcJobExecution.getEndTime());
                                 partialCalculationDtoList.add(dto);
 
-                                if (!isDaily) {
+                                if (!isDaily && BatchStatus.COMPLETED == currentStatus) {
                                     removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
                                 }
 
@@ -278,7 +278,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (generationStlIterator.hasNext()) {
                             JobInstance generationStlJobInstance = generationStlIterator.next();
                             String generationStlJobName = generationStlJobInstance.getJobName();
-                            Iterator<JobExecution> generationStlExecIterator = getJobExecutions(generationStlJobInstance).iterator();
+                                                    Iterator<JobExecution> generationStlExecIterator = getJobExecutions(generationStlJobInstance).iterator();
                             if (generationStlExecIterator.hasNext()) {
                                 JobExecution generationJobExecution = generationStlExecIterator.next();
                                 JobParameters generationJobParameters = generationJobExecution.getJobParameters();

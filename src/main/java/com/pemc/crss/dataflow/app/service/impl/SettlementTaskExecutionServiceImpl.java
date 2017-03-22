@@ -131,51 +131,53 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (calcStlIterator.hasNext()) {
                             JobInstance calcStlJobInstance = calcStlIterator.next();
                             String calcStlJobName = calcStlJobInstance.getJobName();
-                            JobExecution calcJobExecution = getJobExecutions(calcStlJobInstance).iterator().next();
-                            BatchStatus currentStatus = calcJobExecution.getStatus();
-                            JobParameters calcJobParameters = calcJobExecution.getJobParameters();
-                            Long groupId = calcJobParameters.getLong(GROUP_ID);
-                            Date calcStartDate = calcJobParameters.getDate(START_DATE);
-                            Date calcEndDate = calcJobParameters.getDate(END_DATE);
+                            if (getJobExecutions(calcStlJobInstance).iterator().hasNext()) {
+                                JobExecution calcJobExecution = getJobExecutions(calcStlJobInstance).iterator().next();
+                                BatchStatus currentStatus = calcJobExecution.getStatus();
+                                JobParameters calcJobParameters = calcJobExecution.getJobParameters();
+                                Long groupId = calcJobParameters.getLong(GROUP_ID);
+                                Date calcStartDate = calcJobParameters.getDate(START_DATE);
+                                Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
-                            StlJobGroupDto stlJobGroupDto;
-                            if (stlJobGroupDtoMap.get(groupId) == null) {
-                                stlJobGroupDto = new StlJobGroupDto();
-                                stlJobGroupDto.setRemainingDates(new TreeSet<>(remainingDates));
-                            } else {
-                                stlJobGroupDto = stlJobGroupDtoMap.get(groupId);
-                            }
+                                StlJobGroupDto stlJobGroupDto;
+                                if (stlJobGroupDtoMap.get(groupId) == null) {
+                                    stlJobGroupDto = new StlJobGroupDto();
+                                    stlJobGroupDto.setRemainingDates(new TreeSet<>(remainingDates));
+                                } else {
+                                    stlJobGroupDto = stlJobGroupDtoMap.get(groupId);
+                                }
 //                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                            stlJobGroupDto.setHeader(jobId.equals(groupId));
-                            stlJobGroupDto.setRemainingDates(remainingDates);
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                stlJobGroupDto.setRemainingDates(remainingDates);
 
-                            List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
-                            if (partialCalculationDtoList == null) {
-                                partialCalculationDtoList = Lists.newArrayList();
-                                stlJobGroupDto.setRunStartDateTime(calcStartDate);
-                                stlJobGroupDto.setRunEndDateTime(calcEndDate);
-                            }
-                            PartialCalculationDto dto = new PartialCalculationDto();
-                            dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
-                            dto.setBillingStart(calcStartDate);
-                            dto.setBillingEnd(calcEndDate);
-                            dto.setRunDate(calcJobExecution.getStartTime());
-                            dto.setRunEndDate(calcJobExecution.getEndTime());
-                            partialCalculationDtoList.add(dto);
+                                List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
+                                if (partialCalculationDtoList == null) {
+                                    partialCalculationDtoList = Lists.newArrayList();
+                                    stlJobGroupDto.setRunStartDateTime(calcStartDate);
+                                    stlJobGroupDto.setRunEndDateTime(calcEndDate);
+                                }
+                                PartialCalculationDto dto = new PartialCalculationDto();
+                                dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
+                                dto.setBillingStart(calcStartDate);
+                                dto.setBillingEnd(calcEndDate);
+                                dto.setRunDate(calcJobExecution.getStartTime());
+                                dto.setRunEndDate(calcJobExecution.getEndTime());
+                                partialCalculationDtoList.add(dto);
 
-                            if (!isDaily) {
-                                removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
-                            }
+                                if (!isDaily) {
+                                    removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                                }
 
-                            stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
-                            stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));
-                            stlJobGroupDto.setGroupId(groupId);
-                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                                stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
+                                stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));
+                                stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
-                            if (stlJobGroupDto.isHeader()) {
-                                parentStlJobGroupDto = stlJobGroupDto;
+                                if (stlJobGroupDto.isHeader()) {
+                                    parentStlJobGroupDto = stlJobGroupDto;
+                                }
                             }
                         }
                     /* CALCULATION END */
@@ -188,20 +190,22 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (calcTagStlIterator.hasNext()) {
                             JobInstance calcTagStlJobInstance = calcTagStlIterator.next();
                             String calcTagStlJobName = calcTagStlJobInstance.getJobName();
-                            JobExecution calcTagJobExecution = getJobExecutions(calcTagStlJobInstance).iterator().next();
-                            JobParameters calcTagJobParameters = calcTagJobExecution.getJobParameters();
-                            Long groupId = calcTagJobParameters.getLong(GROUP_ID);
-                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                            stlJobGroupDto.setHeader(jobId.equals(groupId));
-                            BatchStatus currentStatus = calcTagJobExecution.getStatus();
-                            stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
-                            stlJobGroupDto.setStlAmtTaggingStatus(currentStatus);
-                            stlJobGroupDto.setGroupId(groupId);
-                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                            if (stlJobGroupDto.isHeader()) {
-                                parentStlJobGroupDto = stlJobGroupDto;
+                            if (getJobExecutions(calcTagStlJobInstance).iterator().hasNext()) {
+                                JobExecution calcTagJobExecution = getJobExecutions(calcTagStlJobInstance).iterator().next();
+                                JobParameters calcTagJobParameters = calcTagJobExecution.getJobParameters();
+                                Long groupId = calcTagJobParameters.getLong(GROUP_ID);
+                                StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                BatchStatus currentStatus = calcTagJobExecution.getStatus();
+                                stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
+                                stlJobGroupDto.setStlAmtTaggingStatus(currentStatus);
+                                stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                                if (stlJobGroupDto.isHeader()) {
+                                    parentStlJobGroupDto = stlJobGroupDto;
+                                }
                             }
                         }
                     /* CALCULATION TAGGING END */
@@ -214,20 +218,22 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (calcGmrStlIterator.hasNext()) {
                             JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
                             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
-                            JobExecution calcGmrJobExecution = getJobExecutions(calcGmrStlJobInstance).iterator().next();
-                            JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
-                            Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
-                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                            stlJobGroupDto.setHeader(jobId.equals(groupId));
-                            BatchStatus currentStatus = calcGmrJobExecution.getStatus();
-                            stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
-                            stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
-                            stlJobGroupDto.setGroupId(groupId);
-                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                            if (stlJobGroupDto.isHeader()) {
-                                parentStlJobGroupDto = stlJobGroupDto;
+                            if (getJobExecutions(calcGmrStlJobInstance).iterator().hasNext()) {
+                                JobExecution calcGmrJobExecution = getJobExecutions(calcGmrStlJobInstance).iterator().next();
+                                JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
+                                Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
+                                StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                BatchStatus currentStatus = calcGmrJobExecution.getStatus();
+                                stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
+                                stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
+                                stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                                if (stlJobGroupDto.isHeader()) {
+                                    parentStlJobGroupDto = stlJobGroupDto;
+                                }
                             }
                         }
                     /* CALCULATION GMR END */
@@ -240,20 +246,22 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (tagGmrStlIterator.hasNext()) {
                             JobInstance tagGmrStlJobInstance = tagGmrStlIterator.next();
                             String tagGmrStlJobName = tagGmrStlJobInstance.getJobName();
-                            JobExecution tagGmrJobExecution = getJobExecutions(tagGmrStlJobInstance).iterator().next();
-                            JobParameters tagGmrJobParameters = tagGmrJobExecution.getJobParameters();
-                            Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
-                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                            stlJobGroupDto.setHeader(jobId.equals(groupId));
-                            BatchStatus currentStatus = tagGmrJobExecution.getStatus();
-                            stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
-                            stlJobGroupDto.setGmrVatMFeeTaggingStatus(currentStatus);
-                            stlJobGroupDto.setGroupId(groupId);
-                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                            if (stlJobGroupDto.isHeader()) {
-                                parentStlJobGroupDto = stlJobGroupDto;
+                            if (getJobExecutions(tagGmrStlJobInstance).iterator().hasNext()) {
+                                JobExecution tagGmrJobExecution = getJobExecutions(tagGmrStlJobInstance).iterator().next();
+                                JobParameters tagGmrJobParameters = tagGmrJobExecution.getJobParameters();
+                                Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
+                                StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                BatchStatus currentStatus = tagGmrJobExecution.getStatus();
+                                stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
+                                stlJobGroupDto.setGmrVatMFeeTaggingStatus(currentStatus);
+                                stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                                if (stlJobGroupDto.isHeader()) {
+                                    parentStlJobGroupDto = stlJobGroupDto;
+                                }
                             }
                         }
                     /* TAGGING GMR END */
@@ -266,21 +274,23 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         while (generationStlIterator.hasNext()) {
                             JobInstance generationStlJobInstance = generationStlIterator.next();
                             String generationStlJobName = generationStlJobInstance.getJobName();
-                            JobExecution generationJobExecution = getJobExecutions(generationStlJobInstance).iterator().next();
-                            JobParameters generationJobParameters = generationJobExecution.getJobParameters();
-                            Long groupId = generationJobParameters.getLong(GROUP_ID);
-                            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                            stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                            stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                            stlJobGroupDto.setHeader(jobId.equals(groupId));
-                            BatchStatus currentStatus = generationJobExecution.getStatus();
-                            stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
-                            stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
-                            stlJobGroupDto.setGroupId(groupId);
-                            stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
-                            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                            if (stlJobGroupDto.isHeader()) {
-                                parentStlJobGroupDto = stlJobGroupDto;
+                            if (getJobExecutions(generationStlJobInstance).iterator().hasNext()) {
+                                JobExecution generationJobExecution = getJobExecutions(generationStlJobInstance).iterator().next();
+                                JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+                                Long groupId = generationJobParameters.getLong(GROUP_ID);
+                                StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                BatchStatus currentStatus = generationJobExecution.getStatus();
+                                stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
+                                stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
+                                stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
+                                stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                                if (stlJobGroupDto.isHeader()) {
+                                    parentStlJobGroupDto = stlJobGroupDto;
+                                }
                             }
                         }
                     /* OUTPUT GENERATION END */

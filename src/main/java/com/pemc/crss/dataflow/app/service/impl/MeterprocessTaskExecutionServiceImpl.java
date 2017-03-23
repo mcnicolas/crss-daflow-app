@@ -113,7 +113,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution mqReportJobExecution = getJobExecutions(mqReportJobs.get(0)).iterator().next();
                                 taskExecutionDto.setMqReportStatus(mqReportJobExecution.getStatus());
 
-                                if (taskExecutionDto.getMqReportStatus().isUnsuccessful()) {
+                                if (taskExecutionDto.getRcoaStatus().isRunning()) {
+                                    calculateProgress(mqReportJobExecution, taskExecutionDto);
+                                } else if (taskExecutionDto.getMqReportStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(mqReportJobExecution));
                                 } else if (taskExecutionDto.getMqReportStatus() == BatchStatus.COMPLETED) {
                                     taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution));

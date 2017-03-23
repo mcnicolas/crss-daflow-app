@@ -24,3 +24,9 @@ spring:
   cloud:
     config:
       uri: http://crssconfig-server.marathon.l4lb.thisdcos.directory:8080
+---
+spring:
+  profiles: pemc-uat
+  cloud:
+    config:
+      uri: http://crssconfig-server.marathon.l4lb.thisdcos.directory:8080

@@ -408,7 +408,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
                     runningAdjustmentLockRepository.save(lock);
                 }
-                if (latestAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0) {
+                if (taskRunDto.isNewGroup() && latestAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0) {
                     LatestAdjustmentLock lock = new LatestAdjustmentLock();
                     lock.setLocked(true);
                     lock.setGroupId(groupId);

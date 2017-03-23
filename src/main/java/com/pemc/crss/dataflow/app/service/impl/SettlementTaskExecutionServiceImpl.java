@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
@@ -191,9 +192,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         String calcTagQueryString = FINALIZE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> calcTagStlJobInstances = jobExplorer.findJobInstancesByJobName(calcTagQueryString, 0, Integer.MAX_VALUE);
                         Iterator<JobInstance> calcTagStlIterator = calcTagStlJobInstances.iterator();
+                        Set<String> calcTagNames = Sets.newHashSet();
                         while (calcTagStlIterator.hasNext()) {
                             JobInstance calcTagStlJobInstance = calcTagStlIterator.next();
                             String calcTagStlJobName = calcTagStlJobInstance.getJobName();
+                            if (calcTagNames.contains(calcTagStlJobName)) {
+                                continue;
+                            }
                             Iterator<JobExecution> calcTagStlExecIterator = getJobExecutions(calcTagStlJobInstance).iterator();
                             if (calcTagStlExecIterator.hasNext()) {
                                 JobExecution calcTagJobExecution = calcTagStlExecIterator.next();
@@ -212,6 +217,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     parentStlJobGroupDto = stlJobGroupDto;
                                 }
                             }
+                            calcTagNames.add(calcTagStlJobName);
                         }
                     /* CALCULATION TAGGING END */
 
@@ -220,9 +226,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         String calcGmrQueryString = COMPUTE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> calcGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(calcGmrQueryString, 0, Integer.MAX_VALUE);
                         Iterator<JobInstance> calcGmrStlIterator = calcGmrStlJobInstances.iterator();
+                        Set<String> calcGmrNames = Sets.newHashSet();
                         while (calcGmrStlIterator.hasNext()) {
                             JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
                             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
+                            if (calcGmrNames.contains(calcGmrStlJobName)) {
+                                continue;
+                            }
                             Iterator<JobExecution> calcGmrStlExecIterator = getJobExecutions(calcGmrStlJobInstance).iterator();
                             if (calcGmrStlExecIterator.hasNext()) {
                                 JobExecution calcGmrJobExecution = calcGmrStlExecIterator.next();
@@ -241,6 +251,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     parentStlJobGroupDto = stlJobGroupDto;
                                 }
                             }
+                            calcGmrNames.add(calcGmrStlJobName);
                         }
                     /* CALCULATION GMR END */
 
@@ -249,9 +260,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         String tagGmrQueryString = FINALIZE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> tagGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(tagGmrQueryString, 0, Integer.MAX_VALUE);
                         Iterator<JobInstance> tagGmrStlIterator = tagGmrStlJobInstances.iterator();
+                        Set<String> tagGmrNames = Sets.newHashSet();
                         while (tagGmrStlIterator.hasNext()) {
                             JobInstance tagGmrStlJobInstance = tagGmrStlIterator.next();
                             String tagGmrStlJobName = tagGmrStlJobInstance.getJobName();
+                            if (tagGmrNames.contains(tagGmrStlJobName)) {
+                                continue;
+                            }
                             Iterator<JobExecution> tagGmrStlExecIterator = getJobExecutions(tagGmrStlJobInstance).iterator();
                             if (tagGmrStlExecIterator.hasNext()) {
                                 JobExecution tagGmrJobExecution = tagGmrStlExecIterator.next();
@@ -270,6 +285,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     parentStlJobGroupDto = stlJobGroupDto;
                                 }
                             }
+                            tagGmrNames.add(tagGmrStlJobName);
                         }
                     /* TAGGING GMR END */
 
@@ -278,10 +294,14 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         String generationQueryString = GENERATE_INVOICE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> generationStlJobInstances = jobExplorer.findJobInstancesByJobName(generationQueryString, 0, Integer.MAX_VALUE);
                         Iterator<JobInstance> generationStlIterator = generationStlJobInstances.iterator();
+                        Set<String> generationNames = Sets.newHashSet();
                         while (generationStlIterator.hasNext()) {
                             JobInstance generationStlJobInstance = generationStlIterator.next();
                             String generationStlJobName = generationStlJobInstance.getJobName();
-                                                    Iterator<JobExecution> generationStlExecIterator = getJobExecutions(generationStlJobInstance).iterator();
+                            if (generationNames.contains(generationStlJobName)) {
+                                continue;
+                            }
+                            Iterator<JobExecution> generationStlExecIterator = getJobExecutions(generationStlJobInstance).iterator();
                             if (generationStlExecIterator.hasNext()) {
                                 JobExecution generationJobExecution = generationStlExecIterator.next();
                                 JobParameters generationJobParameters = generationJobExecution.getJobParameters();
@@ -300,6 +320,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     parentStlJobGroupDto = stlJobGroupDto;
                                 }
                             }
+                            generationNames.add(generationStlJobName);
                         }
                     /* OUTPUT GENERATION END */
 

@@ -362,7 +362,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
-                    if (taskRunDto.isHeader() && batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {
+                    if (batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun first = new BatchJobAdjRun();
                         first.setBillingPeriodStart(baseStartDate);
                         first.setBillingPeriodEnd(baseEndDate);
@@ -371,7 +371,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         first.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
                         batchJobAdjRunRepository.save(first);
                     }
-                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun latest = new BatchJobAdjRun();
                         latest.setBillingPeriodStart(baseStartDate);
                         latest.setBillingPeriodEnd(baseEndDate);

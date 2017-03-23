@@ -1,7 +1,7 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
-def allowableProfiles = ['dev', 'qa', 'dev2']
+def allowableProfiles = ['dev', 'qa', 'dev2', 'pemc-uat']
 
 if (project.hasProperty('env') && !allowableProfiles.contains(project.env)) {
     throw new IllegalArgumentException("Unknown environment supplied: ${project.env}")

@@ -112,6 +112,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             latestGroupId = iteratorLatest.hasNext() ? iteratorLatest.next().getGroupId() : null;
                         }
 
+                        taskExecutionDto.setCurrentlyRunningId(lockedGroupId);
+                        taskExecutionDto.setLatestAdjustmentId(latestGroupId);
+
                         StlJobGroupDto parentStlJobGroupDto = new StlJobGroupDto();
                         parentStlJobGroupDto.setGroupId(jobId);
                         parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));

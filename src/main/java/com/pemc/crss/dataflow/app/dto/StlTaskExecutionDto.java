@@ -8,6 +8,10 @@ public class StlTaskExecutionDto extends BaseTaskExecutionDto {
 
     private BatchStatus stlReadyStatus;
 
+    private Long currentlyRunningId;
+
+    private Long latestAdjustmentId;
+
     private StlJobGroupDto parentStlJobGroupDto;
 
     private Map<Long, StlJobGroupDto> stlJobGroupDtoMap;
@@ -18,6 +22,22 @@ public class StlTaskExecutionDto extends BaseTaskExecutionDto {
 
     public void setStlReadyStatus(BatchStatus stlReadyStatus) {
         this.stlReadyStatus = stlReadyStatus;
+    }
+
+    public Long getCurrentlyRunningId() {
+        return currentlyRunningId;
+    }
+
+    public void setCurrentlyRunningId(Long currentlyRunningId) {
+        this.currentlyRunningId = currentlyRunningId;
+    }
+
+    public Long getLatestAdjustmentId() {
+        return latestAdjustmentId;
+    }
+
+    public void setLatestAdjustmentId(Long latestAdjustmentId) {
+        this.latestAdjustmentId = latestAdjustmentId;
     }
 
     public StlJobGroupDto getParentStlJobGroupDto() {

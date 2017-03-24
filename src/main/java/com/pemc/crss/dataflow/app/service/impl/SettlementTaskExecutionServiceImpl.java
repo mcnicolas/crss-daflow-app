@@ -157,7 +157,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 }
 //                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 stlJobGroupDto.setRemainingDates(remainingDates);
 
@@ -210,7 +210,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 Long groupId = calcTagJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = calcTagJobExecution.getStatus();
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
@@ -244,7 +244,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = calcGmrJobExecution.getStatus();
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
@@ -278,7 +278,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 Long groupId = tagGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = tagGmrJobExecution.getStatus();
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
@@ -312,7 +312,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 Long groupId = generationJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = generationJobExecution.getStatus();
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));

@@ -1,7 +1,5 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -17,6 +15,7 @@ import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsReposito
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.LatestAdjustmentLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -392,35 +391,24 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
-                    log.debug("finalBased: " + finalBased);
-                    log.debug("baseStartDate: " + baseStartDate);
-                    log.debug("baseEndDate: " + baseEndDate);
-                    long countBP = batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate);
-                    log.debug("countBP: " + countBP);
-
-                    log.debug("taskRunDto.getGroupId(): " + taskRunDto.getGroupId());
-                    long countGroupIdBP = batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(
-                            taskRunDto.getGroupId(), baseStartDate, baseEndDate);
-                    log.debug("countGroupIdBP: " + countGroupIdBP);
-
-//                    if (batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate) < 1) {
-//                        BatchJobAdjRun first = new BatchJobAdjRun();
-//                        first.setBillingPeriodStart(baseStartDate);
-//                        first.setBillingPeriodEnd(baseEndDate);
-//                        first.setGroupId(taskRunDto.getGroupId());
-//                        first.setJobId(taskRunDto.getParentJob());
-//                        first.setMeterProcessType(MeterProcessType.FINAL);
-//                        batchJobAdjRunRepository.save(first);
-//                    }
-//                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {
-//                        BatchJobAdjRun latest = new BatchJobAdjRun();
-//                        latest.setBillingPeriodStart(baseStartDate);
-//                        latest.setBillingPeriodEnd(baseEndDate);
-//                        latest.setGroupId(groupId.toString());
-//                        latest.setJobId(taskRunDto.getParentJob());
-//                        latest.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
-//                        batchJobAdjRunRepository.save(latest);
-//                    }
+                    if (batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate) < 1) {
+                        BatchJobAdjRun first = new BatchJobAdjRun();
+                        first.setBillingPeriodStart(baseStartDate);
+                        first.setBillingPeriodEnd(baseEndDate);
+                        first.setGroupId(taskRunDto.getGroupId());
+                        first.setJobId(taskRunDto.getParentJob());
+                        first.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
+                        batchJobAdjRunRepository.save(first);
+                    }
+                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                        BatchJobAdjRun latest = new BatchJobAdjRun();
+                        latest.setBillingPeriodStart(baseStartDate);
+                        latest.setBillingPeriodEnd(baseEndDate);
+                        latest.setGroupId(groupId.toString());
+                        latest.setJobId(taskRunDto.getParentJob());
+                        latest.setMeterProcessType(MeterProcessType.ADJUSTED);
+                        batchJobAdjRunRepository.save(latest);
+                    }
 
                     if (finalBased) {
                         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlAmtsMtrFinCalculation")));

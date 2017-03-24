@@ -404,7 +404,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         first.setBillingPeriodEnd(baseEndDate);
                         first.setGroupId(taskRunDto.getGroupId());
                         first.setJobId(taskRunDto.getParentJob());
-                        first.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
+                        first.setMeterProcessType(MeterProcessType.FINAL);
                         batchJobAdjRunRepository.save(first);
 //                    }
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {

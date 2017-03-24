@@ -170,8 +170,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
             final Long runId = System.currentTimeMillis();
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
+                arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
                 String processType = taskRunDto.getMeterProcessType();
                 if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
@@ -179,87 +179,87 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
                     checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
                 }
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
 
                 List<BatchJobAddtlParams> addtlParams = new ArrayList<>();
 
                 BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
                 paramsBillingPeriodId.setRunId(runId);
-                paramsBillingPeriodId.setType("LONG");
+                paramsBillingPeriodId.setType(PARAMS_TYPE_LONG);
                 paramsBillingPeriodId.setKey(PARAMS_BILLING_PERIOD_ID);
                 paramsBillingPeriodId.setLongVal(taskRunDto.getBillingPeriodId());
                 addtlParams.add(paramsBillingPeriodId);
 
                 BatchJobAddtlParams paramsBillingPeriod = new BatchJobAddtlParams();
                 paramsBillingPeriod.setRunId(runId);
-                paramsBillingPeriod.setType("LONG");
+                paramsBillingPeriod.setType(PARAMS_TYPE_LONG);
                 paramsBillingPeriod.setKey(PARAMS_BILLING_PERIOD);
                 paramsBillingPeriod.setLongVal(taskRunDto.getBillingPeriod());
                 addtlParams.add(paramsBillingPeriod);
 
                 BatchJobAddtlParams paramsSupplyMonth = new BatchJobAddtlParams();
                 paramsSupplyMonth.setRunId(runId);
-                paramsSupplyMonth.setType("STRING");
+                paramsSupplyMonth.setType(PARAMS_TYPE_STRING);
                 paramsSupplyMonth.setKey(PARAMS_SUPPLY_MONTH);
                 paramsSupplyMonth.setStringVal(taskRunDto.getSupplyMonth());
                 addtlParams.add(paramsSupplyMonth);
 
                 BatchJobAddtlParams paramsBillingPeriodName = new BatchJobAddtlParams();
                 paramsBillingPeriodName.setRunId(runId);
-                paramsBillingPeriodName.setType("STRING");
+                paramsBillingPeriodName.setType(PARAMS_TYPE_STRING);
                 paramsBillingPeriodName.setKey(PARAMS_BILLING_PERIOD_NAME);
                 paramsBillingPeriodName.setStringVal(taskRunDto.getBillingPeriodName());
                 addtlParams.add(paramsBillingPeriodName);
 
                 batchJobAddtlParamsRepository.save(addtlParams);
 
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
             }
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-            arguments.add(concatKeyValue(METER_TYPE, "MIRF_MT_WESM"));
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
+            arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
             JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
             boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
             if (isDaily) {
-                arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), "date"));
+                arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
-                arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), "date"));
-                arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), "date"));
+                arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), PARAMS_TYPE_DATE));
+                arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, jobParameters.getString(PROCESS_TYPE)));
             }
-            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
+            arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), PARAMS_TYPE_LONG));
             if (RUN_RCOA_JOB_NAME.equals(taskRunDto.getJobName())) {
-                arguments.add(concatKeyValue(METER_TYPE, "MIRF_MT_RCOA"));
+                arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_RCOA));
                 if (isDaily) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
                 } else {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMq")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
                 }
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMq")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
                 } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelim")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_PRELIM)));
                 } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
                     checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinal")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_FINAL)));
                 } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
                     checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjusted")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_ADJUSTED)));
                 }
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMqReport")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ_REPORT)));
                 } else {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMqReport")));
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ_REPORT)));
                 }
                 arguments.remove(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                 jobName = "crss-meterprocess-task-mqcomputation";

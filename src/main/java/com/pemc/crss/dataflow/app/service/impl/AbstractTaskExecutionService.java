@@ -59,6 +59,18 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
     protected static final String USERNAME = "username";
     protected static final String QUOTE = "\"";
+    protected static final String PARAMS_TYPE_STRING = "string";
+    protected static final String PARAMS_TYPE_LONG = "long";
+    protected static final String PARAMS_TYPE_DATE = "date";
+    protected static final String PROFILE_DAILY_MQ= "dailyMq";
+    protected static final String PROFILE_MONTHLY_MQ= "monthlyMq";
+    protected static final String PROFILE_MONTHLY_PRELIM= "monthlyPrelim";
+    protected static final String PROFILE_MONTHLY_FINAL= "monthlyFinal";
+    protected static final String PROFILE_MONTHLY_ADJUSTED= "monthlyAdjusted";
+    protected static final String PROFILE_DAILY_MQ_REPORT= "dailyMqReport";
+    protected static final String PROFILE_MONTHLY_MQ_REPORT= "monthlyMqReport";
+    protected static final String METER_TYPE_WESM= "MIRF_MT_WESM";
+    protected static final String METER_TYPE_RCOA= "MIRF_MT_RCOA";
 
     @Autowired
     protected ExecutionParamRepository executionParamRepository;

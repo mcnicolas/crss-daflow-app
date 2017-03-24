@@ -1,5 +1,7 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -35,6 +37,7 @@ import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
+@Slf4j
 @Service("settlementTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
 public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionService {
@@ -389,7 +392,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
-                    if (batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate) < 1) {
+                    log.debug("finalBased: " + finalBased);
+                    log.debug("baseStartDate: " + baseStartDate);
+                    log.debug("baseEndDate: " + baseEndDate);
+                    long countBP = batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate);
+                    log.debug("countBP: " + countBP);
+
+//                    if (batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun first = new BatchJobAdjRun();
                         first.setBillingPeriodStart(baseStartDate);
                         first.setBillingPeriodEnd(baseEndDate);
@@ -397,7 +406,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         first.setJobId(taskRunDto.getParentJob());
                         first.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
                         batchJobAdjRunRepository.save(first);
-                    }
+//                    }
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(taskRunDto.getGroupId(), baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun latest = new BatchJobAdjRun();
                         latest.setBillingPeriodStart(baseStartDate);

@@ -79,6 +79,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
                         Long jobId = jobExecution.getJobId();
                         BatchStatus jobStatus = jobExecution.getStatus();
+                        if (BatchStatus.COMPLETED != jobStatus) {
+                            LOG.debug("Job processStlReady with id {} removed with status: {} ", jobId, jobStatus.name());
+                            return null;
+                        }
                         LOG.debug("Processing processStlReady jobId {}", jobId);
 
                         String parentId = jobInstance.getJobName().split("-")[1];

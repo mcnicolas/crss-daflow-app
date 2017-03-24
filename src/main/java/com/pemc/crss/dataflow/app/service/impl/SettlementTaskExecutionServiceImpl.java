@@ -164,8 +164,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
                                 if (partialCalculationDtoList == null) {
                                     partialCalculationDtoList = Lists.newArrayList();
-                                    stlJobGroupDto.setRunStartDateTime(calcStartDate);
-                                    stlJobGroupDto.setRunEndDateTime(calcEndDate);
+                                    stlJobGroupDto.setRunStartDateTime(calcJobExecution.getStartTime());
+                                    stlJobGroupDto.setRunEndDateTime(calcJobExecution.getEndTime());
                                 }
                                 PartialCalculationDto dto = new PartialCalculationDto();
                                 dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));

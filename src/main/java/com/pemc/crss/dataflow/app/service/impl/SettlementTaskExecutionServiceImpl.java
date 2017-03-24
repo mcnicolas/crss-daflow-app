@@ -376,6 +376,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 try {
                     baseStartDate = DateUtil.getStartRangeDate(taskRunDto.getBaseStartDate());
                     baseEndDate = DateUtil.getStartRangeDate(taskRunDto.getBaseEndDate());
+                    start = DateUtil.convertToDate(baseStartDate);
+                    end = DateUtil.convertToDate(baseEndDate);
                 } catch (ParseException e) {
                     LOG.warn("Unable to parse billing date", e);
                 }
@@ -420,7 +422,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
             if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
                     || MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
-                if (runningAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0) {
+                if (runningAdjustmentLockRepository.lockJob(groupId, Long.parseLong(taskRunDto.getParentJob()), start, end) == 0) {
                     RunningAdjustmentLock lock = new RunningAdjustmentLock();
                     lock.setLocked(true);
                     lock.setGroupId(groupId);
@@ -429,7 +431,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
                     runningAdjustmentLockRepository.save(lock);
                 }
-                if (taskRunDto.isNewGroup() && latestAdjustmentLockRepository.lockJob(Long.parseLong(taskRunDto.getParentJob()), groupId, start, end) == 0) {
+                if (taskRunDto.isNewGroup() && latestAdjustmentLockRepository.lockJob(groupId, Long.parseLong(taskRunDto.getParentJob()), start, end) == 0) {
                     LatestAdjustmentLock lock = new LatestAdjustmentLock();
                     lock.setLocked(true);
                     lock.setGroupId(groupId);

@@ -391,23 +391,14 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
-                    if (batchJobAdjRunRepository.countByBillingPeriodStartAndBillingPeriodEnd(baseStartDate, baseEndDate) < 1) {
-                        BatchJobAdjRun first = new BatchJobAdjRun();
-                        first.setBillingPeriodStart(baseStartDate);
-                        first.setBillingPeriodEnd(baseEndDate);
-                        first.setGroupId(taskRunDto.getGroupId());
-                        first.setJobId(taskRunDto.getParentJob());
-                        first.setMeterProcessType(finalBased ? MeterProcessType.FINAL : MeterProcessType.ADJUSTED);
-                        batchJobAdjRunRepository.save(first);
-                    }
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
-                        BatchJobAdjRun latest = new BatchJobAdjRun();
-                        latest.setBillingPeriodStart(baseStartDate);
-                        latest.setBillingPeriodEnd(baseEndDate);
-                        latest.setGroupId(groupId.toString());
-                        latest.setJobId(taskRunDto.getParentJob());
-                        latest.setMeterProcessType(MeterProcessType.ADJUSTED);
-                        batchJobAdjRunRepository.save(latest);
+                        BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
+                        batchJobAdjRun.setBillingPeriodStart(baseStartDate);
+                        batchJobAdjRun.setBillingPeriodEnd(baseEndDate);
+                        batchJobAdjRun.setGroupId(groupId.toString());
+                        batchJobAdjRun.setJobId(taskRunDto.getParentJob());
+                        batchJobAdjRun.setMeterProcessType(MeterProcessType.ADJUSTED);
+                        batchJobAdjRunRepository.save(batchJobAdjRun);
                     }
 
                     if (finalBased) {
@@ -418,6 +409,15 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 } else if (MeterProcessType.PRELIMINARY.name().equals(type) || MeterProcessType.PRELIM.name().equals(type)) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimStlAmtsCalculation")));
                 } else if (MeterProcessType.FINAL.name().equals(type)) {
+                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                        BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
+                        batchJobAdjRun.setBillingPeriodStart(baseStartDate);
+                        batchJobAdjRun.setBillingPeriodEnd(baseEndDate);
+                        batchJobAdjRun.setGroupId(taskRunDto.getGroupId());
+                        batchJobAdjRun.setJobId(taskRunDto.getParentJob());
+                        batchJobAdjRun.setMeterProcessType(MeterProcessType.FINAL);
+                        batchJobAdjRunRepository.save(batchJobAdjRun);
+                    }
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlAmtsCalculation")));
                 }
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));

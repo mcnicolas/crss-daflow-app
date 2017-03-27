@@ -32,10 +32,10 @@ public class DataInterfaceTaskExecutionResource {
     public ResponseEntity<Page<? extends BaseTaskExecutionDto>> findDataInterfaceJobInstances(
             Pageable pageable, @RequestParam String type, @RequestParam String status, @RequestParam String mode,
             @RequestParam String runStartDate, @RequestParam String runEndDate, @RequestParam String tradingStartDate,
-            @RequestParam String tradingEndDate) {
+            @RequestParam String tradingEndDate, @RequestParam String username) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable, type, status, mode,
-                runStartDate, tradingStartDate, tradingEndDate), HttpStatus.OK);
+                runStartDate, tradingStartDate, tradingEndDate, username), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)

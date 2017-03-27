@@ -19,7 +19,7 @@ public interface TaskExecutionService {
     Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type,
                                                           String status, String mode,
                                                           String runStartDate, String tradingStartDate,
-                                                          String tradingEndDate);
+                                                          String tradingEndDate, String username);
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 

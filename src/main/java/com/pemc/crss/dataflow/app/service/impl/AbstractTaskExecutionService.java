@@ -147,10 +147,9 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     }
 
     protected List<JobExecution> getJobExecutions(JobInstance jobInstance, String status, String mode,
-                                                  String runStartDate, String runEndDate,
-                                                  String tradingStartDate, String tradingEndDate) {
+                                                  String runStartDate, String tradingStartDate, String tradingEndDate) {
         List<JobExecution> executions = dataFlowJdbcJobExecutionDao.findJobExecutions(jobInstance,
-                status, mode, runStartDate, runEndDate, tradingStartDate, tradingEndDate);
+                status, mode, runStartDate, tradingStartDate, tradingEndDate);
         for (JobExecution jobExecution : executions) {
             getJobExecutionDependencies(jobExecution);
             for (StepExecution stepExecution : jobExecution.getStepExecutions()) {

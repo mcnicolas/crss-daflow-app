@@ -103,27 +103,27 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
 
     public Page<DataInterfaceExecutionDTO> findJobInstances(Pageable pageable, String type,
                                                             String status, String filterMode,
-                                                            String runStartDate, String runEndDate,
-                                                            String tradingStartDate, String tradingEndDate) {
+                                                            String runStartDate, String tradingStartDate,
+                                                            String tradingEndDate) {
 
         List<DataInterfaceExecutionDTO> dataInterfaceExecutionDTOs = new ArrayList<>();
 
         int count = 0;
 
         try {
-            count += dataFlowJdbcJobExecutionDao.getJobInstanceCount(type, status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate);
+            count += dataFlowJdbcJobExecutionDao.getJobInstanceCount(type, status, filterMode, runStartDate, tradingStartDate, tradingEndDate);
         } catch (NoSuchJobException e) {
             LOG.error("Exception: " + e);
         }
 
         if (count > 0) {
             dataInterfaceExecutionDTOs = dataFlowJdbcJobExecutionDao.findJobInstancesByName(type,
-                    pageable.getOffset(), pageable.getPageSize(), status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate)
+                    pageable.getOffset(), pageable.getPageSize(), status, filterMode, runStartDate, tradingStartDate, tradingEndDate)
                     .stream().map((JobInstance jobInstance) -> {
 
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
                                 if (getJobExecutions(jobInstance).iterator().hasNext()) {
-                                    JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate, runEndDate, tradingStartDate, tradingEndDate).iterator().next();
+                                    JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate, tradingStartDate, tradingEndDate).iterator().next();
 
                                     Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                                     String jobName = jobExecution.getJobInstance().getJobName();

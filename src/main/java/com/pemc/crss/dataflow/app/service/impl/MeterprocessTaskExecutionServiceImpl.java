@@ -151,7 +151,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     @Override
-    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String runEndDate, String tradingStartDate, String tradingEndDate) {
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate) {
         return null;
     }
 

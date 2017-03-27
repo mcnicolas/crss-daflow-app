@@ -35,7 +35,7 @@ public class DataInterfaceTaskExecutionResource {
             @RequestParam String tradingEndDate) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable, type, status, mode,
-                runStartDate, runEndDate, tradingStartDate, tradingEndDate), HttpStatus.OK);
+                runStartDate, tradingStartDate, tradingEndDate), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)

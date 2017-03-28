@@ -56,6 +56,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private static final String AMS_REMARKS_INV = "amsRemarksInv";
     private static final String AMS_REMARKS_MF = "amsRemarksMf";
 
+    // from batch_job_execution_context
+    private static final String INVOICE_GENERATION_FILENAME = "INVOICE_GENERATION_FILENAME";
+
     private static final String GROUP_ID = "groupId";
 
     @Autowired
@@ -321,7 +324,14 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
                                 stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
+                                stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
+                                stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+                                Optional.ofNullable(generationJobExecution.getExecutionContext()
+                                    .get(INVOICE_GENERATION_FILENAME)).ifPresent(val ->
+                                        stlJobGroupDto.setInvoiceGenFolder((String) val));
+
                                 if (stlJobGroupDto.isHeader()) {
                                     parentStlJobGroupDto = stlJobGroupDto;
                                 }

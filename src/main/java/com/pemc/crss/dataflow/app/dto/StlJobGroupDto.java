@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.dto;
 
+import com.pemc.crss.shared.commons.util.DateUtil;
 import org.springframework.batch.core.BatchStatus;
 
 import java.time.LocalDate;
@@ -21,6 +22,9 @@ public class StlJobGroupDto {
     private Date runStartDateTime;
     private Date runEndDateTime;
     private Long runId;
+
+    // folder in sftp server where files are uploaded
+    private String invoiceGenFolder;
 
     private List<PartialCalculationDto> partialCalculationDtos;
 
@@ -118,12 +122,22 @@ public class StlJobGroupDto {
         return runStartDateTime;
     }
 
+    public String getRunStartDateTimeStr() {
+        return runEndDateTime != null
+                ? DateUtil.convertToString(runStartDateTime, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
     public void setRunStartDateTime(Date runStartDateTime) {
         this.runStartDateTime = runStartDateTime;
     }
 
     public Date getRunEndDateTime() {
         return runEndDateTime;
+    }
+
+    public String getRunEndDateTimeStr() {
+        return runEndDateTime != null
+                ? DateUtil.convertToString(runEndDateTime, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
     public void setRunEndDateTime(Date runEndDateTime) {
@@ -136,5 +150,13 @@ public class StlJobGroupDto {
 
     public void setRunId(Long runId) {
         this.runId = runId;
+    }
+
+    public String getInvoiceGenFolder() {
+        return invoiceGenFolder;
+    }
+
+    public void setInvoiceGenFolder(String invoiceGenFolder) {
+        this.invoiceGenFolder = invoiceGenFolder;
     }
 }

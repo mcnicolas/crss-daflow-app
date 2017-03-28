@@ -40,5 +40,4 @@ public class MtrTaskExecutionResource {
         taskExecutionService.launchJob(taskRunDto);
         return new ResponseEntity(HttpStatus.OK);
     }
-
 }

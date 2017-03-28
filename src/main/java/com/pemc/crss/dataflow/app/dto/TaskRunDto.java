@@ -19,6 +19,7 @@ public class TaskRunDto {
     private boolean header;
     private String baseType;
     private String currentUser;
+    private String meterType;
 
     // FOR SETTLEMENT AMS OUTPUT GENERATION
     private String amsInvoiceDate;
@@ -198,6 +199,14 @@ public class TaskRunDto {
 
     public void setBillingPeriodName(String billingPeriodName) {
         this.billingPeriodName = billingPeriodName;
+    }
+
+    public String getMeterType() {
+        return meterType;
+    }
+
+    public void setMeterType(String meterType) {
+        this.meterType = meterType;
     }
 
     @Override

@@ -95,6 +95,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
         List<String> arguments = Lists.newArrayList();
 
         if (RUN_MTR_JOB_NAME.equals(taskRunDto.getJobName())) {
+            arguments.add(concatKeyValue(METER_TYPE, taskRunDto.getMeterType(), ""));
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMtr")));

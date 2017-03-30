@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
@@ -54,12 +55,17 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                         if (getJobExecutions(jobInstance).iterator().hasNext()) {
                             JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
+                            Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                            String user = (String) jobParameters.getOrDefault(USERNAME, "");
+
                             MtrTaskExecutionDto mtrTaskExecutionDto = new MtrTaskExecutionDto();
                             mtrTaskExecutionDto.setId(jobInstance.getId());
                             mtrTaskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                            mtrTaskExecutionDto.setParams(Maps.transformValues(
-                                    jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+                            mtrTaskExecutionDto.setParams(jobParameters);
                             mtrTaskExecutionDto.setStatus(jobExecution.getStatus().toString());
+                            mtrTaskExecutionDto.setUser(user);
+
+
                             if (jobExecution.getStatus().isRunning()) {
                                 calculateProgress(jobExecution, mtrTaskExecutionDto);
                             } else if (jobExecution.getStatus().isUnsuccessful()) {
@@ -105,6 +111,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMtr")));
             }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
+            arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
             jobName = "crss-meterprocess-task-mtr";
         }
 

@@ -18,6 +18,15 @@ public class BaseTaskExecutionDto {
     private String status;
     private String statusDetails;
     private TaskProgressDto progress;
+    private String user;
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
 
     private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();
 

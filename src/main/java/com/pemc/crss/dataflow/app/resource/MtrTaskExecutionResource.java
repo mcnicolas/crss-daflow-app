@@ -11,17 +11,21 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
+import java.security.Principal;
+import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/task-executions/mtr")
 public class MtrTaskExecutionResource {
 
+    public static final String ANONYMOUS = "anonymous";
     private static final Logger LOG = LoggerFactory.getLogger(MtrTaskExecutionResource.class);
 
     @Autowired
@@ -35,9 +39,23 @@ public class MtrTaskExecutionResource {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto) throws URISyntaxException {
+    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         LOG.debug("Running job request. taskRunDto={}", taskRunDto);
+        String currentUser = getCurrentUser(principal);
+        taskRunDto.setCurrentUser(currentUser);
         taskExecutionService.launchJob(taskRunDto);
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    private String getCurrentUser(Principal principal) {
+        String currentUser = ANONYMOUS;
+        if (principal != null) {
+            if (principal instanceof OAuth2Authentication) {
+                OAuth2Authentication auth = (OAuth2Authentication) principal;
+                LinkedHashMap<String, Object> userDetails = (LinkedHashMap<String, Object>) auth.getPrincipal();
+                return (String) userDetails.get("name");
+            }
+        }
+        return currentUser;
     }
 }

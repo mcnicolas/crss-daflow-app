@@ -504,45 +504,16 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             jobName = "crss-settlement-task-calculation";
         } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+            final Long runId = System.currentTimeMillis();
             String type = taskRunDto.getMeterProcessType();
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedInvoiceGeneration")));
+                saveAMSadditionalParams(runId, taskRunDto);
             } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimInvoiceGeneration")));
             } else if (MeterProcessType.FINAL.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalInvoiceGeneration")));
-                final Long runId = System.currentTimeMillis();
-
-                try {
-                    BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
-                    batchJobAddtlParamsInvoiceDate.setRunId(runId);
-                    batchJobAddtlParamsInvoiceDate.setType("DATE");
-                    batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
-                    batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
-                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
-
-                    BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
-                    batchJobAddtlParamsDueDate.setRunId(runId);
-                    batchJobAddtlParamsDueDate.setType("DATE");
-                    batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
-                    batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
-                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
-
-                    BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
-                    batchJobAddtlParamsRemarksInv.setRunId(runId);
-                    batchJobAddtlParamsRemarksInv.setType("STRING");
-                    batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
-                    batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
-                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
-
-                    BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
-                    batchJobAddtlParamsRemarksMf.setRunId(runId);
-                    batchJobAddtlParamsRemarksMf.setType("STRING");
-                    batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
-                    batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
-                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
-                } catch (ParseException e) {
-                }
+                saveAMSadditionalParams(runId, taskRunDto);
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
@@ -555,6 +526,41 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
+        }
+    }
+
+    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+        log.debug("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        try {
+            BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsInvoiceDate.setRunId(runId);
+            batchJobAddtlParamsInvoiceDate.setType("DATE");
+            batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
+            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
+            batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsDueDate.setRunId(runId);
+            batchJobAddtlParamsDueDate.setType("DATE");
+            batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
+            batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
+            batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+            batchJobAddtlParamsRemarksInv.setRunId(runId);
+            batchJobAddtlParamsRemarksInv.setType("STRING");
+            batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+            batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
+            batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+
+            BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
+            batchJobAddtlParamsRemarksMf.setRunId(runId);
+            batchJobAddtlParamsRemarksMf.setType("STRING");
+            batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
+            batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
+            batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+        } catch (ParseException e) {
+            log.error("Error parsing additional batch job params for AMS: {}", e);
         }
     }
 

@@ -370,12 +370,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         String jobName = null;
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
-        Long timestamp = System.currentTimeMillis();
+        final Long runId = System.currentTimeMillis();
 
         arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
-        arguments.add(concatKeyValue(RUN_ID, String.valueOf(timestamp), "long"));
+        arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
 
-        Long groupId = taskRunDto.isNewGroup() ? timestamp : Long.parseLong(taskRunDto.getGroupId());
+        Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
         arguments.add(concatKeyValue(GROUP_ID, groupId.toString(), "long"));
 
         Date start = null;
@@ -504,7 +504,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             jobName = "crss-settlement-task-calculation";
         } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-            final Long runId = System.currentTimeMillis();
             String type = taskRunDto.getMeterProcessType();
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedInvoiceGeneration")));

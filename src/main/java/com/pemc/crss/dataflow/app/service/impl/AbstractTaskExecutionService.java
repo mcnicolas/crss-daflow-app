@@ -58,6 +58,9 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String PROCESS_TYPE = "processType";
     protected DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
     protected static final String USERNAME = "username";
+    protected static final String WESM_USERNAME = "wesmUsername";
+    protected static final String STL_READY_USERNAME = "stlReadyUsername";
+    protected static final String RCOA_USERNAME = "rcoaUsername";
     protected static final String QUOTE = "\"";
     protected static final String PARAMS_TYPE_STRING = "string";
     protected static final String PARAMS_TYPE_LONG = "long";

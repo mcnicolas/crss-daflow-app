@@ -19,6 +19,9 @@ public class BaseTaskExecutionDto {
     private String statusDetails;
     private TaskProgressDto progress;
     private String user;
+    private String wesmUser;
+    private String rcoaUser;
+    private String stlReadyUser;
 
     public String getUser() {
         return user;
@@ -26,6 +29,30 @@ public class BaseTaskExecutionDto {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getWesmUser() {
+        return wesmUser;
+    }
+
+    public void setWesmUser(String wesmUser) {
+        this.wesmUser = wesmUser;
+    }
+
+    public String getRcoaUser() {
+        return rcoaUser;
+    }
+
+    public void setRcoaUser(String rcoaUser) {
+        this.rcoaUser = rcoaUser;
+    }
+
+    public String getStlReadyUser() {
+        return stlReadyUser;
+    }
+
+    public void setStlReadyUser(String stlReadyUser) {
+        this.stlReadyUser = stlReadyUser;
     }
 
     private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();

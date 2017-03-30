@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
@@ -70,12 +71,15 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         if (getJobExecutions(jobInstance).iterator().hasNext()) {
                             JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
+                            Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                            String wesmUser = (String) jobParameters.getOrDefault(WESM_USERNAME, "");
+
                             TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
                             taskExecutionDto.setId(jobInstance.getId());
                             taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-                            taskExecutionDto.setParams(Maps.transformValues(
-                                    jobExecution.getJobParameters().getParameters(), JobParameter::getValue));
+                            taskExecutionDto.setParams(jobParameters);
                             taskExecutionDto.setWesmStatus(jobExecution.getStatus());
+                            taskExecutionDto.setWesmUser(wesmUser);
 
                             if (taskExecutionDto.getWesmStatus().isRunning()) {
                                 calculateProgress(jobExecution, taskExecutionDto);
@@ -93,7 +97,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             if (!rcoaJobs.isEmpty()) {
                                 JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
+                                String rcoaUser = (String) jobParameters.getOrDefault(RCOA_USERNAME, "");
+
                                 taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
+                                taskExecutionDto.setRcoaUser(rcoaUser);
 
                                 if (taskExecutionDto.getRcoaStatus().isRunning()) {
                                     calculateProgress(rcoaJobExecution, taskExecutionDto);
@@ -127,7 +134,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             if (!settlementJobs.isEmpty()) {
                                 JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
+                                String stlReadyUser = (String) jobParameters.getOrDefault(STL_READY_USERNAME, "");
+
                                 taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
+                                taskExecutionDto.setStlReadyUser(stlReadyUser);
 
                                 if (taskExecutionDto.getSettlementStatus().isRunning()) {
                                     calculateProgress(settlementJobExecution, taskExecutionDto);
@@ -221,6 +231,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
+            arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
@@ -241,6 +252,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 } else {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
                 }
+                arguments.add(concatKeyValue(RCOA_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
@@ -256,6 +268,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_ADJUSTED)));
                 }
+                arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {

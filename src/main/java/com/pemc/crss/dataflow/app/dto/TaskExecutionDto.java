@@ -14,6 +14,7 @@ public class TaskExecutionDto extends BaseTaskExecutionDto {
     private BatchStatus calculationStatus;
     private BatchStatus taggingStatus;
 
+
     public BatchStatus getWesmStatus() {
         return wesmStatus;
     }

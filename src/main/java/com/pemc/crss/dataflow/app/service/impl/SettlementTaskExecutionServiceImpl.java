@@ -182,6 +182,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
                                 if (!isDaily && BatchStatus.COMPLETED == currentStatus) {
                                     removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                                    stlJobGroupDto.setStlAmtCalculationStatus(currentStatus);
                                 }
 
                                 stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
@@ -460,6 +461,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             }
         } else if (FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             String type = taskRunDto.getMeterProcessType();
+
+            BatchJobAdjRun batchJobAdjRun = batchJobAdjRunRepository.findByGroupId(taskRunDto.getGroupId());
+            if (batchJobAdjRun != null) {
+                type = batchJobAdjRun.getMeterProcessType().name();
+            }
+
             if (type == null) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyStlAmtsTagging")));
             } else if (MeterProcessType.ADJUSTED.name().equals(type)) {

@@ -10,7 +10,6 @@ import java.util.SortedSet;
 
 public class StlJobGroupDto {
 
-    private BatchStatus stlAmtCalculationStatus;
     private BatchStatus stlAmtTaggingStatus;
     private BatchStatus gmrVatMFeeCalculationStatus;
     private BatchStatus gmrVatMFeeTaggingStatus;
@@ -30,14 +29,6 @@ public class StlJobGroupDto {
     private List<PartialCalculationDto> partialCalculationDtos;
 
     private SortedSet<LocalDate> remainingDates;
-
-    public BatchStatus getStlAmtCalculationStatus() {
-        return stlAmtCalculationStatus;
-    }
-
-    public void setStlAmtCalculationStatus(final BatchStatus stlAmtCalculationStatus) {
-        this.stlAmtCalculationStatus = stlAmtCalculationStatus;
-    }
 
     public BatchStatus getStlAmtTaggingStatus() {
         return stlAmtTaggingStatus;

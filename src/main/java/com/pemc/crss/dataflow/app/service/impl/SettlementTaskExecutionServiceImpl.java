@@ -182,7 +182,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
                                 if (!isDaily && BatchStatus.COMPLETED == currentStatus) {
                                     removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
-                                    stlJobGroupDto.setStlAmtCalculationStatus(currentStatus);
                                 }
 
                                 stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
@@ -321,7 +320,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = generationJobExecution.getStatus();
-                                stlJobGroupDto.setStatus(convertStatus(currentStatus, generationStatusSuffix));
                                 stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
                                 stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));

@@ -136,14 +136,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         String calcStatusSuffix = "PARTIAL-CALCULATION";
                         String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
-                        SortedSet<LocalDate> remainingDates = new TreeSet<>();
-                        if (!isDaily) {
-                            remainingDates = createRange(startDate, endDate);
-                        }
-                        Iterator<JobInstance> calcStlIterator = calcStlJobInstances.iterator();
-                        while (calcStlIterator.hasNext()) {
-                            JobInstance calcStlJobInstance = calcStlIterator.next();
-                            String calcStlJobName = calcStlJobInstance.getJobName();
+
+                        Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+
+                        for (JobInstance calcStlJobInstance : calcStlJobInstances) {
+
                             Iterator<JobExecution> calcStlExecIterator = getJobExecutions(calcStlJobInstance).iterator();
                             if (calcStlExecIterator.hasNext()) {
                                 JobExecution calcJobExecution = calcStlExecIterator.next();
@@ -153,18 +150,15 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 Date calcStartDate = calcJobParameters.getDate(START_DATE);
                                 Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
-                                StlJobGroupDto stlJobGroupDto;
-                                if (stlJobGroupDtoMap.get(groupId) == null) {
-                                    stlJobGroupDto = new StlJobGroupDto();
-                                    stlJobGroupDto.setRemainingDates(new TreeSet<>(remainingDates));
-                                } else {
-                                    stlJobGroupDto = stlJobGroupDtoMap.get(groupId);
+                                if (!isDaily && !remainingDatesMap.containsKey(groupId)) {
+                                    remainingDatesMap.put(groupId, createRange(startDate, endDate));
                                 }
-//                        StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+
+                                final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
                                 stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
-                                stlJobGroupDto.setRemainingDates(remainingDates);
+                                stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
 
                                 List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
                                 if (partialCalculationDtoList == null) {
@@ -180,8 +174,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 dto.setRunEndDate(calcJobExecution.getEndTime());
                                 partialCalculationDtoList.add(dto);
 
-                                if (!isDaily && BatchStatus.COMPLETED == currentStatus) {
-                                    removeDateRangeFrom(stlJobGroupDto.getRemainingDates(), calcStartDate, calcEndDate);
+                                if (!isDaily && BatchStatus.COMPLETED == currentStatus
+                                    && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
+                                    removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
                                 }
 
                                 stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);

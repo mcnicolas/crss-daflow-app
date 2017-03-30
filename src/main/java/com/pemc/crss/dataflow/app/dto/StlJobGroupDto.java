@@ -5,7 +5,9 @@ import org.springframework.batch.core.BatchStatus;
 
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 
 public class StlJobGroupDto {
@@ -28,7 +30,7 @@ public class StlJobGroupDto {
 
     private List<PartialCalculationDto> partialCalculationDtos;
 
-    private SortedSet<LocalDate> remainingDates;
+    private Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
     public BatchStatus getStlAmtTaggingStatus() {
         return stlAmtTaggingStatus;
@@ -102,14 +104,6 @@ public class StlJobGroupDto {
         this.header = header;
     }
 
-    public SortedSet<LocalDate> getRemainingDates() {
-        return remainingDates;
-    }
-
-    public void setRemainingDates(SortedSet<LocalDate> remainingDates) {
-        this.remainingDates = remainingDates;
-    }
-
     public Long getGroupId() {
         return groupId;
     }
@@ -158,5 +152,13 @@ public class StlJobGroupDto {
 
     public void setInvoiceGenFolder(String invoiceGenFolder) {
         this.invoiceGenFolder = invoiceGenFolder;
+    }
+
+    public Map<Long, SortedSet<LocalDate>> getRemainingDatesMap() {
+        return remainingDatesMap;
+    }
+
+    public void setRemainingDatesMap(Map<Long, SortedSet<LocalDate>> remainingDatesMap) {
+        this.remainingDatesMap = remainingDatesMap;
     }
 }

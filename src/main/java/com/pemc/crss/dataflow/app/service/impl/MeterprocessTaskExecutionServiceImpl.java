@@ -288,5 +288,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate, process, jobName) > 0, errMsq);
     }
 
+    private void checkFinalizeProcessTypeState(String process, String startDate, String endDate) {
+        String errMsq = "You already have a " + process + " processed on the same billing period!";
+        Preconditions.checkState(executionParamRepository.countMonthlyFinalizeRun(startDate, endDate, process) < 1, errMsq);
+    }
+
 
 }

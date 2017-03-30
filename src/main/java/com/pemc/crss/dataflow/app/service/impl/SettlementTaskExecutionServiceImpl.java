@@ -383,6 +383,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         Date end = null;
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_STL_JOB_NAME) == 0,
+                    "There is an existing ".concat(FINALIZE_STL_JOB_NAME).concat(" job running"));
+
             LocalDateTime baseStartDate = null;
             LocalDateTime baseEndDate = null;
             String type = taskRunDto.getMeterProcessType();
@@ -460,6 +464,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 }
             }
         } else if (FINALIZE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
+                    "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
+
             String type = taskRunDto.getMeterProcessType();
 
             BatchJobAdjRun batchJobAdjRun = batchJobAdjRunRepository.findByGroupId(taskRunDto.getGroupId());
@@ -480,7 +488,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             jobName = "crss-settlement-task-calculation";
+
         } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_GMRVAT_MFEE_JOB_NAME) == 0,
+                    "There is an existing ".concat(FINALIZE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
+
             String type = taskRunDto.getMeterProcessType();
             Preconditions.checkState(type != null, "Cannot run GMR/Market Fee calculation job on daily basis.");
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
@@ -495,7 +508,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             jobName = "crss-settlement-task-calculation";
+
         } else if (FINALIZE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_GMRVAT_MFEE_JOB_NAME) == 0,
+                    "There is an existing ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
+
             String type = taskRunDto.getMeterProcessType();
             Preconditions.checkState(type != null, "Cannot run GMR/Market Fee tagging job on daily basis.");
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
@@ -510,7 +528,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             jobName = "crss-settlement-task-calculation";
+
         } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_GMRVAT_MFEE_JOB_NAME) == 0,
+                    "There is an existing ".concat(FINALIZE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
+
             String type = taskRunDto.getMeterProcessType();
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedInvoiceGeneration")));

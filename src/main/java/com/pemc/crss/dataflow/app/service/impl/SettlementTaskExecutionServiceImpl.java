@@ -536,7 +536,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     }
 
     private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
-        log.debug("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        LOG.debug("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
             batchJobAddtlParamsInvoiceDate.setRunId(runId);
@@ -566,7 +566,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
             batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
         } catch (ParseException e) {
-            log.error("Error parsing additional batch job params for AMS: {}", e);
+            LOG.error("Error parsing additional batch job params for AMS: {}", e);
         }
     }
 

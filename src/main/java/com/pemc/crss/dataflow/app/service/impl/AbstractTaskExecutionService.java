@@ -60,6 +60,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String USERNAME = "username";
     protected static final String WESM_USERNAME = "wesmUsername";
     protected static final String STL_READY_USERNAME = "stlReadyUsername";
+    protected static final String STL_NOT_READY_USERNAME = "stlNotReadyUsername";
     protected static final String RCOA_USERNAME = "rcoaUsername";
     protected static final String QUOTE = "\"";
     protected static final String PARAMS_TYPE_STRING = "string";
@@ -72,6 +73,10 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String PROFILE_MONTHLY_ADJUSTED= "monthlyAdjusted";
     protected static final String PROFILE_DAILY_MQ_REPORT= "dailyMqReport";
     protected static final String PROFILE_MONTHLY_MQ_REPORT= "monthlyMqReport";
+    protected static final String PROFILE_STL_READY_DAILY = "finalizeDaily";
+    protected static final String PROFILE_STL_READY_MONTHLY_PRELIM = "finalizeMonthlyPrelim";
+    protected static final String PROFILE_STL_READY_MONTHLY_FINAL = "finalizeMonthlyFinal";
+    protected static final String PROFILE_STL_READY_MONTHLY_ADJUSTED = "finalizeMonthlyAdjusted";
     protected static final String METER_TYPE_WESM= "MIRF_MT_WESM";
     protected static final String METER_TYPE_RCOA= "MIRF_MT_RCOA";
 

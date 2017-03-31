@@ -22,6 +22,7 @@ public class BaseTaskExecutionDto {
     private String wesmUser;
     private String rcoaUser;
     private String stlReadyUser;
+    private String stlNotReadyUser;
 
     public String getUser() {
         return user;
@@ -53,6 +54,14 @@ public class BaseTaskExecutionDto {
 
     public void setStlReadyUser(String stlReadyUser) {
         this.stlReadyUser = stlReadyUser;
+    }
+
+    public String getStlNotReadyUser() {
+        return stlNotReadyUser;
+    }
+
+    public void setStlNotReadyUser(String stlNotReadyUser) {
+        this.stlNotReadyUser = stlNotReadyUser;
     }
 
     private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();

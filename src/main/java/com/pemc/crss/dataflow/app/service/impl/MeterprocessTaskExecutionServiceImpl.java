@@ -39,6 +39,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private static final String RUN_WESM_JOB_NAME = "computeWesmMq";
     private static final String RUN_RCOA_JOB_NAME = "computeRcoaMq";
+    private static final String RUN_STL_NOT_READY_JOB_NAME = "stlNotReady";
     private static final String RUN_STL_READY_JOB_NAME = "stlReady";
     private static final String RUN_MQ_REPORT_JOB_NAME = "genReport";
     private static final String PARAMS_BILLING_PERIOD_ID = "billingPeriodId";
@@ -129,12 +130,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 }
                             }
 
-                            List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
-                                    RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+                            List<JobInstance> settlementNotReadyJobs = jobExplorer.findJobInstancesByJobName(
+                                    RUN_STL_NOT_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
 
-                            if (!settlementJobs.isEmpty()) {
-                                JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
-                                String stlReadyUser = (String) jobParameters.getOrDefault(STL_READY_USERNAME, "");
+                            if (!settlementNotReadyJobs.isEmpty()) {
+                                JobExecution settlementJobExecution = getJobExecutions(settlementNotReadyJobs.get(0)).iterator().next();
+                                String stlReadyUser = (String) jobParameters.getOrDefault(STL_NOT_READY_USERNAME, "");
 
                                 taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
                                 taskExecutionDto.setStlReadyUser(stlReadyUser);
@@ -144,9 +145,29 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
                                 } else if (taskExecutionDto.getSettlementStatus() == BatchStatus.COMPLETED) {
-                                    taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
+                                    taskExecutionDto.getSummary().put(RUN_STL_NOT_READY_JOB_NAME, showSummary(settlementJobExecution));
                                 }
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "SETTLEMENT"));
+                            }
+
+                            List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
+                                    RUN_STL_READY_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
+
+                            if (!settlementJobs.isEmpty()) {
+                                JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
+                                String stlReadyUser = (String) jobParameters.getOrDefault(STL_READY_USERNAME, "");
+
+                                taskExecutionDto.setSettlementReadyStatus(settlementJobExecution.getStatus());
+                                taskExecutionDto.setStlReadyUser(stlReadyUser);
+
+                                if (taskExecutionDto.getSettlementReadyStatus().isRunning()) {
+                                    calculateProgress(settlementJobExecution, taskExecutionDto);
+                                } else if (taskExecutionDto.getSettlementReadyStatus().isUnsuccessful()) {
+                                    taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
+                                } else if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED) {
+                                    taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
+                                }
+                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "SETTLEMENT READY"));
                             }
 
                             return taskExecutionDto;
@@ -254,6 +275,22 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(RCOA_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";
+            } else if (RUN_STL_NOT_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
+                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_DAILY)));
+                } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_PRELIM)));
+                } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_NOT_READY_JOB_NAME);
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_FINAL)));
+                } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_NOT_READY_JOB_NAME);
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
+                }
+                arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
+                jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));

@@ -101,7 +101,6 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
         List<String> arguments = Lists.newArrayList();
 
         if (RUN_MTR_JOB_NAME.equals(taskRunDto.getJobName())) {
-            arguments.add(concatKeyValue(METER_TYPE, taskRunDto.getMeterType(), ""));
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMtr")));
@@ -110,6 +109,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMtr")));
             }
+            arguments.add(concatKeyValue(METER_TYPE, taskRunDto.getMeterType()));
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
             jobName = "crss-meterprocess-task-mtr";

@@ -488,6 +488,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     "There is an existing ".concat(FINALIZE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
 
             String type = taskRunDto.getMeterProcessType();
+
+            BatchJobAdjRun batchJobAdjRun = batchJobAdjRunRepository.findByGroupId(taskRunDto.getGroupId());
+            if (batchJobAdjRun != null) {
+                type = batchJobAdjRun.getMeterProcessType().name();
+            }
+
             Preconditions.checkState(type != null, "Cannot run GMR/Market Fee calculation job on daily basis.");
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedGmrVatMfeeCalculation")));
@@ -508,6 +514,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     "There is an existing ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
 
             String type = taskRunDto.getMeterProcessType();
+
+            BatchJobAdjRun batchJobAdjRun = batchJobAdjRunRepository.findByGroupId(taskRunDto.getGroupId());
+            if (batchJobAdjRun != null) {
+                type = batchJobAdjRun.getMeterProcessType().name();
+            }
+
             Preconditions.checkState(type != null, "Cannot run GMR/Market Fee tagging job on daily basis.");
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedGmrVatMfeeTagging")));

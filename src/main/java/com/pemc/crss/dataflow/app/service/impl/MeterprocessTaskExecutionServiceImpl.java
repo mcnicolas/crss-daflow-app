@@ -200,8 +200,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
+        final Long runId = System.currentTimeMillis();
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
-            final Long runId = System.currentTimeMillis();
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
@@ -277,22 +277,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (RUN_STL_NOT_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_DAILY)));
-                } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_PRELIM)));
-                } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
-                    checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
-                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_NOT_READY_JOB_NAME);
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_FINAL)));
-                } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
-                    checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
-                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_NOT_READY_JOB_NAME);
-                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
-                }
-                arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
-                jobName = "crss-meterprocess-task-stlready";
-            } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
-                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
                 } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_PRELIM)));
@@ -305,6 +289,23 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_ADJUSTED)));
                 }
+                arguments.add(concatKeyValue(STL_NOT_READY_USERNAME, taskRunDto.getCurrentUser()));
+                jobName = "crss-meterprocess-task-stlready";
+            } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
+                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_DAILY)));
+                } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_PRELIM)));
+                } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_NOT_READY_JOB_NAME);
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_FINAL)));
+                } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_NOT_READY_JOB_NAME);
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
+                }
+                arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {

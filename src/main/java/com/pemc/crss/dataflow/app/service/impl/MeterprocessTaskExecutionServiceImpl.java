@@ -139,10 +139,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution settlementJobExecution = getJobExecutions(settlementNotReadyJobs.get(0)).iterator().next();
 
                                 jobParameters = Maps.transformValues(settlementJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                                String stlReadyUser = (String) jobParameters.getOrDefault(STL_NOT_READY_USERNAME, "");
+                                String stlNotReadyUser = (String) jobParameters.getOrDefault(STL_NOT_READY_USERNAME, "");
 
                                 taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
-                                taskExecutionDto.setStlReadyUser(stlReadyUser);
+                                taskExecutionDto.setStlNotReadyUser(stlNotReadyUser);
 
                                 if (taskExecutionDto.getSettlementStatus().isRunning()) {
                                     calculateProgress(settlementJobExecution, taskExecutionDto);

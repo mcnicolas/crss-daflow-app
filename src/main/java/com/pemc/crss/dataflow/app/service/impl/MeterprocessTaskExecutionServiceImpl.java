@@ -98,6 +98,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             if (!rcoaJobs.isEmpty()) {
                                 JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
+
+                                jobParameters = Maps.transformValues(rcoaJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                                 String rcoaUser = (String) jobParameters.getOrDefault(RCOA_USERNAME, "");
 
                                 taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
@@ -135,6 +137,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             if (!settlementNotReadyJobs.isEmpty()) {
                                 JobExecution settlementJobExecution = getJobExecutions(settlementNotReadyJobs.get(0)).iterator().next();
+
+                                jobParameters = Maps.transformValues(settlementJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                                 String stlReadyUser = (String) jobParameters.getOrDefault(STL_NOT_READY_USERNAME, "");
 
                                 taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
@@ -155,6 +159,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             if (!settlementJobs.isEmpty()) {
                                 JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
+
+                                jobParameters = Maps.transformValues(settlementJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                                 String stlReadyUser = (String) jobParameters.getOrDefault(STL_READY_USERNAME, "");
 
                                 taskExecutionDto.setSettlementReadyStatus(settlementJobExecution.getStatus());

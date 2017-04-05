@@ -246,7 +246,9 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
             } else if (runningStep.getStepName().equals("generateReportStep")) {
                 progressDto = processStepProgress(runningStep, "Generate Report");
             } else if (runningStep.getStepName().equals("processStlReadyStep")) {
-                progressDto = processStepProgress(runningStep, "Process STL Ready");
+                progressDto = processStepProgress(runningStep, "Process GESQ");
+            } else if (runningStep.getStepName().equals("finalStlReadyStep")) {
+                progressDto = processStepProgress(runningStep, "Finalize STL Ready");
             } else if (runningStep.getStepName().equals("generateMtrStep")) {
                 progressDto = processStepProgress(runningStep, "Generate MTR");
             }

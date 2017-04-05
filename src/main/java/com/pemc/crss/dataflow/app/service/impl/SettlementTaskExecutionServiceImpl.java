@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
@@ -180,8 +181,14 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 }
 
                                 stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
-                                stlJobGroupDto.setStatus(convertStatus(jobStatus, calcStatusSuffix));
+                                stlJobGroupDto.setStatus(convertStatus(isDaily ? currentStatus : jobStatus, calcStatusSuffix));
                                 stlJobGroupDto.setGroupId(groupId);
+
+                                Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+                                if (latestJobExecStartDate == null || !latestJobExecStartDate.after(calcJobExecution.getStartTime())) {
+                                    updateProgress(calcJobExecution, stlJobGroupDto);
+                                }
+
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
                                 if (stlJobGroupDto.isHeader()) {
@@ -216,6 +223,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, calcTagStatusSuffix));
                                 stlJobGroupDto.setStlAmtTaggingStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
+
+                                if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcTagJobExecution.getStartTime())) {
+                                    updateProgress(calcTagJobExecution, stlJobGroupDto);
+                                }
+
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
                                 if (stlJobGroupDto.isHeader()) {
                                     parentStlJobGroupDto = stlJobGroupDto;
@@ -250,6 +262,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
                                 stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
+
+                                if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
+                                    updateProgress(calcGmrJobExecution, stlJobGroupDto);
+                                }
+
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
                                 if (stlJobGroupDto.isHeader()) {
                                     parentStlJobGroupDto = stlJobGroupDto;
@@ -284,6 +301,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, tagGmrStatusSuffix));
                                 stlJobGroupDto.setGmrVatMFeeTaggingStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
+
+                                if (!stlJobGroupDto.getLatestJobExecStartDate().after(tagGmrJobExecution.getStartTime())) {
+                                    updateProgress(tagGmrJobExecution, stlJobGroupDto);
+                                }
+
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
                                 if (stlJobGroupDto.isHeader()) {
                                     parentStlJobGroupDto = stlJobGroupDto;
@@ -320,6 +342,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
                                 stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
                                 stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
+
+                                if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+                                    updateProgress(generationJobExecution, stlJobGroupDto);
+                                }
+
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
                                 Optional.ofNullable(generationJobExecution.getExecutionContext()
@@ -628,5 +655,25 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             remainingDates.remove(ctrDate);
             ctrDate = ctrDate.plusDays(1);
         }
+    }
+
+    private void updateProgress(JobExecution jobExecution, StlJobGroupDto dto) {
+        List<String> runningTasks = Lists.newArrayList();
+        if (!jobExecution.getStepExecutions().isEmpty()) {
+            jobExecution.getStepExecutions().parallelStream()
+                    .filter(stepExecution -> stepExecution.getStatus().isRunning())
+                    .forEach(stepExecution -> {
+                        Map<String, String> map = SettlementStepUtil.getProgressNameTaskMap();
+                        String stepName = stepExecution.getStepName();
+                        if (map.containsKey(stepName)) {
+                            runningTasks.add(map.get(stepName));
+                        } else {
+                            LOG.warn("Step name {} not existing in current mapping.", stepName);
+                        }
+                    });
+        }
+        dto.setRunningSteps(runningTasks);
+        dto.setLatestJobExecStartDate(jobExecution.getStartTime());
+        dto.setLatestJobExecEndDate(jobExecution.getEndTime());
     }
 }

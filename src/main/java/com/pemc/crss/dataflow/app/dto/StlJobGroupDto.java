@@ -25,6 +25,11 @@ public class StlJobGroupDto {
     private Date runEndDateTime;
     private Long runId;
 
+    // progress bar and status
+    private Date latestJobExecStartDate;
+    private Date latestJobExecEndDate;
+    private List<String> runningSteps;
+
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
 
@@ -160,5 +165,29 @@ public class StlJobGroupDto {
 
     public void setRemainingDatesMap(Map<Long, SortedSet<LocalDate>> remainingDatesMap) {
         this.remainingDatesMap = remainingDatesMap;
+    }
+
+    public Date getLatestJobExecStartDate() {
+        return latestJobExecStartDate;
+    }
+
+    public void setLatestJobExecStartDate(Date latestJobExecStartDate) {
+        this.latestJobExecStartDate = latestJobExecStartDate;
+    }
+
+    public Date getLatestJobExecEndDate() {
+        return latestJobExecEndDate;
+    }
+
+    public void setLatestJobExecEndDate(Date latestJobExecEndDate) {
+        this.latestJobExecEndDate = latestJobExecEndDate;
+    }
+
+    public List<String> getRunningSteps() {
+        return runningSteps;
+    }
+
+    public void setRunningSteps(List<String> runningSteps) {
+        this.runningSteps = runningSteps;
     }
 }

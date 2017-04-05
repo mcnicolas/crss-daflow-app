@@ -269,7 +269,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
             JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
-            boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
+            String processType = jobParameters.getString(PROCESS_TYPE);
+            boolean isDaily = processType== null;
             if (isDaily) {
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
@@ -284,6 +285,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
                 } else {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
+                    if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
+                        String processBefore = processType.equalsIgnoreCase(MeterProcessType.FINAL.name()) ?
+                                MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
+                        checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
+                    }
                 }
                 arguments.add(concatKeyValue(RCOA_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";

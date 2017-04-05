@@ -1,3 +1,5 @@
+def registryUrl = project.hasProperty('registryUrl') ? project.getProperty('registryUrl') : 'pemc.medcurial.com'
+
 buildscript {
     repositories {
         maven {
@@ -28,11 +30,9 @@ apply plugin: com.bmuschko.gradle.docker.DockerRemoteApiPlugin
 ext {
     baseImage = 'exist/jre:1.8'
     daemonUrl = 'unix:///var/run/docker.sock'
-    registryUrl = 'pemc.medcurial.com'
     serviceName = "${project.name}"
     dockerImageName = "$project.serviceName"
-    //dockerImageTag = "$project.dockerImageName:$version"
-    dockerImageTag = "pemc.medcurial.com/$project.dockerImageName:" + 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    dockerImageTag = registryUrl + "/$project.dockerImageName:" + 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
 }
 
 docker {

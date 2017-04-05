@@ -1,41 +1,12 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
-def allowableProfiles = ['dev', 'qa', 'dev2', 'pemc-uat']
-
-if (project.hasProperty('env') && !allowableProfiles.contains(project.env)) {
-    throw new IllegalArgumentException("Unknown environment supplied: ${project.env}")
-}
-
-def profile = project.hasProperty('env') ? project.getProperty('env') : 'local'
-
-
 ext {
-    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim() + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
-    switch (profile) {
-        case 'dev':
-            marathonUrl = "http://pemc-master.ss2.exist.com/marathon/v2/apps"
-            appProfile = "dev"
-            break
-
-        case 'dev2':
-            marathonUrl = "http://crss-master.pemc.exist.com/marathon/v2/apps"
-            appProfile = "dev2"
-            break
-
-        case 'qa':
-            marathonUrl = "http://pemc-dcos.southeastasia.cloudapp.azure.com/marathon/v2/apps"
-            appProfile = "qa,skipSSLA"
-            break
-
-        case 'pemc-uat':
-            marathonUrl = "http://master.uat.crss.wesm.ph/marathon/v2/apps"
-            appProfile = "pemc-uat,skipSSLA"
-            break
-
-        default:
-            break
-    }
+    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    scdfUrl = project.hasProperty('scdfUrl') ? project.getProperty('scdfUrl') : 'http://scdf.pemc.com'
+    descriptorPath = project.hasProperty('descriptorPath') ? project.getProperty('descriptorPath') : 'http://pemc-storage.southeastasia.cloudapp.azure.com/descriptors'
+    appProfile = project.hasProperty('appProfile') ? project.getProperty('appProfile') : 'dev'
+    marathonUrl = project.hasProperty('marathonUrl') ? project.getProperty('marathonUrl') : ''
 }
 
 task setupDeployer() {

@@ -152,7 +152,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getSettlementStatus() == BatchStatus.COMPLETED) {
                                     taskExecutionDto.getSummary().put(RUN_STL_NOT_READY_JOB_NAME, showSummary(settlementJobExecution));
                                 }
-                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "SETTLEMENT"));
+                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "GESQ"));
                             }
 
                             List<JobInstance> settlementJobs = jobExplorer.findJobInstancesByJobName(
@@ -174,7 +174,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED) {
                                     taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
                                 }
-                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementReadyStatus(), "SETTLEMENT READY"));
+                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementReadyStatus(), "Settlement Ready"));
                             }
 
                             return taskExecutionDto;

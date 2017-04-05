@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
@@ -197,6 +198,11 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
         }
         Collections.reverse(dataInterfaceExecutionDTOs);
         return new PageImpl<>(dataInterfaceExecutionDTOs, pageable, count);
+    }
+
+    @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
+        return null;
     }
 
     @Override

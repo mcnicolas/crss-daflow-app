@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -191,6 +192,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode,
                                                                  String runStartDate, String tradingStartDate, String tradingEndDate,
                                                                  String username) {
+        return null;
+    }
+
+    @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
         return null;
     }
 

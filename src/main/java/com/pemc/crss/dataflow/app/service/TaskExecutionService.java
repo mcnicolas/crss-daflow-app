@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.service;
 
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,8 @@ public interface TaskExecutionService {
                                                           String status, String mode,
                                                           String runStartDate, String tradingStartDate,
                                                           String tradingEndDate, String username);
+
+    Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest);
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 

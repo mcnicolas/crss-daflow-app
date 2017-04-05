@@ -1,10 +1,8 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by Fernflower decompiler)
-//
-
+import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.dataflow.app.support.StlJobQuery;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
@@ -22,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     private static final String FIND_CUSTOM_JOB_INSTANCE = "SELECT A.JOB_INSTANCE_ID, A.JOB_NAME from %PREFIX%JOB_INSTANCE A join %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID join %PREFIX%JOB_EXECUTION_PARAMS C on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID where JOB_NAME like ? and B.STATUS like ? and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') and (F.STRING_VAL like ? and F.KEY_NAME = 'username') order by JOB_INSTANCE_ID desc";
@@ -51,25 +50,6 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                                                     String status, String mode, String runStartDate,
                                                     String tradingStartDate, String tradingEndDate,
                                                     String username) {
-        ResultSetExtractor extractor = new ResultSetExtractor() {
-            private List<JobInstance> list = new ArrayList();
-
-            public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
-                int rowNum;
-                for (rowNum = 0; rowNum < start && rs.next(); ++rowNum) {
-                    ;
-                }
-
-                while (rowNum < start + count && rs.next()) {
-                    DataFlowJdbcJobExecutionDao.JobInstanceRowMapper rowMapper = DataFlowJdbcJobExecutionDao.this.new JobInstanceRowMapper();
-                    this.list.add(rowMapper.mapRow(rs, rowNum));
-                    ++rowNum;
-                }
-
-                return this.list;
-            }
-        };
-
         jobName = jobName.contains("*") ? jobName.replaceAll("\\*", "%") : jobName;
         status = status.contains("*") ? status.replaceAll("\\*", "%") : status;
         mode = mode.contains("*") ? mode.replaceAll("\\*", "%") : mode;
@@ -78,8 +58,8 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         tradingEndDate = tradingEndDate.isEmpty() ? "%" : tradingEndDate;
         username = username.isEmpty() ? "%" : username;
 
-        return (List) this.getJdbcTemplate().query(this.getQuery(FIND_CUSTOM_JOB_INSTANCE), new Object[]{jobName, status, runStartDate,
-                mode, tradingStartDate, tradingEndDate, username}, extractor);
+        return this.getJdbcTemplate().query(this.getQuery(FIND_CUSTOM_JOB_INSTANCE), new Object[]{jobName, status, runStartDate,
+                mode, tradingStartDate, tradingEndDate, username}, getJobInstanceExtractor(start, count));
     }
 
     public int getJobInstanceCount(String jobName, String status, String mode, String runStartDate,
@@ -94,12 +74,63 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
             username = username.isEmpty() ? "%" : username;
 
             return this.getJdbcTemplate().queryForObject(this.getQuery(COUNT_JOBS_WITH_NAME), Integer.class, new Object[]{jobName, status, runStartDate,
-                    mode, tradingStartDate, tradingEndDate, username}).intValue();
+                    mode, tradingStartDate, tradingEndDate, username});
         } catch (EmptyResultDataAccessException var3) {
             throw new NoSuchJobException("No job instances were found for job name " + jobName);
         }
     }
 
+    // Stl Job Queries
+    public Long countStlJobInstances(final PageableRequest pageableRequest) {
+        return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterCountQuery(), Long.class,
+                getStlParams(pageableRequest));
+    }
+
+    public List<JobInstance> findStlJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
+        return this.getJdbcTemplate().query(StlJobQuery.stlFilterSelectQuery(), getStlParams(pageableRequest),
+                getJobInstanceExtractor(start, count));
+    }
+
+    // Support methods
+    private String[] getStlParams(final PageableRequest pageableRequest) {
+        Map<String, String> mapParams = pageableRequest.getMapParams();
+
+        String processType = resolveQueryParam(mapParams.getOrDefault("processType", null));
+        String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
+        String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
+
+        return new String[]{processType, startDate, endDate};
+    }
+
+    private String resolveQueryParam(String param) {
+        return StringUtils.isEmpty(param) ? "%" : param;
+    }
+
+    // ResultSetExtractors start
+    private ResultSetExtractor<List<JobInstance>> getJobInstanceExtractor(int start, int count) {
+        return new ResultSetExtractor<List<JobInstance>>() {
+            private List<JobInstance> list = new ArrayList<>();
+
+            @Override
+            public List<JobInstance> extractData(ResultSet rs) throws SQLException, DataAccessException {
+                int rowNum = 0;
+                while (rowNum < start && rs.next()) {
+                    ++rowNum;
+                }
+
+                while (rowNum < start + count && rs.next()) {
+                    DataFlowJdbcJobExecutionDao.JobInstanceRowMapper rowMapper = DataFlowJdbcJobExecutionDao.this.new JobInstanceRowMapper();
+                    this.list.add(rowMapper.mapRow(rs, rowNum));
+                    ++rowNum;
+                }
+
+                return this.list;
+            }
+        };
+    }
+    // ResultSetExtractors end
+
+    // RowMappers start
     private final class JobExecutionRowMapper implements RowMapper<JobExecution> {
         private JobInstance jobInstance;
         private JobParameters jobParameters;
@@ -109,7 +140,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         }
 
         public JobExecution mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Long id = Long.valueOf(rs.getLong(1));
+            Long id = rs.getLong(1);
             String jobConfigurationLocation = rs.getString(10);
             if (this.jobParameters == null) {
                 this.jobParameters = DataFlowJdbcJobExecutionDao.this.getJobParameters(id);
@@ -128,19 +159,21 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
             jobExecution.setExitStatus(new ExitStatus(rs.getString(5), rs.getString(6)));
             jobExecution.setCreateTime(rs.getTimestamp(7));
             jobExecution.setLastUpdated(rs.getTimestamp(8));
-            jobExecution.setVersion(Integer.valueOf(rs.getInt(9)));
+            jobExecution.setVersion(rs.getInt(9));
             return jobExecution;
         }
     }
 
     private final class JobInstanceRowMapper implements RowMapper<JobInstance> {
         public JobInstanceRowMapper() {
+
         }
 
         public JobInstance mapRow(ResultSet rs, int rowNum) throws SQLException {
-            JobInstance jobInstance = new JobInstance(Long.valueOf(rs.getLong(1)), rs.getString(2));
+            JobInstance jobInstance = new JobInstance(rs.getLong(1), rs.getString(2));
             jobInstance.incrementVersion();
             return jobInstance;
         }
     }
+    // RowMappers end
 }

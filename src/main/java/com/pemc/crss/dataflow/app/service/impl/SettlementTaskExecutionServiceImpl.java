@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
@@ -75,10 +76,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private LatestAdjustmentLockRepository latestAdjustmentLockRepository;
 
     @Override
-    public Page<StlTaskExecutionDto> findJobInstances(Pageable pageable) {
+    public Page<StlTaskExecutionDto> findJobInstances(final PageableRequest pageableRequest) {
+        final Long totalSize = dataFlowJdbcJobExecutionDao.countStlJobInstances(pageableRequest);
 
-        List<StlTaskExecutionDto> taskExecutionDtos = jobExplorer.findJobInstancesByJobName(STL_READY_JOB_NAME.concat("*"),
-                pageable.getOffset(), pageable.getPageSize()).stream()
+        final Pageable pageable = pageableRequest.getPageable();
+        List<StlTaskExecutionDto> taskExecutionDtos = dataFlowJdbcJobExecutionDao.findStlJobInstances(
+                pageable.getOffset(), pageable.getPageSize(), pageableRequest).stream()
                 .map((JobInstance jobInstance) -> {
 
                     if (getJobExecutions(jobInstance).iterator().hasNext()) {
@@ -372,12 +375,17 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 .filter(Objects::nonNull)
                 .collect(toList());
 
-        return new PageImpl<>(taskExecutionDtos, pageable, taskExecutionDtos.size());
+        return new PageImpl<>(taskExecutionDtos, pageable, totalSize);
     }
 
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate,
                                                                  String tradingStartDate, String tradingEndDate, String useername) {
+        return null;
+    }
+
+    @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable) {
         return null;
     }
 

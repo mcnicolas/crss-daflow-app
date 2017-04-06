@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlJobQuery;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.ExitStatus;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     private static final String FIND_CUSTOM_JOB_INSTANCE = "SELECT A.JOB_INSTANCE_ID, A.JOB_NAME from %PREFIX%JOB_INSTANCE A join %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID join %PREFIX%JOB_EXECUTION_PARAMS C on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID where JOB_NAME like ? and B.STATUS like ? and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') and (F.STRING_VAL like ? and F.KEY_NAME = 'username') order by JOB_INSTANCE_ID desc";
     private static final String COUNT_JOBS_WITH_NAME = "SELECT COUNT(*) from %PREFIX%JOB_INSTANCE A join %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID join %PREFIX%JOB_EXECUTION_PARAMS C on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID where JOB_NAME like ? and B.STATUS like ? and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') and (F.STRING_VAL like ? and F.KEY_NAME = 'username')";
@@ -82,24 +84,65 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
 
     // Stl Job Queries
     public Long countStlJobInstances(final PageableRequest pageableRequest) {
-        return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterCountQuery(), Long.class,
-                getStlParams(pageableRequest));
+        String processType = resolveProcessType(pageableRequest.getMapParams());
+
+        log.debug("Querying Stl Job Count query with processType: {}", processType);
+        switch (processType) {
+            case "ADJUSTED":
+            case "PRELIM":
+            case "FINAL":
+                return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterMonthlyCountQuery(), Long.class,
+                        getStlMonthlyParams(pageableRequest.getMapParams()));
+            case "DAILY":
+                return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterDailyCountQuery(), Long.class,
+                        getStlDailyParams(pageableRequest.getMapParams()));
+            default:
+                return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterAllCountQuery(), Long.class);
+        }
     }
 
     public List<JobInstance> findStlJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
-        return this.getJdbcTemplate().query(StlJobQuery.stlFilterSelectQuery(), getStlParams(pageableRequest),
-                getJobInstanceExtractor(start, count));
+        String processType = resolveProcessType(pageableRequest.getMapParams());
+
+        log.debug("Querying Stl Job Select query with processType: {}", processType);
+        switch (processType) {
+            case "ADJUSTED":
+            case "PRELIM":
+            case "FINAL":
+                return this.getJdbcTemplate().query(StlJobQuery.stlFilterMonthlySelectQuery(),
+                        getStlMonthlyParams(pageableRequest.getMapParams()),
+                        getJobInstanceExtractor(start, count));
+            case "DAILY":
+                return this.getJdbcTemplate().query(StlJobQuery.stlFilterDailySelectQuery(),
+                        getStlDailyParams(pageableRequest.getMapParams()),
+                        getJobInstanceExtractor(start, count));
+            default:
+                return this.getJdbcTemplate().query(StlJobQuery.stlFilterAllSelectQuery(),
+                        getJobInstanceExtractor(start, count));
+        }
     }
 
     // Support methods
-    private String[] getStlParams(final PageableRequest pageableRequest) {
-        Map<String, String> mapParams = pageableRequest.getMapParams();
+    private String resolveProcessType(final Map<String, String> mapParams) {
+        String processType = mapParams.getOrDefault("processType", null);
 
+        if (processType == null) {
+            processType = "ALL";
+        }
+
+        return processType;
+    }
+
+    private String[] getStlMonthlyParams(final Map<String, String> mapParams) {
         String processType = resolveQueryParam(mapParams.getOrDefault("processType", null));
         String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
         String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
 
         return new String[]{processType, startDate, endDate};
+    }
+
+    private String[] getStlDailyParams(final Map<String, String> mapParams) {
+        return new String[]{resolveQueryParam(mapParams.getOrDefault("tradingDate", null))};
     }
 
     private String resolveQueryParam(String param) {

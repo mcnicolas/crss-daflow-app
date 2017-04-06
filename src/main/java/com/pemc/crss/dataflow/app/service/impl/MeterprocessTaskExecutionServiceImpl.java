@@ -288,7 +288,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     if (!processType.equalsIgnoreCase(MeterProcessType.PRELIM.name())) {
                         String processBefore = processType.equalsIgnoreCase(MeterProcessType.FINAL.name()) ?
                                 MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
-                        checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
+                        checkProcessTypeState(processBefore, dateFormat.format(jobParameters.getDate(START_DATE)),
+                                dateFormat.format(jobParameters.getDate(END_DATE)), RUN_RCOA_JOB_NAME);
                     }
                 }
                 arguments.add(concatKeyValue(RCOA_USERNAME, taskRunDto.getCurrentUser()));

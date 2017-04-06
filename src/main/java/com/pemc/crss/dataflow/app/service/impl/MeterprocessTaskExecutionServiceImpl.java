@@ -4,9 +4,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
@@ -215,6 +215,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final Long runId = System.currentTimeMillis();
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                checkFinalizeDailyState(taskRunDto.getTradingDate());
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
@@ -224,6 +225,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
                     checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
                 }
+                checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
@@ -272,8 +274,13 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String processType = jobParameters.getString(PROCESS_TYPE);
             boolean isDaily = processType== null;
             if (isDaily) {
+                checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
+                if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
+                    checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)));
+                }
                 arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, jobParameters.getString(PROCESS_TYPE)));
@@ -314,14 +321,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_DAILY)));
                 } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
-                    checkFinalizeProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
-                            dateFormat.format(jobParameters.getDate(END_DATE)));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_PRELIM)));
                 } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
                     checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
-                    checkFinalizeProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
-                            dateFormat.format(jobParameters.getDate(END_DATE)));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_FINAL)));
                 } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
                     checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
@@ -356,14 +359,18 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     }
 
-
     private void checkProcessTypeState(String process, String startDate, String endDate, String jobName) {
         String errMsq = "Must run " + process + " first!";
         Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate, process, jobName) > 0, errMsq);
     }
 
+    private void checkFinalizeDailyState(String date) {
+        String errMsq = "You already have a process finalized on the same date: " + date + " !";
+        Preconditions.checkState(executionParamRepository.countDailyRun(date, RUN_STL_READY_JOB_NAME) < 1, errMsq);
+    }
+
     private void checkFinalizeProcessTypeState(String process, String startDate, String endDate) {
-        String errMsq = "You already have a " + process + " processed on the same billing period!";
+        String errMsq = "You already have a " + process + " finalized on the same billing period!";
         Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1, errMsq);
     }
 

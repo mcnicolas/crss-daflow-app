@@ -2,6 +2,9 @@ package com.pemc.crss.dataflow.app.support;
 
 public class StlJobQuery {
 
+    //TODO: remove % prefix once all stl ready job names in batch_job_instance start with 'stlReady'
+    private static final String STL_READY_JOB_NAME = "%stlReady%";
+
     private static final String JOB_INSTANCE_SELECT = "SELECT JI.JOB_INSTANCE_ID, JI.JOB_NAME ";
     private static final String JOB_INSTANCE_COUNT = "SELECT COUNT(1) ";
     private static final String FILTER_PREDICATE =
@@ -10,7 +13,7 @@ public class StlJobQuery {
         + "JOIN BATCH_JOB_EXECUTION_PARAMS JP_PROCESSTYPE ON JE.JOB_EXECUTION_ID = JP_PROCESSTYPE.JOB_EXECUTION_ID "
         + "JOIN BATCH_JOB_EXECUTION_PARAMS JP_STARTDATE ON JE.JOB_EXECUTION_ID = JP_STARTDATE.JOB_EXECUTION_ID "
         + "JOIN BATCH_JOB_EXECUTION_PARAMS JP_ENDDATE ON JE.JOB_EXECUTION_ID = JP_ENDDATE.JOB_EXECUTION_ID "
-    + "WHERE JI.JOB_NAME LIKE 'processStlReady%' "
+    + "WHERE JI.JOB_NAME ILIKE '"+ STL_READY_JOB_NAME +"' "
         + "AND JE.STATUS = 'COMPLETED' "
         + "AND (JP_PROCESSTYPE.KEY_NAME = 'processType' AND JP_PROCESSTYPE.STRING_VAL LIKE ?) "
         + "AND (JP_STARTDATE.KEY_NAME = 'startDate' AND TO_CHAR(JP_STARTDATE.DATE_VAL, 'MM/DD/YYYY') LIKE ?) "

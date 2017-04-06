@@ -46,7 +46,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private static final Logger LOG = LoggerFactory.getLogger(SettlementTaskExecutionServiceImpl.class);
 
     // Job names
-    private static final String STL_READY_JOB_NAME = "processStlReady";
     private static final String COMPUTE_STL_JOB_NAME = "computeSettlementSTL_AMT";
     private static final String FINALIZE_STL_JOB_NAME = "tasAsOutputReadySTL_AMT";
     private static final String COMPUTE_GMRVAT_MFEE_JOB_NAME = "computeSettlementGMR_MFEE";

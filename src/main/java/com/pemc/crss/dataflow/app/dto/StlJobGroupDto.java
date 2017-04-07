@@ -12,9 +12,8 @@ import java.util.SortedSet;
 
 public class StlJobGroupDto {
 
-    private BatchStatus stlAmtTaggingStatus;
     private BatchStatus gmrVatMFeeCalculationStatus;
-    private BatchStatus gmrVatMFeeTaggingStatus;
+    private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
     private String status;
     private boolean currentlyRunning;
@@ -37,14 +36,6 @@ public class StlJobGroupDto {
 
     private Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
-    public BatchStatus getStlAmtTaggingStatus() {
-        return stlAmtTaggingStatus;
-    }
-
-    public void setStlAmtTaggingStatus(BatchStatus stlAmtTaggingStatus) {
-        this.stlAmtTaggingStatus = stlAmtTaggingStatus;
-    }
-
     public BatchStatus getGmrVatMFeeCalculationStatus() {
         return gmrVatMFeeCalculationStatus;
     }
@@ -53,12 +44,12 @@ public class StlJobGroupDto {
         this.gmrVatMFeeCalculationStatus = gmrVatMFeeCalculationStatus;
     }
 
-    public BatchStatus getGmrVatMFeeTaggingStatus() {
-        return gmrVatMFeeTaggingStatus;
+    public BatchStatus getTaggingStatus() {
+        return taggingStatus;
     }
 
-    public void setGmrVatMFeeTaggingStatus(BatchStatus gmrVatMFeeTaggingStatus) {
-        this.gmrVatMFeeTaggingStatus = gmrVatMFeeTaggingStatus;
+    public void setTaggingStatus(BatchStatus taggingStatus) {
+        this.taggingStatus = taggingStatus;
     }
 
     public BatchStatus getInvoiceGenerationStatus() {

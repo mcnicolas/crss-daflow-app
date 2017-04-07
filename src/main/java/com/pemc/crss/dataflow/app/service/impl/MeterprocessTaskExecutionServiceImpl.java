@@ -225,7 +225,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
                     checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
                 }
-                checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
+                    checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                }
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));

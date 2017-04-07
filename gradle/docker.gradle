@@ -33,6 +33,7 @@ ext {
     serviceName = "${project.name}"
     dockerImageName = "$project.serviceName"
     dockerImageTag = registryUrl + "/$project.dockerImageName:" + 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
 }
 
 docker {
@@ -92,7 +93,7 @@ task buildDockerImage(type: DockerBuildImage, dependsOn: createDockerfile) {
 
 task tagDockerImage(type: DockerTagImage) {
     imageId = dockerImageTag
-    tag = "$version"
+    tag = dockerImageVersion
     repository = "${docker.registryCredentials.url}/$dockerImageName"
 }
 

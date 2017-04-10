@@ -32,6 +32,8 @@ public class StlJobGroupDto {
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
 
+    private String billingPeriodStr;
+
     private List<PartialCalculationDto> partialCalculationDtos;
 
     private Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
@@ -180,5 +182,13 @@ public class StlJobGroupDto {
 
     public void setRunningSteps(List<String> runningSteps) {
         this.runningSteps = runningSteps;
+    }
+
+    public String getBillingPeriodStr() {
+        return billingPeriodStr;
+    }
+
+    public void setBillingPeriodStr(String billingPeriodStr) {
+        this.billingPeriodStr = billingPeriodStr;
     }
 }

@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.commons.util.TaskUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.entity.LatestAdjustmentLock;
@@ -97,12 +98,15 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             LOG.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
                             parentId = String.valueOf(jobInstance.getInstanceId());
                         }
+
                         JobParameters jobParameters = jobExecution.getJobParameters();
                         Date startDate = jobParameters.getDate(START_DATE);
                         Date endDate = jobParameters.getDate(END_DATE);
                         Date date = jobParameters.getDate(DATE);
                         boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
                         LOG.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
+
+                        final String billingPeriodStr = isDaily ? "" : resolveBillingPeriod(Long.valueOf(parentId));
 
                         StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
                         taskExecutionDto.setId(Long.parseLong(parentId));
@@ -131,6 +135,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         parentStlJobGroupDto.setGroupId(jobId);
                         parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));
                         parentStlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
+                        parentStlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                         Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
 //                    Date recentJobEndTime = Date.from(Instant.MIN);
 
@@ -161,6 +166,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
+                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
                                 if (partialCalculationDtoList == null) {
@@ -227,6 +233,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
                                 stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
                                     updateProgress(calcGmrJobExecution, stlJobGroupDto);
@@ -266,6 +273,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, tagStatusSuffix));
                                 stlJobGroupDto.setTaggingStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
+                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 if (!stlJobGroupDto.getLatestJobExecStartDate().after(tagJobExecution.getStartTime())) {
                                     updateProgress(tagJobExecution, stlJobGroupDto);
@@ -306,6 +314,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
                                 stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
                                 stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
+                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
                                     updateProgress(generationJobExecution, stlJobGroupDto);
@@ -618,8 +627,27 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         }
                     });
         }
+
         dto.setRunningSteps(runningTasks);
         dto.setLatestJobExecStartDate(jobExecution.getStartTime());
         dto.setLatestJobExecEndDate(jobExecution.getEndTime());
+    }
+
+    private String resolveBillingPeriod(Long parentId) {
+        String returnVal = "";
+        JobExecution parentJob = jobExplorer.getJobExecution(parentId);
+        if (parentJob != null) {
+            Long runId = parentJob.getJobParameters().getLong(TaskUtil.RUN_ID);
+            Long billingPeriodId = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId")
+                    .stream().findFirst().map(BatchJobAddtlParams::getLongVal).get();
+            String supplyMonth = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth")
+                    .stream().findFirst().map(BatchJobAddtlParams::getStringVal).get();
+
+            if (StringUtils.isNotEmpty(supplyMonth)) {
+                return billingPeriodId + " - " + supplyMonth;
+            }
+        }
+
+        return returnVal;
     }
 }

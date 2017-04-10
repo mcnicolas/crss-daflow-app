@@ -68,7 +68,7 @@ repositories {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
     maven {
-        url "http://pemc-discovery.manila.exist.com:8081/repository/pemc-snapshots/"
+        url "http://pemc-storage.southeastasia.cloudapp.azure.com:8081/repository/pemc-snapshots/"
     }
 }
 

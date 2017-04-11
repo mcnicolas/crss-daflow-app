@@ -1,7 +1,9 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.dataflow.app.support.FinalizeJobQuery;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlJobQuery;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
@@ -120,6 +122,15 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 return this.getJdbcTemplate().query(StlJobQuery.stlFilterAllSelectQuery(),
                         getJobInstanceExtractor(start, count));
         }
+    }
+
+    public Long countFinalizeJobInstances(MeterProcessType type, String startDate, String endDate) {
+        String jobName = MeterProcessType.ADJUSTED == type
+                ? FinalizeJobQuery.FINALIZE_JOB_NAME_ADJ
+                : FinalizeJobQuery.FINALIZE_JOB_NAME_FINAL;
+
+        return this.getJdbcTemplate().queryForObject(FinalizeJobQuery.countQuery(), Long.class,
+                new String[]{jobName, startDate, endDate, type.name()});
     }
 
     // Support methods

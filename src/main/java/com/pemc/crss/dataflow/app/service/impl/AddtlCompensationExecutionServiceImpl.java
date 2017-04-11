@@ -8,6 +8,9 @@ import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunDto;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobExecution;
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,8 +35,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     private static final Logger LOG = LoggerFactory.getLogger(AddtlCompensationExecutionServiceImpl.class);
 
-    private static final String ADDTL_COMP_JOB_NAME = "potato";
-    private static final String ADDTL_COMP_TASK_NAME = "tomato";
+    private static final String ADDTL_COMP_JOB_NAME = "calculateAddtlComp";
+    private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation";
 
     private static final String PARAM_BILLING_ID = "billingId";
     private static final String PARAM_MTN = "mtn";
@@ -39,6 +44,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String PARAM_BILLING_START_DATE = "billingStartDate";
     private static final String PARAM_BILLING_END_DATE = "billingEndDate";
     private static final String PARAM_PRICING_CONDITION = "pricingCondition";
+
+    private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
@@ -82,28 +89,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        // temp code start
-        Map<String, Object> mapParams = Maps.newHashMap();
-        mapParams.put("billingId", "GENCO1");
-        mapParams.put("mtn", "GEN1");
-        mapParams.put("approvedRate", 123.45);
-        mapParams.put("billingStartDate", new Date());
-        mapParams.put("billingEndDate", new Date());
-        mapParams.put("pricingCondition", "SEC");
-
-        AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
-        addtlCompensationExecutionDto.setId(1L);
-        addtlCompensationExecutionDto.setStatus("COMPLETED");
-        addtlCompensationExecutionDto.setParams(mapParams);
-        addtlCompensationExecutionDto.setExitMessage("exit message");
-        addtlCompensationExecutionDto.setProgress(null);
-        addtlCompensationExecutionDto.setStatusDetails("status details");
-        addtlCompensationExecutionDto.setRunDateTime(new Date());
-
-        return new PageImpl<>(Lists.newArrayList(addtlCompensationExecutionDto), pageable, 1);
-        // temp code end
-
-//        return new PageImpl<>(addtlCompensationExecutionDtoList, pageable, totalSize);
+        return new PageImpl<>(addtlCompensationExecutionDtoList, pageable, totalSize);
     }
 
     @Override
@@ -128,28 +114,71 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
+        String startDate = addtlCompensationDto.getBillingStartDate();
+        String endDate = addtlCompensationDto.getBillingEndDate();
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(PARAM_BILLING_ID, addtlCompensationDto.getBillingId()));
         arguments.add(concatKeyValue(PARAM_MTN, addtlCompensationDto.getMtn()));
         arguments.add(concatKeyValue(PARAM_APPROVED_RATE, addtlCompensationDto.getApprovedRate().toString(), "long"));
-        arguments.add(concatKeyValue(PARAM_BILLING_START_DATE, addtlCompensationDto.getBillingStartDate(), "date"));
-        arguments.add(concatKeyValue(PARAM_BILLING_END_DATE, addtlCompensationDto.getBillingEndDate(), "date"));
+        arguments.add(concatKeyValue(PARAM_BILLING_START_DATE, startDate, "date"));
+        arguments.add(concatKeyValue(PARAM_BILLING_END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(PARAM_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
 
-        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("sampleProfile")));
+        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
+        Preconditions.checkState(hasAdjusted || dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0,
+                "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
+
+        checkTimeValidity(endDate);
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
 
         LOG.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_JOB_NAME, properties, arguments);
-//        launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
-//
-//        if (batchJobRunLockRepository.lockJob(ADDTL_COMP_JOB_NAME) == 0) {
-//            BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
-//            batchJobRunLock.setJobName(ADDTL_COMP_JOB_NAME);
-//            batchJobRunLock.setLocked(true);
-//            batchJobRunLock.setLockedDate(new Date());
-//            batchJobRunLockRepository.save(batchJobRunLock);
-//        }
+        launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
+
+        if (batchJobRunLockRepository.lockJob(ADDTL_COMP_JOB_NAME) == 0) {
+            BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
+            batchJobRunLock.setJobName(ADDTL_COMP_JOB_NAME);
+            batchJobRunLock.setLocked(true);
+            batchJobRunLock.setLockedDate(new Date());
+            batchJobRunLockRepository.save(batchJobRunLock);
+        }
+    }
+
+    private void checkTimeValidity(String billingEndDate) {
+        LocalDateTime endDate;
+        try {
+            endDate = DateUtil.getStartRangeDate(billingEndDate);
+            LocalDateTime dateDeterminant = LocalDateTime.now().minusMonths(ADDTL_COMP_MONTH_VALIDITY);
+
+            Preconditions.checkState(endDate.isAfter(dateDeterminant),
+                    "Billing period is now invalid due to ".concat(String.valueOf(ADDTL_COMP_MONTH_VALIDITY)).concat("-month limit"));
+        } catch (ParseException e) {
+            LOG.error("Unable to parse endDate", e);
+        }
+    }
+
+    private Page<AddtlCompensationExecutionDto> getTempResult(final Pageable pageable) {
+        Map<String, Object> mapParams = Maps.newHashMap();
+        mapParams.put("billingId", "GENCO1");
+        mapParams.put("mtn", "GEN1");
+        mapParams.put("approvedRate", 123.45);
+        mapParams.put("billingStartDate", new Date());
+        mapParams.put("billingEndDate", new Date());
+        mapParams.put("pricingCondition", "SEC");
+
+        AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
+        addtlCompensationExecutionDto.setId(1L);
+        addtlCompensationExecutionDto.setStatus("COMPLETED");
+        addtlCompensationExecutionDto.setParams(mapParams);
+        addtlCompensationExecutionDto.setExitMessage("exit message");
+        addtlCompensationExecutionDto.setProgress(null);
+        addtlCompensationExecutionDto.setStatusDetails("status details");
+        addtlCompensationExecutionDto.setRunDateTime(new Date());
+
+        return new PageImpl<>(Lists.newArrayList(addtlCompensationExecutionDto), pageable, 1);
     }
 
 }

@@ -631,17 +631,19 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     private String resolveBillingPeriod(Long parentId) {
         JobInstance jobInstance = jobExplorer.getJobInstance(parentId);
-        Optional<JobExecution> jobExecutionOpt = getJobExecutions(jobInstance).stream().findFirst();
+        if (jobInstance != null) {
+            Optional<JobExecution> jobExecutionOpt = getJobExecutions(jobInstance).stream().findFirst();
 
-        if (jobExecutionOpt.isPresent()) {
-            Long runId = jobExecutionOpt.get().getJobParameters().getLong(TaskUtil.RUN_ID);
-            Long billingPeriodId = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId")
-                    .stream().findFirst().map(BatchJobAddtlParams::getLongVal).orElse(null);
-            String supplyMonth = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth")
-                    .stream().findFirst().map(BatchJobAddtlParams::getStringVal).orElse(null);
+            if (jobExecutionOpt.isPresent()) {
+                Long runId = jobExecutionOpt.get().getJobParameters().getLong(TaskUtil.RUN_ID);
+                Long billingPeriodId = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId")
+                        .stream().findFirst().map(BatchJobAddtlParams::getLongVal).orElse(null);
+                String supplyMonth = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth")
+                        .stream().findFirst().map(BatchJobAddtlParams::getStringVal).orElse(null);
 
-            if (StringUtils.isNotEmpty(supplyMonth) && billingPeriodId != null) {
-                return billingPeriodId + " - " + supplyMonth;
+                if (StringUtils.isNotEmpty(supplyMonth) && billingPeriodId != null) {
+                    return billingPeriodId + " - " + supplyMonth;
+                }
             }
         }
 

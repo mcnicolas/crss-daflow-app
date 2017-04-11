@@ -20,8 +20,6 @@ import com.pemc.crss.shared.core.dataflow.repository.LatestAdjustmentLockReposit
 import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -43,8 +41,6 @@ import static java.util.stream.Collectors.toList;
 @Service("settlementTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
 public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SettlementTaskExecutionServiceImpl.class);
 
     // Job names
     private static final String COMPUTE_STL_JOB_NAME = "computeSettlementSTL_AMT";
@@ -88,14 +84,14 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         Long jobId = jobExecution.getJobId();
                         BatchStatus jobStatus = jobExecution.getStatus();
                         if (BatchStatus.COMPLETED != jobStatus) {
-                            LOG.debug("Job processStlReady with id {} removed with status: {} ", jobId, jobStatus.name());
+                            log.debug("Job processStlReady with id {} removed with status: {} ", jobId, jobStatus.name());
                             return null;
                         }
-                        LOG.debug("Processing processStlReady jobId {}", jobId);
+                        log.debug("Processing processStlReady jobId {}", jobId);
 
                         String parentId = jobInstance.getJobName().split("-")[1];
                         if (StringUtils.isEmpty(parentId)) {
-                            LOG.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
+                            log.warn("Parent id not appended for job instance id {}. Setting parent as self..", jobInstance.getId());
                             parentId = String.valueOf(jobInstance.getInstanceId());
                         }
 
@@ -104,7 +100,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         Date endDate = jobParameters.getDate(END_DATE);
                         Date date = jobParameters.getDate(DATE);
                         boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
-                        LOG.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
+                        log.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
 
                         final String billingPeriodStr = isDaily ? "" : resolveBillingPeriod(Long.valueOf(parentId));
 
@@ -399,7 +395,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     start = DateUtil.convertToDate(baseStartDate);
                     end = DateUtil.convertToDate(baseEndDate);
                 } catch (ParseException e) {
-                    LOG.warn("Unable to parse billing date", e);
+                    log.warn("Unable to parse billing date", e);
                 }
 
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
@@ -536,17 +532,17 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             jobName = "crss-settlement-task-invoice-generation";
         }
-        LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+        log.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         if (jobName != null) {
-            LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+            log.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
     }
 
     private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
-        LOG.debug("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        log.debug("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
             batchJobAddtlParamsInvoiceDate.setRunId(runId);
@@ -576,7 +572,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
             batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
         } catch (ParseException e) {
-            LOG.error("Error parsing additional batch job params for AMS: {}", e);
+            log.error("Error parsing additional batch job params for AMS: {}", e);
         }
     }
 
@@ -623,7 +619,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         if (map.containsKey(stepName)) {
                             runningTasks.add(map.get(stepName));
                         } else {
-                            LOG.warn("Step name {} not existing in current mapping.", stepName);
+                            log.warn("Step name {} not existing in current mapping.", stepName);
                         }
                     });
         }
@@ -634,20 +630,21 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     }
 
     private String resolveBillingPeriod(Long parentId) {
-        String returnVal = "";
-        JobExecution parentJob = jobExplorer.getJobExecution(parentId);
-        if (parentJob != null) {
-            Long runId = parentJob.getJobParameters().getLong(TaskUtil.RUN_ID);
-            Long billingPeriodId = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId")
-                    .stream().findFirst().map(BatchJobAddtlParams::getLongVal).get();
-            String supplyMonth = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth")
-                    .stream().findFirst().map(BatchJobAddtlParams::getStringVal).get();
+        JobInstance jobInstance = jobExplorer.getJobInstance(parentId);
+        Optional<JobExecution> jobExecutionOpt = getJobExecutions(jobInstance).stream().findFirst();
 
-            if (StringUtils.isNotEmpty(supplyMonth)) {
+        if (jobExecutionOpt.isPresent()) {
+            Long runId = jobExecutionOpt.get().getJobParameters().getLong(TaskUtil.RUN_ID);
+            Long billingPeriodId = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId")
+                    .stream().findFirst().map(BatchJobAddtlParams::getLongVal).orElse(null);
+            String supplyMonth = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth")
+                    .stream().findFirst().map(BatchJobAddtlParams::getStringVal).orElse(null);
+
+            if (StringUtils.isNotEmpty(supplyMonth) && billingPeriodId != null) {
                 return billingPeriodId + " - " + supplyMonth;
             }
         }
 
-        return returnVal;
+        return "";
     }
 }

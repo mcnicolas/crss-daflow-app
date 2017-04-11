@@ -331,6 +331,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
                     checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
+                    checkFinalizedAdjustmentState(jobParameters.getLong(RUN_ID), MeterProcessType.ADJUSTED.name(),
+                            dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
                 }
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
@@ -376,5 +378,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1, errMsq);
     }
 
+    private void checkFinalizedAdjustmentState(Long parentRunId, String process, String startDate, String endDate) {
+        String errMsq = "A finalized run with a later date already exist!";
+        Preconditions.checkState(executionParamRepository.findLatestWesmRunIdMonthly(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < parentRunId, errMsq);
+    }
 
 }

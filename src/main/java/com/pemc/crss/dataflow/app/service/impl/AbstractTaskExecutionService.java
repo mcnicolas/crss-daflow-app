@@ -241,7 +241,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
                     .findFirst().get();
-            LOGGER.debug("RUNNING STEP NAME: {}", runningStep.getStepName());
+            LOGGER.debug("RUNNING STEP NAME: {}, ID: {}", runningStep.getStepName(), runningStep.getId());
             if (runningStep.getStepName().equals("processGapStep")) {
                 progressDto = processStepProgress(runningStep, "Generate gap records");
             } else if (runningStep.getStepName().equals("computeMqStep")) {

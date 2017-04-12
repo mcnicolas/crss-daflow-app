@@ -12,6 +12,7 @@ public class TaskExecutionDto extends BaseTaskExecutionDto {
     private BatchStatus mqReportStatus;
     private BatchStatus settlementStatus;
     private BatchStatus settlementReadyStatus;
+    private BatchStatus mqReportStatusAfterFinalized;
     private BatchStatus calculationStatus;
     private BatchStatus taggingStatus;
 
@@ -54,6 +55,14 @@ public class TaskExecutionDto extends BaseTaskExecutionDto {
 
     public void setSettlementReadyStatus(BatchStatus settlementReadyStatus) {
         this.settlementReadyStatus = settlementReadyStatus;
+    }
+
+    public BatchStatus getMqReportStatusAfterFinalized() {
+        return mqReportStatusAfterFinalized;
+    }
+
+    public void setMqReportStatusAfterFinalized(BatchStatus mqReportStatusAfterFinalized) {
+        this.mqReportStatusAfterFinalized = mqReportStatusAfterFinalized;
     }
 
     public BatchStatus getCalculationStatus() {

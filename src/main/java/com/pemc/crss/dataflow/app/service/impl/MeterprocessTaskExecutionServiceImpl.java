@@ -10,6 +10,7 @@ import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
@@ -75,6 +76,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                             String wesmUser = (String) jobParameters.getOrDefault(WESM_USERNAME, "");
+                            String processType = (String) jobParameters.getOrDefault(PROCESS_TYPE, "");
 
                             TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
                             taskExecutionDto.setId(jobInstance.getId());
@@ -175,6 +177,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                     taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
                                 }
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementReadyStatus(), "Settlement Ready"));
+                            }
+
+                            if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED
+                                    && StringUtils.isNotEmpty(processType)
+                                    && processType.equals(MeterProcessType.ADJUSTED.name())) {
+                                taskExecutionDto.setMqReportStatusAfterFinalized(BatchStatus.COMPLETED);
                             }
 
                             return taskExecutionDto;

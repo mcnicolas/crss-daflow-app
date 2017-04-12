@@ -131,7 +131,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getMqReportStatus() == BatchStatus.COMPLETED) {
                                     taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution));
                                 }
-                                taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getMqReportStatus(), "MQ Report"));
                             }
 
                             List<JobInstance> settlementNotReadyJobs = jobExplorer.findJobInstancesByJobName(

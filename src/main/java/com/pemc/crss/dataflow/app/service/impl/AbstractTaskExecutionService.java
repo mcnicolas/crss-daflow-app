@@ -13,6 +13,8 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
@@ -46,6 +48,8 @@ import static java.util.stream.Collectors.toList;
  * Created by jdimayuga on 03/03/2017.
  */
 public abstract class AbstractTaskExecutionService implements TaskExecutionService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTaskExecutionService.class);
 
     protected static final String RUN_ID = "run.id";
     protected static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
@@ -237,6 +241,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
                     .findFirst().get();
+            LOGGER.debug("RUNNING STEP NAME: {}", runningStep.getStepName());
             if (runningStep.getStepName().equals("processGapStep")) {
                 progressDto = processStepProgress(runningStep, "Generate gap records");
             } else if (runningStep.getStepName().equals("computeMqStep")) {

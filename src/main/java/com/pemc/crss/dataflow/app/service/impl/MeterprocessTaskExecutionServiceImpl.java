@@ -76,7 +76,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                             String wesmUser = (String) jobParameters.getOrDefault(WESM_USERNAME, "");
-                            String processType = (String) jobParameters.getOrDefault(PROCESS_TYPE, "");
 
                             TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
                             taskExecutionDto.setId(jobInstance.getId());
@@ -179,9 +178,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementReadyStatus(), "Settlement Ready"));
                             }
 
-                            if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED
-                                    && StringUtils.isNotEmpty(processType)
-                                    && processType.equals(MeterProcessType.ADJUSTED.name())) {
+                            if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED) {
                                 taskExecutionDto.setMqReportStatusAfterFinalized(BatchStatus.COMPLETED);
                             }
 
@@ -284,7 +281,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String processType = jobParameters.getString(PROCESS_TYPE);
             boolean isDaily = processType== null;
             if (isDaily) {
-                checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
+                    checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                }
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
@@ -390,5 +389,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         String errMsq = "A finalized run with a later date already exist!";
         Preconditions.checkState(executionParamRepository.findLatestWesmRunIdMonthly(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < parentRunId, errMsq);
     }
+
+    private void
 
 }

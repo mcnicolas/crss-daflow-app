@@ -48,6 +48,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private static final String PARAMS_BILLING_PERIOD = "billingPeriod";
     private static final String PARAMS_SUPPLY_MONTH = "supplyMonth";
     private static final String PARAMS_BILLING_PERIOD_NAME = "billingPeriodName";
+    private static final String MQ_REPORT_STAT_AFTER_FINALIZE = "mqReportStatusAfterFinalized";
 
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
@@ -120,10 +121,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             List<JobInstance> mqReportJobs = jobExplorer.findJobInstancesByJobName(
                                     RUN_MQ_REPORT_JOB_NAME.concat("*-").concat(jobInstance.getId().toString()), 0, 1);
-
+                            String mqReportStatusAfterFinalized = null;
                             if (!mqReportJobs.isEmpty()) {
                                 JobExecution mqReportJobExecution = getJobExecutions(mqReportJobs.get(0)).iterator().next();
+                                Map mqReportJobParameters = Maps.transformValues(mqReportJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                                 taskExecutionDto.setMqReportStatus(mqReportJobExecution.getStatus());
+                                mqReportStatusAfterFinalized = (String) mqReportJobParameters.getOrDefault(MQ_REPORT_STAT_AFTER_FINALIZE, "");
 
                                 if (taskExecutionDto.getMqReportStatus().isRunning()) {
                                     calculateProgress(mqReportJobExecution, taskExecutionDto);
@@ -178,7 +181,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementReadyStatus(), "Settlement Ready"));
                             }
 
-                            if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED) {
+                            if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED
+                                    && StringUtils.isNotEmpty(mqReportStatusAfterFinalized)
+                                    && mqReportStatusAfterFinalized.equals(BatchStatus.COMPLETED.name())) {
                                 taskExecutionDto.setMqReportStatusAfterFinalized(BatchStatus.COMPLETED);
                             }
 
@@ -350,6 +355,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ_REPORT)));
                 } else {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ_REPORT)));
+                }
+                if (taskRunDto.getTradingDate() != null
+                        && taskRunDto.getTradingDate().equals(BatchStatus.COMPLETED.name())) {
+                    arguments.add(concatKeyValue(MQ_REPORT_STAT_AFTER_FINALIZE, BatchStatus.COMPLETED.name()));
                 }
                 arguments.remove(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                 jobName = "crss-meterprocess-task-mqcomputation";

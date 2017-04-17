@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.pemc.crss.dataflow.app.support.FinalizeJobQuery;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlJobQuery;
+import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -86,16 +87,16 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
 
     // Stl Job Queries
     public Long countStlJobInstances(final PageableRequest pageableRequest) {
-        String processType = resolveProcessType(pageableRequest.getMapParams());
+        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
 
         log.debug("Querying Stl Job Count query with processType: {}", processType);
         switch (processType) {
-            case "ADJUSTED":
-            case "PRELIM":
-            case "FINAL":
+            case ADJUSTED:
+            case PRELIM:
+            case FINAL:
                 return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterMonthlyCountQuery(), Long.class,
-                        getStlMonthlyParams(pageableRequest.getMapParams()));
-            case "DAILY":
+                        getStlMonthlyParams(pageableRequest.getMapParams(), processType));
+            case DAILY:
                 return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterDailyCountQuery(), Long.class,
                         getStlDailyParams(pageableRequest.getMapParams()));
             default:
@@ -104,17 +105,18 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     }
 
     public List<JobInstance> findStlJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
-        String processType = resolveProcessType(pageableRequest.getMapParams());
+        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
 
         log.debug("Querying Stl Job Select query with processType: {}", processType);
         switch (processType) {
-            case "ADJUSTED":
-            case "PRELIM":
-            case "FINAL":
+            case ADJUSTED:
+            case PRELIM:
+            case FINAL:
+            case ALL_MONTHLY:
                 return this.getJdbcTemplate().query(StlJobQuery.stlFilterMonthlySelectQuery(),
-                        getStlMonthlyParams(pageableRequest.getMapParams()),
+                        getStlMonthlyParams(pageableRequest.getMapParams(), processType),
                         getJobInstanceExtractor(start, count));
-            case "DAILY":
+            case DAILY:
                 return this.getJdbcTemplate().query(StlJobQuery.stlFilterDailySelectQuery(),
                         getStlDailyParams(pageableRequest.getMapParams()),
                         getJobInstanceExtractor(start, count));
@@ -134,18 +136,19 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     }
 
     // Support methods
-    private String resolveProcessType(final Map<String, String> mapParams) {
+    private StlQueryProcessType resolveProcessType(final Map<String, String> mapParams) {
         String processType = mapParams.getOrDefault("processType", null);
 
         if (processType == null) {
             processType = "ALL";
         }
 
-        return processType;
+        return StlQueryProcessType.valueOf(processType);
     }
 
-    private String[] getStlMonthlyParams(final Map<String, String> mapParams) {
-        String processType = resolveQueryParam(mapParams.getOrDefault("processType", null));
+    private String[] getStlMonthlyParams(final Map<String, String> mapParams, StlQueryProcessType processTypeEnum) {
+        String processType = StlQueryProcessType.MONTHLY_PROCESS_TYPES.contains(processTypeEnum)
+                ? processTypeEnum.toString() : "%";
         String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
         String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
 

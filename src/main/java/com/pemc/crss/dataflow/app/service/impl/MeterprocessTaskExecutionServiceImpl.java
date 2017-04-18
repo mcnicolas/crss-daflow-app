@@ -291,7 +291,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
-                if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
+                if (!MeterProcessType.ADJUSTED.name().equals(processType)
+                        && !RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                     checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)));
                 }

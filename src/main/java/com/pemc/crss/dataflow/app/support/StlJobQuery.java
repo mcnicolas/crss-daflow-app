@@ -2,6 +2,9 @@ package com.pemc.crss.dataflow.app.support;
 
 public class StlJobQuery {
 
+    public static final String DEFAULT_TRADING_DATE_START = "01/01/1970";
+    public static final String DEFAULT_TRADING_DATE_END = "12/31/2099";
+
     //TODO: remove % prefix once all stl ready job names in batch_job_instance start with 'stlReady'
     private static final String STL_READY_JOB_NAME = "%stlReady%";
 
@@ -17,7 +20,7 @@ public class StlJobQuery {
         + "JOIN BATCH_JOB_EXECUTION JE ON JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
         + "JOIN BATCH_JOB_EXECUTION_PARAMS JP_DATE ON JE.JOB_EXECUTION_ID = JP_DATE.JOB_EXECUTION_ID "
     + "WHERE JI.JOB_NAME ILIKE '"+ STL_READY_JOB_NAME +"' AND JE.STATUS = 'COMPLETED' "
-        + "AND (JP_DATE.KEY_NAME = 'date' AND TO_CHAR(JP_DATE.DATE_VAL, 'MM/DD/YYYY') LIKE ?) ";
+        + "AND (JP_DATE.KEY_NAME = 'date' AND JP_DATE.DATE_VAL BETWEEN TO_DATE(?, 'MM/DD/YYYY') AND TO_DATE(?, 'MM/DD/YYYY')) ";
 
     private static final String FILTER_PREDICATE_MONTHLY =
     "FROM BATCH_JOB_INSTANCE JI "

@@ -156,11 +156,17 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     }
 
     private String[] getStlDailyParams(final Map<String, String> mapParams) {
-        return new String[]{resolveQueryParam(mapParams.getOrDefault("tradingDate", null))};
+        String tradingDateStart = getStringValFromMap(mapParams, "tradingDateStart", StlJobQuery.DEFAULT_TRADING_DATE_START);
+        String tradingDateEnd = getStringValFromMap(mapParams, "tradingDateEnd", StlJobQuery.DEFAULT_TRADING_DATE_END);
+
+        return new String[]{tradingDateStart, tradingDateEnd};
     }
 
     private String resolveQueryParam(String param) {
         return StringUtils.isEmpty(param) ? "%" : param;
+    }
+    private String getStringValFromMap(final Map<String, String> mapParams, final String key, final String defaultValue) {
+        return mapParams.containsKey(key) && mapParams.get(key) != null ? mapParams.get(key) : defaultValue;
     }
 
     // ResultSetExtractors start

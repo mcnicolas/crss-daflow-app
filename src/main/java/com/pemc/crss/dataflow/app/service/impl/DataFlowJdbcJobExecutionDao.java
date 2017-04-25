@@ -1,9 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import com.pemc.crss.dataflow.app.support.FinalizeJobQuery;
-import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.dataflow.app.support.StlJobQuery;
-import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
+import com.pemc.crss.dataflow.app.support.*;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -135,6 +132,27 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 new String[]{jobName, startDate, endDate, type.name()});
     }
 
+    public List<JobExecution> findStlCalcJobInstances(String parentGroup, MeterProcessType type, String startDate, String endDate) {
+        String jobName;
+        switch (type) {
+            case PRELIM:
+            case PRELIMINARY:
+                jobName = StlCalculationQuery.CALC_JOB_NAME_PRELIM;
+                break;
+            case FINAL:
+                jobName = StlCalculationQuery.CALC_JOB_NAME_FINAL;
+                break;
+            case ADJUSTED:
+                jobName = StlCalculationQuery.CALC_JOB_NAME_ADJ;
+                break;
+            default:
+                jobName = StlCalculationQuery.CALC_JOB_NAME_DAILY;
+        }
+
+        return this.getJdbcTemplate().query(StlCalculationQuery.executionQuery(), new DataFlowJdbcJobExecutionDao.JobExecutionColNameRowMapper(null),
+                new String[]{jobName.concat(parentGroup), startDate, endDate, startDate, endDate, type != null ? type.name() : ""});
+    }
+
     // Support methods
     private StlQueryProcessType resolveProcessType(final Map<String, String> mapParams) {
         String processType = mapParams.getOrDefault("processType", null);
@@ -223,6 +241,51 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
             jobExecution.setCreateTime(rs.getTimestamp(7));
             jobExecution.setLastUpdated(rs.getTimestamp(8));
             jobExecution.setVersion(rs.getInt(9));
+            return jobExecution;
+        }
+    }
+
+    private final class JobExecutionColNameRowMapper implements RowMapper<JobExecution> {
+        private JobInstance jobInstance;
+        private JobParameters jobParameters;
+
+        private final String[] columns = new String[]{
+                "job_execution_id",
+                "version",
+                "job_instance_id",
+                "create_time",
+                "start_time",
+                "end_time",
+                "status",
+                "exit_code",
+                "exit_message",
+                "last_updated",
+                "job_configuration_location"
+        };
+
+        public JobExecutionColNameRowMapper(JobInstance jobInstance) {
+            this.jobInstance = jobInstance;
+        }
+
+        public JobExecution mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Long id = rs.getLong(columns[0]);
+            String jobConfigurationLocation = rs.getString(columns[10]);
+            this.jobParameters = DataFlowJdbcJobExecutionDao.this.getJobParameters(id);
+
+            JobExecution jobExecution;
+            if (this.jobInstance == null) {
+                jobExecution = new JobExecution(id, this.jobParameters, jobConfigurationLocation);
+            } else {
+                jobExecution = new JobExecution(this.jobInstance, id, this.jobParameters, jobConfigurationLocation);
+            }
+
+            jobExecution.setStartTime(rs.getTimestamp(columns[4]));
+            jobExecution.setEndTime(rs.getTimestamp(columns[5]));
+            jobExecution.setStatus(BatchStatus.valueOf(rs.getString(columns[6])));
+            jobExecution.setExitStatus(new ExitStatus(rs.getString(columns[7]), rs.getString(columns[8])));
+            jobExecution.setCreateTime(rs.getTimestamp(columns[3]));
+            jobExecution.setLastUpdated(rs.getTimestamp(columns[9]));
+            jobExecution.setVersion(rs.getInt(columns[1]));
             return jobExecution;
         }
     }

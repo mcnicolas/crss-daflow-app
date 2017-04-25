@@ -463,9 +463,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 }
             }
         } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
-
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
+            validatePartialCalculation(taskRunDto);
 
             String type = taskRunDto.getMeterProcessType();
 
@@ -653,5 +653,28 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         }
 
         return "";
+    }
+
+    private void validatePartialCalculation(final TaskRunDto taskRunDto) {
+        String parentGroup = taskRunDto.getParentJob() + "-" + taskRunDto.getGroupId();
+        MeterProcessType type = MeterProcessType.valueOf(taskRunDto.getMeterProcessType());
+        List<JobExecution> jobExecutions = dataFlowJdbcJobExecutionDao.findStlCalcJobInstances(parentGroup, type, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+        Preconditions.checkState(jobExecutions.size() > 1, "There should be a completed ".concat(COMPUTE_STL_JOB_NAME).concat(" job for "));
+
+        Date start = null;
+        Date end = null;
+        try {
+            start = DateUtil.convertToDate(DateUtil.getStartRangeDate(taskRunDto.getStartDate()));
+            end = DateUtil.convertToDate(DateUtil.getStartRangeDate(taskRunDto.getEndDate()));
+        } catch (ParseException e) {
+            log.error("Unable to convert: string -> date -> localDate ", e);
+        }
+
+        SortedSet<LocalDate> remainingDate = createRange(start, end);
+        jobExecutions.forEach(jobExecution -> {
+            JobParameters jobParameters = jobExecution.getJobParameters();
+            removeDateRangeFrom(remainingDate, jobParameters.getDate(START_DATE), jobParameters.getDate(END_DATE));
+        });
+        Preconditions.checkState(remainingDate.size() < 1, "Incomplete calculation is not allowed for job: ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME));
     }
 }

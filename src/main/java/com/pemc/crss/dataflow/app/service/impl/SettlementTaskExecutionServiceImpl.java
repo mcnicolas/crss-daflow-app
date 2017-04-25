@@ -171,7 +171,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setRunEndDateTime(calcJobExecution.getEndTime());
 
                                     // get first stl-calc item's status
-                                    stlJobGroupDto.setStatus(convertStatus(isDaily ? currentStatus : jobStatus, calcStatusSuffix));
+                                    stlJobGroupDto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
                                 }
                                 PartialCalculationDto dto = new PartialCalculationDto();
                                 dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));

@@ -169,6 +169,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     partialCalculationDtoList = Lists.newArrayList();
                                     stlJobGroupDto.setRunStartDateTime(calcJobExecution.getStartTime());
                                     stlJobGroupDto.setRunEndDateTime(calcJobExecution.getEndTime());
+
+                                    // get first stl-calc item's status
+                                    stlJobGroupDto.setStatus(convertStatus(isDaily ? currentStatus : jobStatus, calcStatusSuffix));
                                 }
                                 PartialCalculationDto dto = new PartialCalculationDto();
                                 dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
@@ -184,7 +187,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 }
 
                                 stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
-                                stlJobGroupDto.setStatus(convertStatus(isDaily ? currentStatus : jobStatus, calcStatusSuffix));
                                 stlJobGroupDto.setGroupId(groupId);
 
                                 Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();

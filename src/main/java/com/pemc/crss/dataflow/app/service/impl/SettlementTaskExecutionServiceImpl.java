@@ -498,13 +498,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 type = batchJobAdjRun.getMeterProcessType().name();
             }
 
-            Preconditions.checkState(type != null, "Cannot run GMR/Market Fee tagging job on daily basis.");
+            Preconditions.checkState(type != null, "Cannot run tagging job on daily basis.");
             if (MeterProcessType.ADJUSTED.name().equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedGmrVatMfeeTagging")));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedTagging")));
             } else if (MeterProcessType.PRELIMINARY.name().equals(type) || MeterProcessType.PRELIM.name().equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimGmrVatMfeeTagging")));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimTagging")));
             } else if (MeterProcessType.FINAL.name().equals(type)) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalGmrVatMfeeTagging")));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalTagging")));
             }
 
             arguments.add(concatKeyValue(PROCESS_TYPE, type));

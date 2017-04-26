@@ -659,7 +659,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         String parentGroup = taskRunDto.getParentJob() + "-" + taskRunDto.getGroupId();
         MeterProcessType type = MeterProcessType.valueOf(taskRunDto.getMeterProcessType());
         List<JobExecution> jobExecutions = dataFlowJdbcJobExecutionDao.findStlCalcJobInstances(parentGroup, type, taskRunDto.getStartDate(), taskRunDto.getEndDate());
-        Preconditions.checkState(jobExecutions.size() > 1, "There should be a completed ".concat(COMPUTE_STL_JOB_NAME).concat(" job for "));
+        Preconditions.checkState(jobExecutions.size() > 0, "There should be a completed ".concat(COMPUTE_STL_JOB_NAME).concat(" job for "));
 
         Date start = null;
         Date end = null;

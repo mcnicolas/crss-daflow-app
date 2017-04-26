@@ -164,6 +164,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
                                 stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
+                                // reset status
+                                stlJobGroupDto.setGmrVatMFeeCalculationStatus(null);
+
                                 List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
                                 if (partialCalculationDtoList == null) {
                                     partialCalculationDtoList = Lists.newArrayList();

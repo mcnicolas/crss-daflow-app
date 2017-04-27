@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.pemc.crss.shared.commons.util.TaskUtil.*;
+
 @Service("addtlCompensationExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")
 public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecutionService {
@@ -37,13 +39,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     private static final String ADDTL_COMP_JOB_NAME = "calculateAddtlComp";
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation";
-
-    private static final String PARAM_BILLING_ID = "acBillingId";
-    private static final String PARAM_MTN = "acMtn";
-    private static final String PARAM_APPROVED_RATE = "acApprovedRate";
-    private static final String PARAM_BILLING_START_DATE = "startDate";
-    private static final String PARAM_BILLING_END_DATE = "endDate";
-    private static final String PARAM_PRICING_CONDITION = "acPricingCondition";
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
@@ -119,12 +114,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(PARAM_BILLING_ID, addtlCompensationDto.getBillingId()));
-        arguments.add(concatKeyValue(PARAM_MTN, addtlCompensationDto.getMtn()));
-        arguments.add(concatKeyValue(PARAM_APPROVED_RATE, addtlCompensationDto.getApprovedRate().toString(), "long"));
-        arguments.add(concatKeyValue(PARAM_BILLING_START_DATE, startDate, "date"));
-        arguments.add(concatKeyValue(PARAM_BILLING_END_DATE, endDate, "date"));
-        arguments.add(concatKeyValue(PARAM_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
+        arguments.add(concatKeyValue(AC_BILLING_ID, addtlCompensationDto.getBillingId()));
+        arguments.add(concatKeyValue(AC_MTN, addtlCompensationDto.getMtn()));
+        arguments.add(concatKeyValue(AC_APPROVED_RATE, addtlCompensationDto.getApprovedRate().toString(), "double"));
+        arguments.add(concatKeyValue(START_DATE, startDate, "date"));
+        arguments.add(concatKeyValue(END_DATE, endDate, "date"));
+        arguments.add(concatKeyValue(AC_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
 
         boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
         Preconditions.checkState(hasAdjusted || dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0,

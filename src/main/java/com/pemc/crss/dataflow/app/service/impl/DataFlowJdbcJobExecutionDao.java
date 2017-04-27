@@ -91,6 +91,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
             case ADJUSTED:
             case PRELIM:
             case FINAL:
+            case ALL_MONTHLY:
                 return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterMonthlyCountQuery(), Long.class,
                         getStlMonthlyParams(pageableRequest.getMapParams(), processType));
             case DAILY:

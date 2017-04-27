@@ -38,12 +38,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String ADDTL_COMP_JOB_NAME = "calculateAddtlComp";
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation";
 
-    private static final String PARAM_BILLING_ID = "billingId";
-    private static final String PARAM_MTN = "mtn";
-    private static final String PARAM_APPROVED_RATE = "approvedRate";
+    private static final String PARAM_BILLING_ID = "acBillingId";
+    private static final String PARAM_MTN = "acMtn";
+    private static final String PARAM_APPROVED_RATE = "acApprovedRate";
     private static final String PARAM_BILLING_START_DATE = "startDate";
     private static final String PARAM_BILLING_END_DATE = "endDate";
-    private static final String PARAM_PRICING_CONDITION = "pricingCondition";
+    private static final String PARAM_PRICING_CONDITION = "acPricingCondition";
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 

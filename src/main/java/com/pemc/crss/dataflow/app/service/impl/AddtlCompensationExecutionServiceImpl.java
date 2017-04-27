@@ -41,8 +41,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String PARAM_BILLING_ID = "billingId";
     private static final String PARAM_MTN = "mtn";
     private static final String PARAM_APPROVED_RATE = "approvedRate";
-    private static final String PARAM_BILLING_START_DATE = "billingStartDate";
-    private static final String PARAM_BILLING_END_DATE = "billingEndDate";
+    private static final String PARAM_BILLING_START_DATE = "startDate";
+    private static final String PARAM_BILLING_END_DATE = "endDate";
     private static final String PARAM_PRICING_CONDITION = "pricingCondition";
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
@@ -158,27 +158,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         } catch (ParseException e) {
             LOG.error("Unable to parse endDate", e);
         }
-    }
-
-    private Page<AddtlCompensationExecutionDto> getTempResult(final Pageable pageable) {
-        Map<String, Object> mapParams = Maps.newHashMap();
-        mapParams.put("billingId", "GENCO1");
-        mapParams.put("mtn", "GEN1");
-        mapParams.put("approvedRate", 123.45);
-        mapParams.put("billingStartDate", new Date());
-        mapParams.put("billingEndDate", new Date());
-        mapParams.put("pricingCondition", "SEC");
-
-        AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
-        addtlCompensationExecutionDto.setId(1L);
-        addtlCompensationExecutionDto.setStatus("COMPLETED");
-        addtlCompensationExecutionDto.setParams(mapParams);
-        addtlCompensationExecutionDto.setExitMessage("exit message");
-        addtlCompensationExecutionDto.setProgress(null);
-        addtlCompensationExecutionDto.setStatusDetails("status details");
-        addtlCompensationExecutionDto.setRunDateTime(new Date());
-
-        return new PageImpl<>(Lists.newArrayList(addtlCompensationExecutionDto), pageable, 1);
     }
 
 }

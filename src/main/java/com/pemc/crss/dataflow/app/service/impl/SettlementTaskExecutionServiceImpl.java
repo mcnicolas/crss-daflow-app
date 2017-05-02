@@ -47,6 +47,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private static final String COMPUTE_GMRVAT_MFEE_JOB_NAME = "computeSettlementGMR_MFEE";
     private static final String FINALIZE_JOB_NAME = "tasAsOutputReady";
     private static final String GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
+    private static final String STL_VALIDATION_JOB_NAME = "stlValidation";
 
     private static final String AMS_INVOICE_DATE = "amsInvoiceDate";
     private static final String AMS_DUE_DATE = "amsDueDate";
@@ -187,7 +188,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 partialCalculationDtoList.add(dto);
 
                                 if (!isDaily && BatchStatus.COMPLETED == currentStatus
-                                    && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
+                                        && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
                                     removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
                                 }
 
@@ -331,7 +332,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
                                 Optional.ofNullable(generationJobExecution.getExecutionContext()
-                                    .get(INVOICE_GENERATION_FILENAME)).ifPresent(val ->
+                                        .get(INVOICE_GENERATION_FILENAME)).ifPresent(val ->
                                         stlJobGroupDto.setInvoiceGenFolder((String) val));
 
                                 if (stlJobGroupDto.isHeader()) {
@@ -543,6 +544,29 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
             jobName = "crss-settlement-task-invoice-generation";
+        } else if (STL_VALIDATION_JOB_NAME.equals(taskRunDto.getJobName())) {
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(STL_VALIDATION_JOB_NAME) == 0,
+                    String.format("There is an existing %s job running", STL_VALIDATION_JOB_NAME));
+            String type = taskRunDto.getMeterProcessType();
+
+            if (type == null) {
+                type = PROCESS_TYPE_DAILY;
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyStlValidation")));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
+            } else {
+                if (MeterProcessType.ADJUSTED.name().equals(type)) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlValidation")));
+                } else if (MeterProcessType.PRELIMINARY.name().equals(type) || "PRELIM".equals(type)) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimStlValidation")));
+                } else if (MeterProcessType.FINAL.name().equals(type)) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlValidation")));
+                }
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+            }
+
+            arguments.add(concatKeyValue(PROCESS_TYPE, type));
+            jobName = "crss-settlement-task-validation";
         }
         log.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 

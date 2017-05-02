@@ -164,8 +164,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
                                 stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
-                                // reset status
-                                stlJobGroupDto.setGmrVatMFeeCalculationStatus(null);
+                                if (currentStatus.isRunning()) {
+                                    // for validation of gmr calculation in case stl amt is recalculated
+                                    stlJobGroupDto.setStlCalculation(true);
+                                }
 
                                 List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
                                 if (partialCalculationDtoList == null) {
@@ -202,9 +204,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 if (stlJobGroupDto.isHeader()) {
                                     parentStlJobGroupDto = stlJobGroupDto;
                                 }
-
-                                // need to reset status of gmr/mfee calculation
-                                stlJobGroupDto.setGmrVatMFeeCalculationStatus(null);
                             }
                         }
                     /* CALCULATION END */
@@ -235,6 +234,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
                                 stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+
+                                if (currentStatus.isRunning()) {
+                                    stlJobGroupDto.setStlCalculation(false);
+                                }
 
                                 if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
                                     updateProgress(calcGmrJobExecution, stlJobGroupDto);

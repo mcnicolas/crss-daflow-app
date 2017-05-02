@@ -38,6 +38,8 @@ public class StlJobGroupDto {
 
     private Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
+    private boolean stlCalculation;
+
     public BatchStatus getGmrVatMFeeCalculationStatus() {
         return gmrVatMFeeCalculationStatus;
     }
@@ -190,5 +192,13 @@ public class StlJobGroupDto {
 
     public void setBillingPeriodStr(String billingPeriodStr) {
         this.billingPeriodStr = billingPeriodStr;
+    }
+
+    public boolean isStlCalculation() {
+        return stlCalculation;
+    }
+
+    public void setStlCalculation(boolean stlCalculation) {
+        this.stlCalculation = stlCalculation;
     }
 }

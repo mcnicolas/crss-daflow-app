@@ -226,26 +226,30 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
                                 Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
-                                stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = calcGmrJobExecution.getStatus();
-                                stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
-                                stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
-                                stlJobGroupDto.setGroupId(groupId);
-                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 if (currentStatus.isRunning()) {
                                     stlJobGroupDto.setStlCalculation(false);
                                 }
 
-                                if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
-                                    updateProgress(calcGmrJobExecution, stlJobGroupDto);
-                                }
+                                if (!stlJobGroupDto.isStlCalculation()) {
+                                    stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
+                                    stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
+                                    stlJobGroupDto.setHeader(jobId.equals(groupId));
 
-                                stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
-                                if (stlJobGroupDto.isHeader()) {
-                                    parentStlJobGroupDto = stlJobGroupDto;
+                                    stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
+                                    stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
+                                    stlJobGroupDto.setGroupId(groupId);
+                                    stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+
+                                    if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
+                                        updateProgress(calcGmrJobExecution, stlJobGroupDto);
+                                    }
+
+                                    stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+                                    if (stlJobGroupDto.isHeader()) {
+                                        parentStlJobGroupDto = stlJobGroupDto;
+                                    }
                                 }
                             }
                             calcGmrNames.add(calcGmrStlJobName);

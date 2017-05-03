@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.hateoas.ResourceSupport;
@@ -138,8 +139,17 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
 
 
     @Override
-    public List<BatchJobSkipLog> getBatchJobSkipLogs(int stepId) {
-        return executionParamRepository.getBatchJobSkipLogs(stepId);
+    public Page<BatchJobSkipLog> getBatchJobSkipLogs(Pageable pageable, int stepId) {
+        List<BatchJobSkipLog> skipLogs = Lists.newArrayList();
+        int count = 0;
+
+        count += executionParamRepository.getSkipLogsCount(stepId);
+
+        if (count > 0) {
+            skipLogs = executionParamRepository.getBatchJobSkipLogs(pageable.getOffset(), pageable.getPageSize(), stepId);
+        }
+
+        return new PageImpl<>(skipLogs, pageable, count);
     }
 
     protected String convertStatus(BatchStatus batchStatus, String suffix) {

@@ -57,12 +57,9 @@ public class MeterprocessTaskExecutionResource {
     }
 
     @RequestMapping(value = "/get-batch-job-skip-logs", method = RequestMethod.GET)
-    public String getBatchJobSkipLogs(@RequestParam(value = "stepId") int stepId) {
-        String retVal="";
-        for (BatchJobSkipLog log : taskExecutionService.getBatchJobSkipLogs(stepId)) {
-            retVal = retVal.concat(log.getError()).concat("\n");
-        }
-        return retVal;
+    public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(Pageable pageable, int stepId) {
+        LOG.debug("Finding skip logs request. pageable={}", pageable);
+        return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageable, stepId), HttpStatus.OK);
     }
 
     private String getCurrentUser(Principal principal) {

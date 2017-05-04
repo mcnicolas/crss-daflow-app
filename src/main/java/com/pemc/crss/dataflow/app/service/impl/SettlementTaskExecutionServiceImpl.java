@@ -421,6 +421,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         batchJobAdjRun.setGroupId(groupId.toString());
                         batchJobAdjRun.setJobId(taskRunDto.getParentJob());
                         batchJobAdjRun.setMeterProcessType(MeterProcessType.ADJUSTED);
+                        batchJobAdjRun.setOutputReady(false);
                         batchJobAdjRunRepository.save(batchJobAdjRun);
                     }
 
@@ -439,6 +440,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         batchJobAdjRun.setGroupId(taskRunDto.getGroupId());
                         batchJobAdjRun.setJobId(taskRunDto.getParentJob());
                         batchJobAdjRun.setMeterProcessType(MeterProcessType.FINAL);
+                        batchJobAdjRun.setOutputReady(false);
                         batchJobAdjRunRepository.save(batchJobAdjRun);
                     }
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlAmtsCalculation")));

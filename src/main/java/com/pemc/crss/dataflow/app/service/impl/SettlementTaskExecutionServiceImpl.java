@@ -200,6 +200,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     updateProgress(calcJobExecution, stlJobGroupDto);
                                 }
 
+                                Date maxPartialCalcDate = stlJobGroupDto.getPartialCalculationDtos()
+                                        .stream().map(PartialCalculationDto::getRunEndDate).max(Date::compareTo).get();
+                                stlJobGroupDto.setMaxPartialCalcRunEndDate(maxPartialCalcDate);
+
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
                                 if (stlJobGroupDto.isHeader()) {
@@ -242,6 +246,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
                                     stlJobGroupDto.setGroupId(groupId);
                                     stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+                                    stlJobGroupDto.setGmrCalcRunEndDate(calcGmrJobExecution.getEndTime());
+
+                                    // change status to COMPLETED - PARTIAL-CALCULATION
+                                    if (stlJobGroupDto.getForGmrRecalculation()) {
+                                        stlJobGroupDto.setStatus(convertStatus(currentStatus, "PARTIAL-CALCULATION"));
+                                    }
 
                                     if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
                                         updateProgress(calcGmrJobExecution, stlJobGroupDto);

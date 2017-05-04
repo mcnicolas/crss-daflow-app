@@ -40,6 +40,10 @@ public class StlJobGroupDto {
 
     private boolean stlCalculation;
 
+    private Date maxPartialCalcRunEndDate;
+
+    private Date gmrCalcRunEndDate;
+
     public BatchStatus getGmrVatMFeeCalculationStatus() {
         return gmrVatMFeeCalculationStatus;
     }
@@ -201,4 +205,27 @@ public class StlJobGroupDto {
     public void setStlCalculation(boolean stlCalculation) {
         this.stlCalculation = stlCalculation;
     }
+
+    public Date getMaxPartialCalcRunEndDate() {
+        return maxPartialCalcRunEndDate;
+    }
+
+    public void setMaxPartialCalcRunEndDate(Date maxPartialCalcRunEndDate) {
+        this.maxPartialCalcRunEndDate = maxPartialCalcRunEndDate;
+    }
+
+    public Date getGmrCalcRunEndDate() {
+        return gmrCalcRunEndDate;
+    }
+
+    public void setGmrCalcRunEndDate(Date gmrCalcRunEndDate) {
+        this.gmrCalcRunEndDate = gmrCalcRunEndDate;
+    }
+
+
+    // consider gmr/vat recalculation if max partial calculation runEndDate > max gmr calculation runEndDate
+    public boolean getForGmrRecalculation() {
+        return (maxPartialCalcRunEndDate != null && gmrCalcRunEndDate != null) &&
+                maxPartialCalcRunEndDate.compareTo(gmrCalcRunEndDate) > 0;
+    };
 }

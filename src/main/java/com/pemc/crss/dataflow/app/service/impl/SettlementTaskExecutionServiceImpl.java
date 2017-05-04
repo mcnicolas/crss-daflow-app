@@ -35,6 +35,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
+import static com.pemc.crss.shared.commons.util.AuditUtil.AUDIT_TOPIC_NAME;
+import static com.pemc.crss.shared.commons.util.AuditUtil.buildAudit;
+import static com.pemc.crss.shared.commons.util.AuditUtil.createKeyValue;
+import static com.pemc.crss.shared.commons.util.reference.Function.SETTLEMENT_PROCESS;
+import static com.pemc.crss.shared.commons.util.reference.Module.SETTLEMENT;
+import static com.pemc.crss.shared.commons.util.reference.Activity.*;
 import static java.util.stream.Collectors.toList;
 
 @Slf4j
@@ -398,9 +404,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
         Date start = null;
         Date end = null;
+        String activityName = null;
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-
+            activityName = CALC_STL_AMT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
                     "There is an existing ".concat(FINALIZE_JOB_NAME).concat(" job running"));
 
@@ -483,6 +490,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 }
             }
         } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
+            activityName = CALC_GMR_VAT_AMT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
             validatePartialCalculation(taskRunDto);
@@ -509,7 +517,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             jobName = "crss-settlement-task-calculation";
 
         } else if (FINALIZE_JOB_NAME.equals(taskRunDto.getJobName())) {
-
+            activityName = FINALIZE_STL_AMT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
 
@@ -538,7 +546,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             jobName = "crss-settlement-task-calculation";
 
         } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-
+            activityName = GENERATE_OUTPUT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
                     "There is an existing ".concat(FINALIZE_JOB_NAME).concat(" job running"));
 
@@ -587,6 +595,20 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
+
+        genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
+                buildAudit(
+                        SETTLEMENT.name(),
+                        SETTLEMENT_PROCESS.getDescription(),
+                        activityName,
+                        taskRunDto.getCurrentUser(),
+                        createKeyValue("Job Id", taskRunDto.getParentJob()),
+                        createKeyValue("Start Date", taskRunDto.getStartDate()),
+                        createKeyValue("End Date", taskRunDto.getEndDate()),
+                        createKeyValue("Trading Date", taskRunDto.getTradingDate()),
+                        createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY),
+                        createKeyValue("Status", "Started")
+                ));
     }
 
     private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {

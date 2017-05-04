@@ -106,6 +106,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     @Autowired
     protected RedisTemplate<String, Long> redisTemplate;
     @Autowired
+    protected RedisTemplate genericRedisTemplate;
+    @Autowired
     protected DataFlowJdbcJobExecutionDao dataFlowJdbcJobExecutionDao;
 
     @Value("${dataflow.url}")

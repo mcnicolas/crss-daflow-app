@@ -32,7 +32,8 @@ import static com.pemc.crss.shared.commons.util.AuditUtil.AUDIT_TOPIC_NAME;
 import static com.pemc.crss.shared.commons.util.AuditUtil.buildAudit;
 import static com.pemc.crss.shared.commons.util.AuditUtil.createKeyValue;
 import static com.pemc.crss.shared.commons.util.reference.Activity.*;
-import static com.pemc.crss.shared.commons.util.reference.Module.METER_PROCESS;
+import static com.pemc.crss.shared.commons.util.reference.Function.METER_PROCESS;
+import static com.pemc.crss.shared.commons.util.reference.Module.METERING;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -385,8 +386,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             lockJob(taskRunDto);
         }
 
-        redisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
+        genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
                 buildAudit(
+                        METERING.name(),
                         METER_PROCESS.getDescription(),
                         auditLogJobName,
                         taskRunDto.getCurrentUser(),

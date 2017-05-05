@@ -223,8 +223,8 @@ public class StlJobGroupDto {
     }
 
 
-    // consider gmr/vat recalculation if max partial calculation runEndDate > max gmr calculation runEndDate
-    public boolean getForGmrRecalculation() {
+    // consider gmr/vat recalculation if max partial calculation runEndDate > gmr calculation runEndDate
+    public boolean isForGmrRecalculation() {
         return (maxPartialCalcRunEndDate != null && gmrCalcRunEndDate != null) &&
                 maxPartialCalcRunEndDate.compareTo(gmrCalcRunEndDate) > 0;
     };

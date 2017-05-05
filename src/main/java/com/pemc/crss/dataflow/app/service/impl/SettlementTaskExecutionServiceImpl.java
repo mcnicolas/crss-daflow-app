@@ -248,8 +248,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                                     stlJobGroupDto.setGmrCalcRunEndDate(calcGmrJobExecution.getEndTime());
 
-                                    // change status to COMPLETED - PARTIAL-CALCULATION
-                                    if (stlJobGroupDto.getForGmrRecalculation()) {
+                                    // change status to COMPLETED - PARTIAL-CALCULATION if for GMR Recalculation
+                                    if (stlJobGroupDto.isForGmrRecalculation()) {
                                         stlJobGroupDto.setStatus(convertStatus(currentStatus, "PARTIAL-CALCULATION"));
                                     }
 

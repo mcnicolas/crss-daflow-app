@@ -7,6 +7,8 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.shared.commons.util.reference.Activity;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
@@ -25,6 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.pemc.crss.shared.commons.util.AuditUtil.AUDIT_TOPIC_NAME;
+import static com.pemc.crss.shared.commons.util.AuditUtil.buildAudit;
+import static com.pemc.crss.shared.commons.util.AuditUtil.createKeyValue;
+import static com.pemc.crss.shared.commons.util.reference.Function.METER_PROCESS;
+import static com.pemc.crss.shared.commons.util.reference.Module.METERING;
 import static java.util.stream.Collectors.toList;
 
 @Service("mtrTaskExecutionService")
@@ -125,6 +132,20 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
         }
+
+        genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
+                buildAudit(
+                        METERING.name(),
+                        METER_PROCESS.getDescription(),
+                        Activity.GENERATE_MTR,
+                        taskRunDto.getCurrentUser(),
+                        createKeyValue("Job Id", taskRunDto.getParentJob()),
+                        createKeyValue("Start Date", taskRunDto.getStartDate()),
+                        createKeyValue("End Date", taskRunDto.getEndDate()),
+                        createKeyValue("Trading Date", taskRunDto.getTradingDate()),
+                        createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY),
+                        createKeyValue("Status", "Started")
+                ));
 
     }
 

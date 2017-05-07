@@ -27,9 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.pemc.crss.shared.commons.util.AuditUtil.AUDIT_TOPIC_NAME;
-import static com.pemc.crss.shared.commons.util.AuditUtil.buildAudit;
-import static com.pemc.crss.shared.commons.util.AuditUtil.createKeyValue;
+import static com.pemc.crss.shared.commons.util.AuditUtil.*;
 import static com.pemc.crss.shared.commons.util.reference.Function.METER_PROCESS;
 import static com.pemc.crss.shared.commons.util.reference.Module.METERING;
 import static java.util.stream.Collectors.toList;
@@ -133,19 +131,22 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             launchJob(jobName, properties, arguments);
         }
 
-        genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
+        /*genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
                 buildAudit(
                         METERING.name(),
                         METER_PROCESS.getDescription(),
                         Activity.GENERATE_MTR,
                         taskRunDto.getCurrentUser(),
-                        createKeyValue("Job Id", taskRunDto.getParentJob()),
-                        createKeyValue("Start Date", taskRunDto.getStartDate()),
-                        createKeyValue("End Date", taskRunDto.getEndDate()),
-                        createKeyValue("Trading Date", taskRunDto.getTradingDate()),
-                        createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY),
-                        createKeyValue("Status", "Started")
-                ));
+                        buildAuditDetails(
+                                createKeyValue("Job Id", taskRunDto.getParentJob()),
+                                createKeyValue("Start Date", taskRunDto.getStartDate()),
+                                createKeyValue("End Date", taskRunDto.getEndDate()),
+                                createKeyValue("Trading Date", taskRunDto.getTradingDate()),
+                                createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY)
+                        ),
+                        createKeyValue("Status", BatchStatus.STARTED.name())
+                )
+        );*/
 
     }
 

@@ -28,9 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.pemc.crss.shared.commons.util.AuditUtil.AUDIT_TOPIC_NAME;
-import static com.pemc.crss.shared.commons.util.AuditUtil.buildAudit;
-import static com.pemc.crss.shared.commons.util.AuditUtil.createKeyValue;
+import static com.pemc.crss.shared.commons.util.AuditUtil.*;
 import static com.pemc.crss.shared.commons.util.reference.Activity.*;
 import static com.pemc.crss.shared.commons.util.reference.Function.METER_PROCESS;
 import static com.pemc.crss.shared.commons.util.reference.Module.METERING;
@@ -372,7 +370,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         && taskRunDto.getTradingDate().equals(BatchStatus.COMPLETED.name())) {
                     arguments.add(concatKeyValue(MQ_REPORT_STAT_AFTER_FINALIZE, BatchStatus.COMPLETED.name()));
                 }
-                arguments.remove(concatKeyValue(PROCESS_TYPE, taskRunDto.getMeterProcessType()));
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";
                 auditLogJobName = GENERATE_MQ_REPORT;
@@ -387,19 +384,22 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             lockJob(taskRunDto);
         }
 
-        genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
+        /*genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
                 buildAudit(
                         METERING.name(),
                         METER_PROCESS.getDescription(),
                         auditLogJobName,
                         taskRunDto.getCurrentUser(),
-                        createKeyValue("Job Id", taskRunDto.getParentJob()),
-                        createKeyValue("Start Date", taskRunDto.getStartDate()),
-                        createKeyValue("End Date", taskRunDto.getEndDate()),
-                        createKeyValue("Trading Date", taskRunDto.getTradingDate()),
-                        createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY),
-                        createKeyValue("Status", "Started")
-                ));
+                        buildAuditDetails(
+                                createKeyValue("Job Id", taskRunDto.getParentJob()),
+                                createKeyValue("Start Date", taskRunDto.getStartDate()),
+                                createKeyValue("End Date", taskRunDto.getEndDate()),
+                                createKeyValue("Trading Date", taskRunDto.getTradingDate()),
+                                createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY)
+                        ),
+                        createKeyValue("Status", BatchStatus.STARTED.name())
+                )
+        );*/
     }
 
     @Override

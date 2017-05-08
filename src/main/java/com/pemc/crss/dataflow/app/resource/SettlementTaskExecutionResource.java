@@ -4,11 +4,13 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,6 +42,12 @@ public class SettlementTaskExecutionResource {
         LOG.debug("Running job request. taskRunDto={}", taskRunDto);
         taskExecutionService.launchJob(taskRunDto);
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/get-batch-job-skip-logs", method = RequestMethod.GET)
+    public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(Pageable pageable, int stepId) {
+        LOG.debug("Finding skip logs request. pageable={}", pageable);
+        return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageable, stepId), HttpStatus.OK);
     }
 
 }

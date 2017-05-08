@@ -723,7 +723,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     private void validatePartialCalculation(final TaskRunDto taskRunDto) {
         String parentGroup = taskRunDto.getParentJob() + "-" + taskRunDto.getGroupId();
-        MeterProcessType type = MeterProcessType.valueOf(taskRunDto.getMeterProcessType());
+
+        // all non-headers are ADJUSTED runs
+        MeterProcessType type = taskRunDto.isHeader()
+                ? MeterProcessType.valueOf(taskRunDto.getMeterProcessType())
+                : MeterProcessType.ADJUSTED;
+
         List<JobExecution> jobExecutions = dataFlowJdbcJobExecutionDao.findStlCalcJobInstances(parentGroup, type, taskRunDto.getStartDate(), taskRunDto.getEndDate());
         Preconditions.checkState(jobExecutions.size() > 0, "There should be a completed ".concat(COMPUTE_STL_JOB_NAME).concat(" job for "));
 

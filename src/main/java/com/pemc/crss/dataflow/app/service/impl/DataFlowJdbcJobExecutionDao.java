@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.dataflow.app.dto.DistinctAddtlCompDto;
 import com.pemc.crss.dataflow.app.support.*;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.*;
 
 @Slf4j
 public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
@@ -124,6 +127,30 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         }
     }
 
+    // Additional Compensation Queries
+    public Long countAddtlCompJobInstances(final DistinctAddtlCompDto dto) {
+        log.debug("Querying Additional Compensation Job Count query with processType: {}");
+        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_INTS_COUNT_QUERY), Long.class,
+                new String[]{"%", dto.getStartDate(), dto.getEndDate(), dto.getPricingCondition()});
+    }
+
+    public List<JobInstance> findAddtlCompJobInstances(final int start, final int count, final DistinctAddtlCompDto dto) {
+        log.debug("Querying Additional Compensation Job Select query with processType: {}");
+        return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_INTS_QUERY),
+                new String[]{"%", dto.getStartDate(), dto.getEndDate(), dto.getPricingCondition()},
+                getJobInstanceExtractor(start, count));
+    }
+
+    public Long countDistinctAddtlCompJobInstances() {
+        log.debug("Querying Additional Compensation Job Distinct Count query with processType: {}");
+        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_DISTINCT_COUNT_QUERY), Long.class, new String[]{"%"});
+    }
+
+    public List<DistinctAddtlCompDto> findDistinctAddtlCompJobInstances(final int start, final int count) {
+        log.debug("Querying Additional Compensation Job Distinct Select query with processType: {}");
+        return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_DISTINCT_QUERY), new String[]{"%"}, getAddtlCompExtractor(start, count));
+    }
+
     public Long countFinalizeJobInstances(MeterProcessType type, String startDate, String endDate) {
         String jobName = MeterProcessType.ADJUSTED == type
                 ? FinalizeJobQuery.FINALIZE_JOB_NAME_ADJ
@@ -208,6 +235,27 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
 
                 return this.list;
             }
+        };
+    }
+
+    private ResultSetExtractor<List<DistinctAddtlCompDto>> getAddtlCompExtractor(int start, int count) {
+        return rs -> {
+            List<DistinctAddtlCompDto> list = new ArrayList<>();
+
+            int rowNum = 0;
+            while (rowNum < start && rs.next()) {
+                ++rowNum;
+            }
+
+            while (rowNum < start + count && rs.next()) {
+                String startDate = rs.getString("start_date");
+                String endDate = rs.getString("end_date");
+                String pricingCondition = rs.getString("pricing_condition");
+                list.add(DistinctAddtlCompDto.create(startDate, endDate, pricingCondition));
+                ++rowNum;
+            }
+
+            return list;
         };
     }
     // ResultSetExtractors end

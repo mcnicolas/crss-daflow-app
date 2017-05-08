@@ -2,31 +2,25 @@ package com.pemc.crss.dataflow.app.service.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationExecutionDto;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunDto;
-import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.launch.NoSuchJobException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.*;
@@ -50,39 +44,37 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
         final Pageable pageable = pageableRequest.getPageable();
-        int totalSize = pageable.getPageSize();
-        try {
-            totalSize = jobExplorer.getJobInstanceCount(ADDTL_COMP_JOB_NAME);
-        } catch (NoSuchJobException e) {
-            LOG.warn("Unable to retrieve job count for: " + ADDTL_COMP_JOB_NAME, e);
-        }
+        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances();
 
-        List<AddtlCompensationExecutionDto> addtlCompensationExecutionDtoList = jobExplorer
-                .findJobInstancesByJobName(ADDTL_COMP_JOB_NAME, pageable.getOffset(), pageable.getPageSize())
+        List<AddtlCompensationExecutionDto> addtlCompensationExecutionDtoList = dataFlowJdbcJobExecutionDao
+                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize())
                 .stream()
-                .map(jobInstance -> {
-                    List<JobExecution> addtlCompensationExecutionList = getJobExecutions(jobInstance);
-                    Iterator<JobExecution> addtlCompensationExecutionIterator = addtlCompensationExecutionList.iterator();
-                    while (addtlCompensationExecutionIterator.hasNext()) {
-                        JobExecution addtlCompensationExecution = addtlCompensationExecutionIterator.next();
-                        JobParameters addtlCompensationParameters = addtlCompensationExecution.getJobParameters();
+                .map(distinctAddtlCompDto -> {
+                    AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
+                    addtlCompensationExecutionDto.setDistinctAddtlCompDto(distinctAddtlCompDto);
+                    List<AddtlCompensationExecDetailsDto> addtlCompensationExecDetailsDtos = Lists.newArrayList();
 
-                        AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
-                        addtlCompensationExecutionDto.setId(jobInstance.getInstanceId());
-                        addtlCompensationExecutionDto.setStatus(addtlCompensationExecution.getStatus().name());
-                        addtlCompensationExecutionDto.setParams(Maps.transformValues(addtlCompensationParameters.getParameters(), JobParameter::getValue));
-                        addtlCompensationExecutionDto.setExitMessage(null);
-                        addtlCompensationExecutionDto.setProgress(null);
-                        addtlCompensationExecutionDto.setStatusDetails(null);
-                        addtlCompensationExecutionDto.setRunDateTime(addtlCompensationExecution.getStartTime());
+                    dataFlowJdbcJobExecutionDao
+                            .findAddtlCompJobInstances(0, Integer.MAX_VALUE, distinctAddtlCompDto)
+                            .forEach(jobInstance -> {
+                                List<JobExecution> jobExecutionList = getJobExecutions(jobInstance);
+                                if (!jobExecutionList.isEmpty()) {
+                                    JobExecution jobExecution = jobExecutionList.get(0);
+                                    JobParameters parameters = jobExecution.getJobParameters();
 
-                        return addtlCompensationExecutionDto;
-                    }
+                                    AddtlCompensationExecDetailsDto addtlCompensationExecDetailsDto = new AddtlCompensationExecDetailsDto();
+                                    addtlCompensationExecDetailsDto.setRunId(parameters.getLong(RUN_ID));
+                                    addtlCompensationExecDetailsDto.setBillingId(parameters.getString(AC_BILLING_ID));
+                                    addtlCompensationExecDetailsDto.setMtn(parameters.getString(AC_MTN));
+                                    addtlCompensationExecDetailsDto.setApprovedRate(BigDecimal.valueOf(parameters.getDouble(AC_APPROVED_RATE)));
+                                    addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
 
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                                    addtlCompensationExecDetailsDtos.add(addtlCompensationExecDetailsDto);
+                                }
+                            });
+                    addtlCompensationExecutionDto.setAddtlCompensationExecDetailsDtos(addtlCompensationExecDetailsDtos);
+                    return addtlCompensationExecutionDto;
+                }).collect(Collectors.toList());
 
         return new PageImpl<>(addtlCompensationExecutionDtoList, pageable, totalSize);
     }
@@ -103,14 +95,17 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto) throws URISyntaxException {
-        Preconditions.checkNotNull(ADDTL_COMP_JOB_NAME);
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_JOB_NAME) == 0,
-                "There is an existing ".concat(ADDTL_COMP_JOB_NAME).concat(" job running"));
+        String startDate = addtlCompensationDto.getBillingStartDate();
+        String endDate = addtlCompensationDto.getBillingEndDate();
+
+        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
+        Preconditions.checkState(hasAdjusted || dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0,
+                "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
+
+        checkTimeValidity(endDate);
 
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
-        String startDate = addtlCompensationDto.getBillingStartDate();
-        String endDate = addtlCompensationDto.getBillingEndDate();
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
@@ -121,25 +116,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
 
-        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
-        Preconditions.checkState(hasAdjusted || dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0,
-                "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
-
-        checkTimeValidity(endDate);
-
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
 
         LOG.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_JOB_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
 
-        if (batchJobRunLockRepository.lockJob(ADDTL_COMP_JOB_NAME) == 0) {
-            BatchJobRunLock batchJobRunLock = new BatchJobRunLock();
-            batchJobRunLock.setJobName(ADDTL_COMP_JOB_NAME);
-            batchJobRunLock.setLocked(true);
-            batchJobRunLock.setLockedDate(new Date());
-            batchJobRunLockRepository.save(batchJobRunLock);
-        }
     }
 
     private void checkTimeValidity(String billingEndDate) {

@@ -401,13 +401,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
         Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
         arguments.add(concatKeyValue(GROUP_ID, groupId.toString(), "long"));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
 
         Date start = null;
         Date end = null;
-        String activityName = null;
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-            activityName = CALC_STL_AMT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
                     "There is an existing ".concat(FINALIZE_JOB_NAME).concat(" job running"));
 
@@ -490,7 +489,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 }
             }
         } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
-            activityName = CALC_GMR_VAT_AMT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
             validatePartialCalculation(taskRunDto);
@@ -517,7 +515,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             jobName = "crss-settlement-task-calculation";
 
         } else if (FINALIZE_JOB_NAME.equals(taskRunDto.getJobName())) {
-            activityName = FINALIZE_STL_AMT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
 
@@ -546,7 +543,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             jobName = "crss-settlement-task-calculation";
 
         } else if (GENERATE_INVOICE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
-            activityName = GENERATE_OUTPUT;
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
                     "There is an existing ".concat(FINALIZE_JOB_NAME).concat(" job running"));
 
@@ -595,23 +591,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
-
-        /*genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
-                buildAudit(
-                        SETTLEMENT.name(),
-                        SETTLEMENT_PROCESS.getDescription(),
-                        activityName,
-                        taskRunDto.getCurrentUser(),
-                        buildAuditDetails(
-                                createKeyValue("Job Id", taskRunDto.getParentJob()),
-                                createKeyValue("Start Date", taskRunDto.getStartDate()),
-                                createKeyValue("End Date", taskRunDto.getEndDate()),
-                                createKeyValue("Trading Date", taskRunDto.getTradingDate()),
-                                createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY)
-                        ),
-                        createKeyValue("Status", BatchStatus.STARTED.name())
-                )
-        );*/
     }
 
     private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {

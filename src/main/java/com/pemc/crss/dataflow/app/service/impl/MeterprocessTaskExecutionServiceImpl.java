@@ -223,7 +223,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;
-        String auditLogJobName = null;
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
@@ -285,7 +284,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             jobName = "crss-meterprocess-task-mqcomputation";
-            auditLogJobName = RUN_WESM;
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
             JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
@@ -322,7 +320,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(RCOA_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";
-                auditLogJobName = RUN_RCOA;
             } else if (RUN_STL_NOT_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
@@ -339,7 +336,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(STL_NOT_READY_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-stlready";
-                auditLogJobName = RUN_STL_READY;
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_DAILY)));
@@ -359,7 +355,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-stlready";
-                auditLogJobName = FINALIZE_STL_READY;
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ_REPORT)));
@@ -372,7 +367,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";
-                auditLogJobName = GENERATE_MQ_REPORT;
             }
         }
 
@@ -383,23 +377,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
-
-        /*genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
-                buildAudit(
-                        METERING.name(),
-                        METER_PROCESS.getDescription(),
-                        auditLogJobName,
-                        taskRunDto.getCurrentUser(),
-                        buildAuditDetails(
-                                createKeyValue("Job Id", taskRunDto.getParentJob()),
-                                createKeyValue("Start Date", taskRunDto.getStartDate()),
-                                createKeyValue("End Date", taskRunDto.getEndDate()),
-                                createKeyValue("Trading Date", taskRunDto.getTradingDate()),
-                                createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY)
-                        ),
-                        createKeyValue("Status", BatchStatus.STARTED.name())
-                )
-        );*/
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.AddtlCompensationExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/task-executions/additional-compensation")
@@ -33,8 +35,9 @@ public class AddtlCompensationExecutionResource {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity runJob(@RequestBody AddtlCompensationRunDto addtlCompensationRunDto) throws URISyntaxException {
+    public ResponseEntity runJob(@RequestBody AddtlCompensationRunDto addtlCompensationRunDto, Principal principal) throws URISyntaxException {
         LOG.debug("Running job request. addtlCompensationRunDto={}", addtlCompensationRunDto);
+        addtlCompensationRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         ((AddtlCompensationExecutionServiceImpl)taskExecutionService).launchAddtlCompensation(addtlCompensationRunDto);
         return new ResponseEntity(HttpStatus.OK);
     }

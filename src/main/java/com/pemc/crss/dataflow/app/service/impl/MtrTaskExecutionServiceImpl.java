@@ -131,23 +131,6 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             launchJob(jobName, properties, arguments);
         }
 
-        /*genericRedisTemplate.convertAndSend(AUDIT_TOPIC_NAME,
-                buildAudit(
-                        METERING.name(),
-                        METER_PROCESS.getDescription(),
-                        Activity.GENERATE_MTR,
-                        taskRunDto.getCurrentUser(),
-                        buildAuditDetails(
-                                createKeyValue("Job Id", taskRunDto.getParentJob()),
-                                createKeyValue("Start Date", taskRunDto.getStartDate()),
-                                createKeyValue("End Date", taskRunDto.getEndDate()),
-                                createKeyValue("Trading Date", taskRunDto.getTradingDate()),
-                                createKeyValue("Type", StringUtils.isNotEmpty(taskRunDto.getMeterProcessType()) ? taskRunDto.getMeterProcessType() : PROCESS_TYPE_DAILY)
-                        ),
-                        createKeyValue("Status", BatchStatus.STARTED.name())
-                )
-        );*/
-
     }
 
     @Override

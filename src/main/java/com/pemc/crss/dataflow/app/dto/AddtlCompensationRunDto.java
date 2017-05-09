@@ -10,6 +10,7 @@ public class AddtlCompensationRunDto {
     private String billingStartDate;
     private String billingEndDate;
     private String pricingCondition;
+    private String currentUser;
 
     public String getBillingId() {
         return billingId;
@@ -57,5 +58,13 @@ public class AddtlCompensationRunDto {
 
     public void setPricingCondition(String pricingCondition) {
         this.pricingCondition = pricingCondition;
+    }
+
+    public String getCurrentUser() {
+        return currentUser;
+    }
+
+    public void setCurrentUser(String currentUser) {
+        this.currentUser = currentUser;
     }
 }

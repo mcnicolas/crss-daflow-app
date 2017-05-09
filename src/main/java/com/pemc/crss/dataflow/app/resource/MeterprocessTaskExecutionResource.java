@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.resource;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,6 @@ import java.util.LinkedHashMap;
 @RequestMapping("/task-executions/meterprocess")
 public class MeterprocessTaskExecutionResource {
 
-    public static final String ANONYMOUS = "anonymous";
     private static final Logger LOG = LoggerFactory.getLogger(MeterprocessTaskExecutionResource.class);
 
     @Autowired
@@ -38,7 +38,7 @@ public class MeterprocessTaskExecutionResource {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        String currentUser = getCurrentUser(principal);
+        String currentUser = SecurityUtil.getCurrentUser(principal);
         LOG.debug("Running job request. taskRunDto={}", taskRunDto);
         taskRunDto.setCurrentUser(currentUser);
         taskExecutionService.launchJob(taskRunDto);
@@ -60,17 +60,5 @@ public class MeterprocessTaskExecutionResource {
     public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(Pageable pageable, int stepId) {
         LOG.debug("Finding skip logs request. pageable={}", pageable);
         return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageable, stepId), HttpStatus.OK);
-    }
-
-    private String getCurrentUser(Principal principal) {
-        String currentUser = ANONYMOUS;
-        if (principal != null) {
-            if (principal instanceof OAuth2Authentication) {
-                OAuth2Authentication auth = (OAuth2Authentication) principal;
-                LinkedHashMap<String, Object> userDetails = (LinkedHashMap<String, Object>) auth.getPrincipal();
-                return (String) userDetails.get("name");
-            }
-        }
-        return currentUser;
     }
 }

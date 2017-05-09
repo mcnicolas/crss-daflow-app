@@ -4,6 +4,7 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/task-executions/settlement")
@@ -38,8 +40,9 @@ public class SettlementTaskExecutionResource {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto) throws URISyntaxException {
+    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         LOG.debug("Running job request. taskRunDto={}", taskRunDto);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
         return new ResponseEntity(HttpStatus.OK);
     }

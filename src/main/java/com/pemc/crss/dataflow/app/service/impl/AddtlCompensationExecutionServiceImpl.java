@@ -115,6 +115,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
+        arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));

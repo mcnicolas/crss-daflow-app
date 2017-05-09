@@ -1,10 +1,36 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
+import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.PartialCalculationDto;
+import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
+import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
@@ -18,27 +44,7 @@ import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsReposito
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.LatestAdjustmentLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.batch.core.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.*;
-
-import static com.pemc.crss.shared.commons.util.AuditUtil.*;
-import static com.pemc.crss.shared.commons.util.reference.Function.SETTLEMENT_PROCESS;
-import static com.pemc.crss.shared.commons.util.reference.Module.SETTLEMENT;
-import static com.pemc.crss.shared.commons.util.reference.Activity.*;
 import static java.util.stream.Collectors.toList;
 
 @Slf4j
@@ -705,10 +711,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private void validatePartialCalculation(final TaskRunDto taskRunDto) {
         String parentGroup = taskRunDto.getParentJob() + "-" + taskRunDto.getGroupId();
 
-        // all non-headers are ADJUSTED runs
-        MeterProcessType type = taskRunDto.isHeader()
-                ? MeterProcessType.valueOf(taskRunDto.getMeterProcessType())
-                : MeterProcessType.ADJUSTED;
+        MeterProcessType type = MeterProcessType.valueOf(taskRunDto.getMeterProcessType());
+
+        BatchJobAdjRun batchJobAdjRun = batchJobAdjRunRepository.findByGroupId(taskRunDto.getGroupId());
+        if (batchJobAdjRun != null) {
+            type = batchJobAdjRun.getMeterProcessType();
+        }
 
         List<JobExecution> jobExecutions = dataFlowJdbcJobExecutionDao.findStlCalcJobInstances(parentGroup, type, taskRunDto.getStartDate(), taskRunDto.getEndDate());
         Preconditions.checkState(jobExecutions.size() > 0, "There should be a completed ".concat(COMPUTE_STL_JOB_NAME).concat(" job for "));

@@ -32,7 +32,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final Logger LOG = LoggerFactory.getLogger(AddtlCompensationExecutionServiceImpl.class);
 
     private static final String ADDTL_COMP_JOB_NAME = "calculateAddtlComp";
-    private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation";
+    private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation-addtlcomp";
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 

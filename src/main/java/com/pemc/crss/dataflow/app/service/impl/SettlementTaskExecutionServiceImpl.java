@@ -208,7 +208,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
                                 if (latestJobExecStartDate == null || !latestJobExecStartDate.after(calcJobExecution.getStartTime())) {
                                     updateProgress(calcJobExecution, stlJobGroupDto);
-                                } else {
+                                } else if (latestJobExecStartDate.equals(calcJobExecution.getStartTime())) {
                                     taskExecutionDto.getSummary().put(COMPUTE_STL_JOB_NAME, showSummary(calcJobExecution));
                                 }
 

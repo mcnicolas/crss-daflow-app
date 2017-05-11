@@ -4,11 +4,14 @@ import com.pemc.crss.shared.commons.util.DateUtil;
 import org.springframework.batch.core.BatchStatus;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
 
 public class StlJobGroupDto {
 
@@ -34,7 +37,7 @@ public class StlJobGroupDto {
 
     private String billingPeriodStr;
 
-    private List<PartialCalculationDto> partialCalculationDtos;
+    private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();
 
     private Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
@@ -92,12 +95,12 @@ public class StlJobGroupDto {
         this.latestAdjustment = latestAdjustment;
     }
 
-    public List<PartialCalculationDto> getPartialCalculationDtos() {
-        return partialCalculationDtos;
+    public List<JobCalculationDto> getJobCalculationDtos() {
+        return jobCalculationDtos;
     }
 
-    public void setPartialCalculationDtos(List<PartialCalculationDto> partialCalculationDtos) {
-        this.partialCalculationDtos = partialCalculationDtos;
+    public void setJobCalculationDtos(List<JobCalculationDto> jobCalculationDtos) {
+        this.jobCalculationDtos = jobCalculationDtos;
     }
 
     public boolean isHeader() {
@@ -222,10 +225,19 @@ public class StlJobGroupDto {
         this.gmrCalcRunEndDate = gmrCalcRunEndDate;
     }
 
+    // helper methods / properties
 
     // consider gmr/vat recalculation if max partial calculation runEndDate > gmr calculation runEndDate
     public boolean isForGmrRecalculation() {
         return (maxPartialCalcRunEndDate != null && gmrCalcRunEndDate != null) &&
                 maxPartialCalcRunEndDate.compareTo(gmrCalcRunEndDate) > 0;
-    };
+    }
+
+    public List<JobCalculationDto> getSortedJobCalculationDtos() {
+        return jobCalculationDtos
+                .stream()
+                // sort by runEndDate desc
+                .sorted(Collections.reverseOrder((dto1, dto2) -> dto1.getRunDate().compareTo(dto2.getRunDate())))
+                .collect(Collectors.toList());
+    }
 }

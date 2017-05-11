@@ -37,4 +37,7 @@ public interface TaskExecutionService {
     void deleteJob(long jobId);
 
     void relaunchFailedJob(long jobId) throws URISyntaxException;
+
+    String getFailedExitMsg(int
+                                    stepId);
 }

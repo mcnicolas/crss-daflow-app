@@ -27,7 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.PartialCalculationDto;
+import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
 import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
@@ -68,6 +68,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private static final String INVOICE_GENERATION_FILENAME = "INVOICE_GENERATION_FILENAME";
 
     private static final String GROUP_ID = "groupId";
+
+    private static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
+    private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
+    private static final String STAGE_TAGGING = "TAGGING";
 
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
@@ -144,10 +148,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         parentStlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
                         parentStlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                         Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
-//                    Date recentJobEndTime = Date.from(Instant.MIN);
 
                     /* CALCULATION START */
-                        String calcStatusSuffix = "PARTIAL-CALCULATION";
                         String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
 
@@ -180,29 +182,36 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setStlCalculation(true);
                                 }
 
-                                List<PartialCalculationDto> partialCalculationDtoList = stlJobGroupDto.getPartialCalculationDtos();
-                                if (partialCalculationDtoList == null) {
-                                    partialCalculationDtoList = Lists.newArrayList();
+
+                                boolean fullCalculation = startDate != null && endDate != null
+                                        && calcStartDate.compareTo(startDate) == 0 && calcEndDate.compareTo(endDate) == 0;
+
+                                final String jobCalcStatus = fullCalculation
+                                        ? convertStatus(currentStatus, "FULL-SETTLEMENT-CALCULATION")
+                                        : convertStatus(currentStatus, STAGE_PARTIAL_CALC);
+
+                                List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
+                                if (jobCalculationDtoList.isEmpty()) {
                                     stlJobGroupDto.setRunStartDateTime(calcJobExecution.getStartTime());
                                     stlJobGroupDto.setRunEndDateTime(calcJobExecution.getEndTime());
 
                                     // get first stl-calc item's status
-                                    stlJobGroupDto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
+                                    stlJobGroupDto.setStatus(jobCalcStatus);
+                                } else {
+                                    stlJobGroupDto.setStatus(getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC));
                                 }
-                                PartialCalculationDto dto = new PartialCalculationDto();
-                                dto.setStatus(convertStatus(currentStatus, calcStatusSuffix));
-                                dto.setBillingStart(calcStartDate);
-                                dto.setBillingEnd(calcEndDate);
-                                dto.setRunDate(calcJobExecution.getStartTime());
-                                dto.setRunEndDate(calcJobExecution.getEndTime());
-                                partialCalculationDtoList.add(dto);
+
+                                JobCalculationDto partialCalcDto = new JobCalculationDto(calcJobExecution.getStartTime(),
+                                        calcJobExecution.getEndTime(), calcStartDate, calcEndDate,
+                                        jobCalcStatus, STAGE_PARTIAL_CALC);
+                                jobCalculationDtoList.add(partialCalcDto);
 
                                 if (!isDaily && BatchStatus.COMPLETED == currentStatus
                                         && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
                                     removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
                                 }
 
-                                stlJobGroupDto.setPartialCalculationDtos(partialCalculationDtoList);
+                                stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
                                 stlJobGroupDto.setGroupId(groupId);
 
                                 Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
@@ -212,8 +221,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     taskExecutionDto.getSummary().put(COMPUTE_STL_JOB_NAME, showSummary(calcJobExecution));
                                 }
 
-                                Date maxPartialCalcDate = stlJobGroupDto.getPartialCalculationDtos()
-                                        .stream().map(PartialCalculationDto::getRunEndDate).max(Date::compareTo).get();
+                                Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()
+                                        .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_CALC))
+                                        .map(JobCalculationDto::getRunEndDate)
+                                        .max(Date::compareTo).get();
+
                                 stlJobGroupDto.setMaxPartialCalcRunEndDate(maxPartialCalcDate);
 
                                 stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
@@ -226,11 +238,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     /* CALCULATION END */
 
                     /* CALCULATION GMR START */
-                        String calcGmrStatusSuffix = "CALCULATION-GMR";
                         String calcGmrQueryString = COMPUTE_GMRVAT_MFEE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> calcGmrStlJobInstances = jobExplorer.findJobInstancesByJobName(calcGmrQueryString, 0, Integer.MAX_VALUE);
                         Iterator<JobInstance> calcGmrStlIterator = calcGmrStlJobInstances.iterator();
                         Set<String> calcGmrNames = Sets.newHashSet();
+
                         while (calcGmrStlIterator.hasNext()) {
                             JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
                             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
@@ -241,6 +253,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             if (calcGmrStlExecIterator.hasNext()) {
                                 JobExecution calcGmrJobExecution = calcGmrStlExecIterator.next();
                                 JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
+                                Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
+                                Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
                                 Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 BatchStatus currentStatus = calcGmrJobExecution.getStatus();
@@ -254,15 +268,22 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                     stlJobGroupDto.setHeader(jobId.equals(groupId));
 
-                                    stlJobGroupDto.setStatus(convertStatus(currentStatus, calcGmrStatusSuffix));
+                                    stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_GMR_CALC));
                                     stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
                                     stlJobGroupDto.setGroupId(groupId);
                                     stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                                     stlJobGroupDto.setGmrCalcRunEndDate(calcGmrJobExecution.getEndTime());
 
-                                    // change status to COMPLETED - PARTIAL-CALCULATION if for GMR Recalculation
+                                    JobCalculationDto calcGmrDto = new JobCalculationDto(calcGmrJobExecution.getStartTime(),
+                                            calcGmrJobExecution.getEndTime(), calcGmrStartDate, calcGmrEndDate,
+                                            convertStatus(currentStatus, STAGE_GMR_CALC), STAGE_GMR_CALC);
+
+                                    stlJobGroupDto.getJobCalculationDtos().add(calcGmrDto);
+
+                                    // change status to COMPLETED - FULL/PARTIAL-CALCULATION if for GMR Recalculation
                                     if (stlJobGroupDto.isForGmrRecalculation()) {
-                                        stlJobGroupDto.setStatus(convertStatus(currentStatus, "PARTIAL-CALCULATION"));
+                                        stlJobGroupDto.setStatus(getLatestJobCalcStatusByStage(
+                                                stlJobGroupDto, STAGE_PARTIAL_CALC));
                                     }
 
                                     if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
@@ -280,7 +301,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     /* CALCULATION GMR END */
 
                     /* TAGGING START */
-                        String tagStatusSuffix = "TAGGING";
                         String tagQueryString = FINALIZE_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> tagStlJobInstances = jobExplorer.findJobInstancesByJobName(tagQueryString, 0, Integer.MAX_VALUE);
                         Iterator<JobInstance> tagStlIterator = tagStlJobInstances.iterator();
@@ -295,16 +315,25 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             if (tagStlExecIterator.hasNext()) {
                                 JobExecution tagJobExecution = tagStlExecIterator.next();
                                 JobParameters tagJobParameters = tagJobExecution.getJobParameters();
+                                Date tagStartDate = tagJobParameters.getDate(START_DATE);
+                                Date tagEndDate = tagJobParameters.getDate(END_DATE);
                                 Long groupId = tagJobParameters.getLong(GROUP_ID);
+
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
                                 stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 BatchStatus currentStatus = tagJobExecution.getStatus();
-                                stlJobGroupDto.setStatus(convertStatus(currentStatus, tagStatusSuffix));
+                                stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_TAGGING));
                                 stlJobGroupDto.setTaggingStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
                                 stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+
+                                JobCalculationDto finalizeJobDto = new JobCalculationDto(tagJobExecution.getStartTime(),
+                                        tagJobExecution.getEndTime(), tagStartDate, tagEndDate,
+                                        convertStatus(currentStatus, STAGE_TAGGING), STAGE_TAGGING);
+
+                                stlJobGroupDto.getJobCalculationDtos().add(finalizeJobDto);
 
                                 if (!stlJobGroupDto.getLatestJobExecStartDate().after(tagJobExecution.getStartTime())) {
                                     updateProgress(tagJobExecution, stlJobGroupDto);
@@ -377,6 +406,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 .collect(toList());
 
         return new PageImpl<>(taskExecutionDtos, pageable, totalSize);
+    }
+
+    private String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {
+        return stlJobGroupDto.getSortedJobCalculationDtos().stream()
+                .filter(stlJob -> stlJob.getJobStage().equals(stage))
+                .map(JobCalculationDto::getStatus).findFirst().get();
     }
 
     @Override

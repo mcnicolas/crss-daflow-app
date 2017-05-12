@@ -155,6 +155,11 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         return new PageImpl<>(skipLogs, pageable, count);
     }
 
+    @Override
+    public String getFailedExitMsg(int stepId) {
+        return executionParamRepository.getFailedExitMsg(stepId);
+    }
+
     protected String convertStatus(BatchStatus batchStatus, String suffix) {
         return batchStatus.toString().concat("-").concat(suffix);
     }

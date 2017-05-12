@@ -61,4 +61,10 @@ public class MeterprocessTaskExecutionResource {
         LOG.debug("Finding skip logs request. pageable={}", pageable);
         return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageable, stepId), HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/get-failed-exit-msg", method = RequestMethod.GET)
+    public ResponseEntity<String> getBatchJobSkipLogs(@RequestParam int stepId) {
+        LOG.debug("Finding failed exit message for step id {}.", stepId);
+        return new ResponseEntity<>(taskExecutionService.getFailedExitMsg(stepId), HttpStatus.OK);
+    }
 }

@@ -235,6 +235,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         Iterator<JobInstance> calcGmrStlIterator = calcGmrStlJobInstances.iterator();
                         Set<String> calcGmrNames = Sets.newHashSet();
 
+                        Map<String, List<JobCalculationDto>> gmrJobCalculationDtoMap = getCalcGmrJobCalculationMap(calcGmrStlJobInstances);
+
                         while (calcGmrStlIterator.hasNext()) {
                             JobInstance calcGmrStlJobInstance = calcGmrStlIterator.next();
                             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
@@ -245,8 +247,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             if (calcGmrStlExecIterator.hasNext()) {
                                 JobExecution calcGmrJobExecution = calcGmrStlExecIterator.next();
                                 JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
-                                Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
-                                Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
                                 Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 BatchStatus currentStatus = calcGmrJobExecution.getStatus();
@@ -266,11 +266,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                                     stlJobGroupDto.setGmrCalcRunEndDate(calcGmrJobExecution.getEndTime());
 
-                                    JobCalculationDto calcGmrDto = new JobCalculationDto(calcGmrJobExecution.getStartTime(),
-                                            calcGmrJobExecution.getEndTime(), calcGmrStartDate, calcGmrEndDate,
-                                            convertStatus(currentStatus, STAGE_GMR_CALC), STAGE_GMR_CALC);
-
-                                    stlJobGroupDto.getJobCalculationDtos().add(calcGmrDto);
+                                    Optional.ofNullable(gmrJobCalculationDtoMap.get(calcGmrStlJobName)).ifPresent(
+                                        jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
+                                    );
 
                                     // change status to COMPLETED - FULL/PARTIAL-CALCULATION if for GMR Recalculation
                                     if (stlJobGroupDto.isForGmrRecalculation()) {
@@ -398,6 +396,25 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 .collect(toList());
 
         return new PageImpl<>(taskExecutionDtos, pageable, totalSize);
+    }
+
+    private Map<String, List<JobCalculationDto>> getCalcGmrJobCalculationMap(List<JobInstance> calcGmrStlJobInstances) {
+        Map<String, List<JobCalculationDto>> jobCalculationDtoMap = new HashMap<>();
+        // add distinct jobNames for multiple same parentId-groupId job instances
+        calcGmrStlJobInstances.stream().map(JobInstance::getJobName).distinct().forEach(calcJobInstanceName ->
+                jobCalculationDtoMap.put(calcJobInstanceName, new ArrayList<>()));
+
+        calcGmrStlJobInstances.forEach(calcGmrInstance -> getJobExecutions(calcGmrInstance).forEach(jobExecution -> {
+            JobParameters calcGmrJobParameters = jobExecution.getJobParameters();
+            Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
+            Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
+            jobCalculationDtoMap.get(calcGmrInstance.getJobName()).add(
+                new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),  calcGmrStartDate,
+                calcGmrEndDate, convertStatus(jobExecution.getStatus(), STAGE_GMR_CALC), STAGE_GMR_CALC)
+            );
+        }));
+
+        return jobCalculationDtoMap;
     }
 
     private String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {

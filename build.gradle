@@ -47,7 +47,7 @@ apply plugin: 'spring-boot'
 
 jar {
     baseName = 'crss-dataflow-app'
-    version = '2.0.0.BUILD-SNAPSHOT'
+    version = '2.1.0.BUILD-SNAPSHOT'
 }
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -81,8 +81,8 @@ configurations {
 }
 
 dependencies {
-    compile 'com.pemc.crss:crss-shared-core-dataflow:2.0.0.BUILD-SNAPSHOT'
-    compile ('com.pemc.crss:crss-shared-core-config:2.0.0.BUILD-SNAPSHOT') {
+    compile 'com.pemc.crss:crss-shared-core-dataflow:2.1.0.BUILD-SNAPSHOT'
+    compile ('com.pemc.crss:crss-shared-core-config:2.1.0.BUILD-SNAPSHOT') {
         exclude group:'org.springframework.integration', module:'spring-integration-sftp'
         exclude group:'org.springframework.boot', module:'spring-boot-starter-integration'
         exclude group:'org.springframework.batch', module:'spring-batch-integration'
@@ -105,7 +105,7 @@ dependencies {
 
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 
-    testCompile 'com.pemc.crss:crss-shared-commons-test:2.0.0.BUILD-SNAPSHOT'
+    testCompile 'com.pemc.crss:crss-shared-commons-test:2.1.0.BUILD-SNAPSHOT'
 
     // Database
     runtime 'com.zaxxer:HikariCP'

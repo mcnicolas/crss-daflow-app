@@ -441,7 +441,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
-                    "There is an existing ".concat(FINALIZE_JOB_NAME).concat(" job running"));
+                    "There is an existing tag as output ready job running");
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_GMRVAT_MFEE_JOB_NAME) == 0,
+                    "There is an existing ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
 
             LocalDateTime baseStartDate = null;
             LocalDateTime baseEndDate = null;
@@ -522,6 +524,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 }
             }
         } else if (COMPUTE_GMRVAT_MFEE_JOB_NAME.equals(taskRunDto.getJobName())) {
+            Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
+                    "There is an existing tag as output ready job running");
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
             validatePartialCalculation(taskRunDto);
@@ -550,7 +554,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         } else if (FINALIZE_JOB_NAME.equals(taskRunDto.getJobName())) {
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_STL_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_STL_JOB_NAME).concat(" job running"));
-
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(COMPUTE_GMRVAT_MFEE_JOB_NAME) == 0,
                     "There is an existing ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME).concat(" job running"));
 

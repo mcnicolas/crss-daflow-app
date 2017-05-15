@@ -70,6 +70,9 @@ repositories {
     maven {
         url "http://pemc-storage.southeastasia.cloudapp.azure.com:8081/repository/pemc-snapshots/"
     }
+    maven {
+        url "http://pemc-storage.southeastasia.cloudapp.azure.com:8081/repository/pemc-releases/"
+    }
 }
 
 

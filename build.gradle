@@ -111,6 +111,7 @@ dependencies {
     runtime 'com.zaxxer:HikariCP'
     runtime 'org.postgresql:postgresql'
     runtime files("$rootDir/libs/ojdbc6-11.2.0.3.jar")
+    runtime files("$rootDir/libs/edb-jdbc17.jar")
 
 }
 

@@ -10,14 +10,8 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.TaskUtil;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
-import com.pemc.crss.shared.core.dataflow.entity.LatestAdjustmentLock;
-import com.pemc.crss.shared.core.dataflow.entity.RunningAdjustmentLock;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
-import com.pemc.crss.shared.core.dataflow.repository.LatestAdjustmentLockRepository;
-import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockRepository;
+import com.pemc.crss.shared.core.dataflow.entity.*;
+import com.pemc.crss.shared.core.dataflow.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.*;
@@ -68,6 +62,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
+
+    @Autowired
+    private BatchJobAdjVatRunRepository batchJobAdjVatRunRepository;
 
     @Autowired
     private RunningAdjustmentLockRepository runningAdjustmentLockRepository;
@@ -483,6 +480,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
+                    saveAdjVatRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
+
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
                         batchJobAdjRun.setBillingPeriodStart(baseStartDate);
@@ -494,14 +493,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         batchJobAdjRunRepository.save(batchJobAdjRun);
                     }
 
-                    if (finalBased) {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlAmtsMtrFinCalculation")));
-                    } else {
-                        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedStlAmtsMtrAdjCalculation")));
-                    }
+                    String activeProfile = finalBased ? "monthlyAdjustedStlAmtsMtrFinCalculation" : "monthlyAdjustedStlAmtsMtrAdjCalculation";
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(activeProfile)));
                 } else if (MeterProcessType.PRELIMINARY.name().equals(type) || MeterProcessType.PRELIM.name().equals(type)) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyPrelimStlAmtsCalculation")));
                 } else if (MeterProcessType.FINAL.name().equals(type)) {
+                    saveAdjVatRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), Long.parseLong(taskRunDto.getGroupId()), baseStartDate, baseEndDate);
+
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
                         BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
                         batchJobAdjRun.setBillingPeriodStart(baseStartDate);
@@ -784,5 +782,18 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             removeDateRangeFrom(remainingDate, jobParameters.getDate(START_DATE), jobParameters.getDate(END_DATE));
         });
         Preconditions.checkState(remainingDate.size() < 1, "Incomplete calculation is not allowed for job: ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME));
+    }
+
+    private void saveAdjVatRun(MeterProcessType type, String jobId, Long groupId, LocalDateTime start, LocalDateTime end) {
+        BatchJobAdjVatRun adjVatRun = new BatchJobAdjVatRun();
+        adjVatRun.setAdditionalCompensation(false);
+        adjVatRun.setJobId(jobId);
+        adjVatRun.setGroupId(String.valueOf(groupId));
+        adjVatRun.setMeterProcessType(type);
+        adjVatRun.setBillingPeriodStart(start);
+        adjVatRun.setBillingPeriodEnd(end);
+        adjVatRun.setOutputReady(false);
+
+        batchJobAdjVatRunRepository.save(adjVatRun);
     }
 }

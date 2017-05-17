@@ -6,6 +6,7 @@ package com.pemc.crss.dataflow.app.dto;
 public class TaskSummaryDto {
     private String stepName;
     private Long stepId;
+    private Long jobId;
     private int  readCount;
     private int writeCount;
     private int skipCount;
@@ -48,5 +49,13 @@ public class TaskSummaryDto {
 
     public void setStepId(Long stepId) {
         this.stepId = stepId;
+    }
+
+    public Long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
     }
 }

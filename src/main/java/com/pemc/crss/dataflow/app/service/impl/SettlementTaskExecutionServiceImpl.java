@@ -211,6 +211,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
                                 if (stlJobGroupDto.getLatestJobExecStartDate().equals(calcJobExecution.getStartTime())) {
                                     taskExecutionDto.getSummary().put(COMPUTE_STL_JOB_NAME, showSummary(calcJobExecution));
+                                    taskExecutionDto.getLatestRunDates().put(COMPUTE_STL_JOB_NAME, calcJobExecution.getStartTime());
                                 }
 
                                 Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()

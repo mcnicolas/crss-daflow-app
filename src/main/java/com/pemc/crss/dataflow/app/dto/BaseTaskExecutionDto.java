@@ -24,6 +24,9 @@ public class BaseTaskExecutionDto {
     private String stlReadyUser;
     private String stlNotReadyUser;
 
+    private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();
+    private Map<String, Date> latestRunDates = Maps.newHashMap();
+
     public String getUser() {
         return user;
     }
@@ -52,6 +55,7 @@ public class BaseTaskExecutionDto {
         return stlReadyUser;
     }
 
+
     public void setStlReadyUser(String stlReadyUser) {
         this.stlReadyUser = stlReadyUser;
     }
@@ -63,8 +67,6 @@ public class BaseTaskExecutionDto {
     public void setStlNotReadyUser(String stlNotReadyUser) {
         this.stlNotReadyUser = stlNotReadyUser;
     }
-
-    private Map<String, List<TaskSummaryDto>> summary = Maps.newHashMap();
 
     public Long getId() {
         return id;
@@ -128,5 +130,13 @@ public class BaseTaskExecutionDto {
 
     public void setSummary(Map<String, List<TaskSummaryDto>> summary) {
         this.summary = summary;
+    }
+
+    public Map<String, Date> getLatestRunDates() {
+        return latestRunDates;
+    }
+
+    public void setLatestRunDates(Map<String, Date> latestRunDates) {
+        this.latestRunDates = latestRunDates;
     }
 }

@@ -33,7 +33,9 @@ ext {
     serviceName = "${project.name}"
     dockerImageName = "$project.serviceName"
     dockerImageTag = registryUrl + "/$project.dockerImageName:" + 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
-    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    //dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    // need to uniquely generate version since scdf doesn't force pull image yet.
+    dockerImageVersion = project.version + "." + 'git rev-parse --short HEAD'.execute().text.trim();
 }
 
 docker {

@@ -218,10 +218,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
 
         saveAdjVatRun(addtlCompensationFinalizeDto);
-        String jobName = determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
+        determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
 
-        log.debug("Running job name={}, properties={}, arguments={}", jobName, properties, arguments);
-        launchJob(jobName, properties, arguments);
+        log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
+        launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
         lockJob(ADDTL_COMP_GMR_BASE_JOB_NAME);
     }
 

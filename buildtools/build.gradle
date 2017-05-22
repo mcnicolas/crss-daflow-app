@@ -1,0 +1,43 @@
+apply plugin: 'liquibase'
+apply from: 'liquibase.gradle'
+
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'gradle.plugin.org.liquibase:liquibase-gradle-plugin:1.2.3'
+        classpath 'org.postgresql:postgresql:9.4.1211'
+        classpath 'org.liquibase.ext:liquibase-hibernate5:3.6'
+    }
+}
+
+liquibase {
+    activities {
+
+        dataflow {
+            changeLogFile "${project.file('src/main')}/liquibase/changelogs/changelog-dataflow.groovy"
+            url "${dbUrlDataflow}"
+            username "${dbUserDataflow}"
+            password "${dbPasswordDataflow}"
+            driver "${dbDriver}"
+            referenceUrl "hibernate:spring:com.pemc.crss.shared.core.dataflow?dialect=${dbDialect}"
+            changeLogFile "${dataflowChangeLogFile}"
+        }
+    }
+
+    runList = 'dataflow'
+}
+
+
+
+
+
+
+
+

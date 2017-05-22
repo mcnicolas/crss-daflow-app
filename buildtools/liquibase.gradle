@@ -1,0 +1,150 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+
+}
+
+
+def profile  = project.hasProperty('env') ? project.getProperty('env') : 'local'
+def action = project.hasProperty('action') ? project.getProperty('action') : '';
+
+ext {
+    dbDriver = "org.postgresql.Driver"
+    dbDialect = "org.hibernate.dialect.PostgreSQL81Dialect"
+
+
+    if(action == 'diffSchema') {
+        dataflowChangeLogFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/dataflow/changelog-schema-tmp.groovy"
+    }
+    else {
+        dataflowChangeLogFile = "${project.file('src/main/resources')}/liquibase/changelogs/changelog-dataflow.groovy"
+    }
+
+    switch (profile) {
+        case 'dev':
+            println "setting up liqubase gradle dev properties"
+            dbUrlMetering = "jdbc:postgresql://192.168.236.2:5432/crss_metering"
+            dbUserMetering = "postgres"
+            dbPasswordMetering = "postgres"
+
+            dbUrlReg = "jdbc:postgresql://192.168.236.2:5432/crss_reg"
+            dbUserReg = "postgres"
+            dbPasswordReg = "postgres"
+
+            dbUrlMeterProcess = "jdbc:postgresql://192.168.236.2:5432/crss_meterprocess"
+            dbUserMeterProcess = "postgres"
+            dbPasswordMeterProcess = "postgres"
+
+            dbUrlDataflow = "jdbc:postgresql://192.168.236.2:5432/crss_dataflow"
+            dbUserDataflow = "postgres"
+            dbPasswordDataflow = "postgres"
+
+            dbUrlNmms = "jdbc:postgresql://192.168.236.2:5432/crss_nmms"
+            dbUserNmms = "postgres"
+            dbPasswordNmms = "postgres"
+
+            break
+
+        case 'dev2':
+            println "setting up liquibase gradle dev2 properties"
+            dbUrlMetering = "jdbc:postgresql://192.168.233.9:5432/crss_metering"
+            dbUserMetering = "crss_metering"
+            dbPasswordMetering = "crss_metering"
+
+            dbUrlReg = "jdbc:postgresql://192.168.233.9:5432/crss_reg2"
+            dbUserReg = "crss_reg2"
+            dbPasswordReg = "crss_reg2"
+
+            dbUrlMeterProcess = "jdbc:postgresql://192.168.233.9:5432/crss_meterprocess"
+            dbUserMeterProcess = "crss_meterprocess"
+            dbPasswordMeterProcess = "crss_meterprocess"
+
+            dbUrlDataflow = "jdbc:postgresql://192.168.233.9:5432/crss_dataflow"
+            dbUserDataflow = "crss_dataflow"
+            dbPasswordDataflow = "crss_dataflow"
+
+            dbUrlNmms = "jdbc:postgresql://192.168.233.9:5432/crss_nmms"
+            dbUserNmms = "crss_nmms"
+            dbPasswordNmms = "crss_nmms"
+
+            break
+
+        case 'pemc-uat':
+            println "setting up liquibase gradle pemc-uat properties"
+
+            dbUrlMetering = "jdbc:postgresql://db.uat.crss.wesm.ph:5432/crss_metering2"
+            dbUserMetering = "crss_meterprocess"
+            dbPasswordMetering = "crss_meterprocess"
+
+            dbUrlReg = "jdbc:postgresql://db.uat.crss.wesm.ph:5432/crss_reg2"
+            dbUserReg = "crss_meterprocess"
+            dbPasswordReg = "crss_meterprocess"
+
+            dbUrlMeterProcess = "jdbc:postgresql://db.uat.crss.wesm.ph:5432/crss_meterprocess"
+            dbUserMeterProcess = "crss_meterprocess"
+            dbPasswordMeterProcess = "crss_meterprocess"
+
+            dbUrlDataflow = "jdbc:postgresql://db.uat.crss.wesm.ph:5432/crss_dataflow"
+            dbUserDataflow = "crss_dataflow"
+            dbPasswordDataflow = "crss_dataflow"
+
+            dbUrlNmms = "jdbc:postgresql://db.uat.crss.wesm.ph:5432/crss_nmms"
+            dbUserNmms = "crss_meterprocess"
+            dbPasswordNmms = "crss_meterprocess"
+
+            break
+
+        case 'qa':
+
+            println "setting up liquibase gradle qa properties"
+            dbUrlMetering = "jdbc:postgresql://localhost:5433/crss_metering"
+            dbUserMetering = "postgres"
+            dbPasswordMetering = "postgres"
+
+            dbUrlReg = "jdbc:postgresql://localhost:5433/crss_reg"
+            dbUserReg = "postgres"
+            dbPasswordReg = "postgres"
+
+            dbUrlMeterProcess = "jdbc:postgresql://localhost:5433/crss_meterprocess"
+            dbUserMeterProcess = "postgres"
+            dbPasswordMeterProcess = "postgres"
+
+            dbUrlDataflow = "jdbc:postgresql://localhost:5433/crss_dataflow"
+            dbUserDataflow = "postgres"
+            dbPasswordDataflow = "postgres"
+
+            dbUrlNmms = "jdbc:postgresql://localhost:5433/crss_nmms"
+            dbUserNmms = "postgres"
+            dbPasswordNmms = "postgres"
+
+            break
+
+        default:
+            println "setting up liquibase gradle local properties"
+            dbUrlMetering = "jdbc:postgresql://localhost:5432/crss_metering"
+            dbUserMetering = "postgres"
+            dbPasswordMetering = "postgres"
+
+            dbUrlReg = "jdbc:postgresql://localhost:5432/crss_reg"
+            dbUserReg = "postgres"
+            dbPasswordReg = "postgres"
+
+            dbUrlMeterProcess = "jdbc:postgresql://localhost:5432/crss_meterprocess"
+            dbUserMeterProcess = "postgres"
+            dbPasswordMeterProcess = "postgres"
+
+            dbUrlDataflow = "jdbc:postgresql://localhost:5432/crss_dataflow"
+            dbUserDataflow = "postgres"
+            dbPasswordDataflow = "postgres"
+
+            dbUrlNmms = "jdbc:postgresql://localhost:5432/crss_nmms"
+            dbUserNmms = "postgres"
+            dbPasswordNmms = "postgres"
+    }
+
+}

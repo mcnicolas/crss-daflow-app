@@ -60,7 +60,7 @@ task stopApp(dependsOn: setupDeployer)  {
 task deployApp(dependsOn: setupDeployer) {
     doLast {
         exec {
-            println "Deploying new app: ${project.appId}"
+            println "Deploying new app: ${appId}"
             commandLine "$rootDir/buildtools/deployer/deploy.sh"
             args "$project.marathonUrl"
             args "$project.buildDir/deployer/${project.name}.json"

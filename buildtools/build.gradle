@@ -14,6 +14,36 @@ buildscript {
         classpath 'gradle.plugin.org.liquibase:liquibase-gradle-plugin:1.2.3'
         classpath 'org.postgresql:postgresql:9.4.1211'
         classpath 'org.liquibase.ext:liquibase-hibernate5:3.6'
+        classpath 'org.springframework:spring-test:4.3.2.RELEASE'
+        classpath 'org.springframework:spring-jdbc:4.3.2.RELEASE'
+        classpath 'org.springframework:spring-beans:4.3.2.RELEASE'
+        classpath 'org.springframework:spring-context:4.3.2.RELEASE'
+        classpath 'org.springframework:spring-orm:4.3.2.RELEASE'
+        classpath 'commons-logging:commons-logging:1.2'
+        classpath 'com.google.guava:guava:19.0'
+        classpath 'org.apache.commons:commons-lang3:3.4'
+        //classpath 'org.jadira.usertype:usertype.core:5.0.0.GA'
+        classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.3'
+        classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.8.3'
+
+        classpath ('com.pemc.crss:crss-shared-commons-model:2.0.0.RC4'){
+            transitive = false
+        }
+        classpath ('com.pemc.crss:crss-shared-core-nmms:2.0.0.RC4'){
+            transitive = false
+        }
+        classpath ('com.pemc.crss:crss-shared-core-metering:2.0.0.RC4'){
+            transitive = false
+        }
+        classpath ('com.pemc.crss:crss-shared-core-registration:2.0.0.RC4'){
+            transitive = false
+        }
+        classpath ('com.pemc.crss:crss-shared-core-dataflow:2.0.0.RC4'){
+            transitive = false
+        }
+        classpath ('com.pemc.crss:crss-meterprocess-core-main:2.0.0.RC4'){
+            transitive = false
+        }
     }
 }
 
@@ -21,7 +51,6 @@ liquibase {
     activities {
 
         dataflow {
-            changeLogFile "${project.file('src/main')}/liquibase/changelogs/changelog-dataflow.groovy"
             url "${dbUrlDataflow}"
             username "${dbUserDataflow}"
             password "${dbPasswordDataflow}"

@@ -217,15 +217,15 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
 
-        saveAdjVatRun(addtlCompensationFinalizeDto);
-        determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
+        String jobName = determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
+        saveAdjVatRun(addtlCompensationFinalizeDto, jobName);
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
         lockJob(ADDTL_COMP_GMR_BASE_JOB_NAME);
     }
 
-    private void saveAdjVatRun(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto) {
+    private void saveAdjVatRun(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, String jobName) {
         LocalDateTime start = null;
         LocalDateTime end = null;
 
@@ -243,7 +243,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         adjVatRun.setAdditionalCompensation(true);
         adjVatRun.setJobId(jobId);
         adjVatRun.setGroupId(addtlCompensationFinalizeDto.getGroupId());
-        adjVatRun.setMeterProcessType(null);
+        adjVatRun.setMeterProcessType(determineProcessType(jobName));
         adjVatRun.setBillingPeriodStart(start);
         adjVatRun.setBillingPeriodEnd(end);
         adjVatRun.setOutputReady(false);
@@ -281,6 +281,17 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompGmrVatAcCalculation")));
                 return ADDTL_COMP_GMR_AC_JOB_NAME;
             }
+        }
+    }
+
+    private MeterProcessType determineProcessType(String jobName) {
+        switch (jobName){
+            case ADDTL_COMP_GMR_FINAL_JOB_NAME:
+                return MeterProcessType.FINAL;
+            case ADDTL_COMP_GMR_ADJ_JOB_NAME:
+                return MeterProcessType.ADJUSTED;
+            default:
+                return null;
         }
     }
 

@@ -9,7 +9,10 @@ ext {
     appProfile = project.hasProperty('appProfile') ? project.getProperty('appProfile') : 'dev'
     marathonUrl = project.hasProperty('marathonUrl') ? project.getProperty('marathonUrl') : ''
     environmentSet = project.hasProperty('environmentSet') ? project.getProperty('environmentSet') : ''
+
 }
+
+def appId = ''
 
 task setupDeployer() {
     doLast {
@@ -32,7 +35,9 @@ task setupDeployer() {
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
         json.id = "${project.environmentSet}" + json.id;
 
-        ext.appId ="${project.environmentSet}" + json.id;
+        appId =  ("${project.environmentSet}" + json.id);
+
+        println "${project.environmentSet}" + json.id;
 
         def builder = new JsonBuilder(json)
         outputFile.text = builder.toPrettyString()
@@ -42,8 +47,10 @@ task setupDeployer() {
 task stopApp(dependsOn: setupDeployer)  {
     doLast {
         // stop process app
-        println "Stopping current deployed app: ${project.appId}"
-        def proc = "curl -X DELETE $project.marathonUrl/${project.appId}".execute()
+
+        println "Stopping current deployed app: ${appId}"
+        def proc = "curl -X DELETE $project.marathonUrl/${appId}".execute()
+        println "curl -X DELETE $project.marathonUrl$appId"
         Thread.start { System.err << proc.err }
         proc.waitFor()
         println "Stopped"

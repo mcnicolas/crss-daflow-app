@@ -435,6 +435,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+
         Preconditions.checkNotNull(taskRunDto.getJobName());
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
@@ -453,6 +454,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
         Date start = null;
         Date end = null;
+
+        log.debug("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
+                taskRunDto.getBaseType());
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
             Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(FINALIZE_JOB_NAME) == 0,
@@ -481,6 +485,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                        log.debug("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
+                                + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                         saveAdjVatRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                     }
@@ -494,6 +500,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 } else if (MeterProcessType.FINAL.name().equals(type)) {
 
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                        log.debug("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
+                                + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                         saveAdjVatRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), Long.parseLong(taskRunDto.getGroupId()), baseStartDate, baseEndDate);
                     }

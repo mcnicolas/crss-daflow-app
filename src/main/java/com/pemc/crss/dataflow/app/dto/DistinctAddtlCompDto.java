@@ -9,6 +9,9 @@ public class DistinctAddtlCompDto {
     private Long jobId;
     private Long groupId;
     private BatchStatus taggingStatus;
+    private BatchStatus genFileStatus;
+    private String genFileFolderName;
+    private String genFileEndTime;
 
     public DistinctAddtlCompDto(String startDate, String endDate, String pricingCondition) {
         this.startDate = startDate;
@@ -66,5 +69,29 @@ public class DistinctAddtlCompDto {
 
     public static DistinctAddtlCompDto create(final String startDate, final String endDate, final String pricingCondition) {
         return new DistinctAddtlCompDto(startDate, endDate, pricingCondition);
+    }
+
+    public BatchStatus getGenFileStatus() {
+        return genFileStatus;
+    }
+
+    public void setGenFileStatus(BatchStatus genFileStatus) {
+        this.genFileStatus = genFileStatus;
+    }
+
+    public String getGenFileFolderName() {
+        return genFileFolderName;
+    }
+
+    public void setGenFileFolderName(String genFileFolderName) {
+        this.genFileFolderName = genFileFolderName;
+    }
+
+    public String getGenFileEndTime() {
+        return genFileEndTime;
+    }
+
+    public void setGenFileEndTime(String genFileEndTime) {
+        this.genFileEndTime = genFileEndTime;
     }
 }

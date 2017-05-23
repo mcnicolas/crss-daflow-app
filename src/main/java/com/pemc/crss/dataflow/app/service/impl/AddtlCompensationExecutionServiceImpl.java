@@ -40,6 +40,7 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.AC_APPROVED_RATE;
@@ -61,10 +62,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String ADDTL_COMP_GMR_AC_JOB_NAME = "calculateAddtlCompGmrVatAc";
     private static final String ADDTL_COMP_GMR_ADJ_JOB_NAME = "calculateAddtlCompGmrVatAdjusted";
     private static final String ADDTL_COMP_GMR_FINAL_JOB_NAME = "calculateAddtlCompGmrVatFinal";
-    private static final String GENERATE_ADDTL_COMP_JOB_NAME = "generateAddtlCompFiles"; // profile: addtlCompFileGeneration
+    private static final String GENERATE_ADDTL_COMP_JOB_NAME = "generateAddtlCompFiles";
 
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation-addtlcomp";
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";
+
+    private static final String AC_FILE_GEN_FOLDERNAME = "AC_FILE_GEN_FOLDERNAME";
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
@@ -117,9 +120,31 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     distinctAddtlCompDto.setTaggingStatus(taggingStatus);
                                     distinctAddtlCompDto.setGroupId(groupId);
 
-                                    addtlCompensationExecDetailsDtos.add(addtlCompensationExecDetailsDto);
+                                    // do not include finalize ac jobs
+                                    if (!jobInstance.getJobName().startsWith(ADDTL_COMP_GMR_BASE_JOB_NAME)) {
+                                        addtlCompensationExecDetailsDtos.add(addtlCompensationExecDetailsDto);
+                                    }
                                 }
                             });
+
+                    if (distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)){
+                        // get generated AC files folder name
+                        Optional<JobInstance> genFileJobInstanceOpt = jobExplorer.findJobInstancesByJobName(
+                                GENERATE_ADDTL_COMP_JOB_NAME + "-" + distinctAddtlCompDto.getGroupId(),
+                                0, Integer.MAX_VALUE).stream().findFirst();
+
+                        genFileJobInstanceOpt.ifPresent(jobInstance -> getJobExecutions(jobInstance)
+                            .forEach(jobExecution -> {
+                                distinctAddtlCompDto.setGenFileStatus(jobExecution.getStatus());
+                                distinctAddtlCompDto.setGenFileEndTime(
+                                        DateUtil.convertToString(jobExecution.getEndTime(), DateUtil.DEFAULT_DATETIME_FORMAT));
+
+                                Optional.ofNullable(jobExecution.getExecutionContext().get(AC_FILE_GEN_FOLDERNAME))
+                                        .ifPresent(val -> distinctAddtlCompDto.setGenFileFolderName((String) val));
+                            })
+                        );
+                    }
+
                     addtlCompensationExecutionDto.setAddtlCompensationExecDetailsDtos(addtlCompensationExecDetailsDtos);
                     return addtlCompensationExecutionDto;
                 }).collect(Collectors.toList());

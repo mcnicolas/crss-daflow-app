@@ -34,6 +34,7 @@ task setupDeployer() {
         json.container.docker.image = dockerPath
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
         json.id = "${project.environmentSet}" + json.id;
+        json.container.docker.portMappings[0].labels.VIP_0 = "${json.id}:8082"
 
         appId =  ("${project.environmentSet}" + json.id);
 

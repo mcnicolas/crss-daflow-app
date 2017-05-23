@@ -36,9 +36,9 @@ task setupDeployer() {
         json.id = "${project.environmentSet}" + json.id;
         json.container.docker.portMappings[0].labels.VIP_0 = "${json.id}:8082"
 
-        appId =  ("${project.environmentSet}" + json.id);
+        appId = "${json.id}"
 
-        println "${project.environmentSet}" + json.id;
+        println "${appId}"
 
         def builder = new JsonBuilder(json)
         outputFile.text = builder.toPrettyString()

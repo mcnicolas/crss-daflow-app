@@ -1,6 +1,6 @@
 {
     "volumes": null,
-    "id": "/crss-dataflow-app",
+    "id": "/dataflow-app",
     "cmd": null,
     "args": null,
     "user": null,
@@ -29,7 +29,7 @@
                     "containerPort": 8082,
                     "protocol": "tcp",
                     "labels": {
-                        "VIP_0": "/crss-dataflow-app:8082"
+                        "VIP_0": "/dataflow-app:8082"
                     }
                 }
             ],
@@ -52,10 +52,6 @@
     "upgradeStrategy": {
         "minimumHealthCapacity": 1,
         "maximumOverCapacity": 1
-    },
-    "labels": {
-        "HAPROXY_0_VHOST": "app.meterprocess.pemc.com",
-        "HAPROXY_GROUP": "external"
     },
     "acceptedResourceRoles": null,
     "residency": null,

@@ -40,7 +40,7 @@ public class AddtlCompensationQuery {
             + "    and B.STATUS like ? "
             + "    and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi:ss') like ? and D.KEY_NAME = 'startDate') "
             + "    and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi:ss') like ? and E.KEY_NAME = 'endDate') "
-            + "    and (F.STRING_VAL like ? and F.KEY_NAME = 'acPricingCondition') "
+            + "    and (F.STRING_VAL like ? and F.KEY_NAME = 'acPC') "
             + "ORDER BY JOB_INSTANCE_ID desc";
 
     public static final String ADDTL_COMP_INTS_COUNT_QUERY
@@ -61,7 +61,7 @@ public class AddtlCompensationQuery {
             + "    and B.STATUS like ? "
             + "    and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') "
             + "    and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') "
-            + "    and (F.STRING_VAL like ? and F.KEY_NAME = 'acPricingCondition') "
+            + "    and (F.STRING_VAL like ? and F.KEY_NAME = 'acPC') "
             + "ORDER BY JOB_INSTANCE_ID desc";
 
     public static final String ADDTL_COMP_DISTINCT_QUERY
@@ -83,7 +83,7 @@ public class AddtlCompensationQuery {
             + "    and B.STATUS like ? "
             + "    and D.KEY_NAME = 'startDate' "
             + "    and E.KEY_NAME = 'endDate' "
-            + "    and F.KEY_NAME = 'acPricingCondition' "
+            + "    and F.KEY_NAME = 'acPC' "
             + "ORDER BY D.DATE_VAL DESC, E.DATE_VAL DESC";
 
     public static final String ADDTL_COMP_DISTINCT_COUNT_QUERY

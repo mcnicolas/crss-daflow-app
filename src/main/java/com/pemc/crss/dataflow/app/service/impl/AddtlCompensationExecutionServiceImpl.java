@@ -368,7 +368,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         addtlCompParams.setBillingId(addtlCompensationDto.getBillingId());
         addtlCompParams.setMtn(addtlCompensationDto.getMtn());
         addtlCompParams.setApprovedRate(addtlCompensationDto.getApprovedRate());
-        addtlCompParams.setGroupId(String.valueOf(groupId));
+        addtlCompParams.setGroupId(groupId);
         addtlCompParams.setStatus("STARTED");
 
         addtlCompParamsRepository.save(addtlCompParams);

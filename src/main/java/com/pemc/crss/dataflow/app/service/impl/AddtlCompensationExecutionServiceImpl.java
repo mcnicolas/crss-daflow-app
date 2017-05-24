@@ -127,21 +127,22 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                 }
                             });
 
-                    if (distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)){
+                    if (distinctAddtlCompDto != null && distinctAddtlCompDto.getTaggingStatus() != null
+                            && distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)){
                         // get generated AC files folder name
                         Optional<JobInstance> genFileJobInstanceOpt = jobExplorer.findJobInstancesByJobName(
                                 GENERATE_ADDTL_COMP_JOB_NAME + "-" + distinctAddtlCompDto.getGroupId(),
                                 0, Integer.MAX_VALUE).stream().findFirst();
 
                         genFileJobInstanceOpt.ifPresent(jobInstance -> getJobExecutions(jobInstance)
-                            .forEach(jobExecution -> {
-                                distinctAddtlCompDto.setGenFileStatus(jobExecution.getStatus());
-                                distinctAddtlCompDto.setGenFileEndTime(
-                                        DateUtil.convertToString(jobExecution.getEndTime(), DateUtil.DEFAULT_DATETIME_FORMAT));
+                                .forEach(jobExecution -> {
+                                    distinctAddtlCompDto.setGenFileStatus(jobExecution.getStatus());
+                                    distinctAddtlCompDto.setGenFileEndTime(
+                                            DateUtil.convertToString(jobExecution.getEndTime(), DateUtil.DEFAULT_DATETIME_FORMAT));
 
-                                Optional.ofNullable(jobExecution.getExecutionContext().get(AC_FILE_GEN_FOLDERNAME))
-                                        .ifPresent(val -> distinctAddtlCompDto.setGenFileFolderName((String) val));
-                            })
+                                    Optional.ofNullable(jobExecution.getExecutionContext().get(AC_FILE_GEN_FOLDERNAME))
+                                            .ifPresent(val -> distinctAddtlCompDto.setGenFileFolderName((String) val));
+                                })
                         );
                     }
 

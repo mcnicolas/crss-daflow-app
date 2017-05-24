@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -68,6 +69,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";
 
     private static final String AC_FILE_GEN_FOLDERNAME = "AC_FILE_GEN_FOLDERNAME";
+    private static final List<String> AC_FILTER_STEP_LIST = Arrays.asList("calculateAddtlCompStep",
+            "calculateAddtlCompAllocStep", "calculateAddtlCompVatStep", "calculateAddtlCompVatAllocStep");
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
@@ -114,6 +117,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     addtlCompensationExecDetailsDto.setMtn(parameters.getString(AC_MTN));
                                     addtlCompensationExecDetailsDto.setApprovedRate(BigDecimal.valueOf(parameters.getDouble(AC_APPROVED_RATE)));
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
+                                    addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_FILTER_STEP_LIST));
 
                                     BatchStatus taggingStatus = extractTaggingStatus(groupId);
 

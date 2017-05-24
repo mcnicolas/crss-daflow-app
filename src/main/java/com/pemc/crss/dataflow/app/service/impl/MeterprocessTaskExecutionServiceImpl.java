@@ -94,7 +94,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             } else if (taskExecutionDto.getWesmStatus().isUnsuccessful()) {
                                 taskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
                             } else if (taskExecutionDto.getWesmStatus() == BatchStatus.COMPLETED) {
-                                taskExecutionDto.getSummary().put(RUN_WESM_JOB_NAME, showSummary(jobExecution));
+                                taskExecutionDto.getSummary().put(RUN_WESM_JOB_NAME, showSummary(jobExecution, null));
                             }
 
                             taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getWesmStatus(), "WESM"));
@@ -117,7 +117,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getRcoaStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(rcoaJobExecution));
                                 } else if (taskExecutionDto.getRcoaStatus() == BatchStatus.COMPLETED) {
-                                    taskExecutionDto.getSummary().put(RUN_RCOA_JOB_NAME, showSummary(rcoaJobExecution));
+                                    taskExecutionDto.getSummary().put(RUN_RCOA_JOB_NAME, showSummary(rcoaJobExecution, null));
                                 }
 
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getRcoaStatus(), "RCOA"));
@@ -137,7 +137,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getMqReportStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(mqReportJobExecution));
                                 } else if (taskExecutionDto.getMqReportStatus() == BatchStatus.COMPLETED) {
-                                    taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution));
+                                    taskExecutionDto.getSummary().put(RUN_MQ_REPORT_JOB_NAME, showSummary(mqReportJobExecution, null));
                                 }
                             }
 
@@ -158,7 +158,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getSettlementStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
                                 } else if (taskExecutionDto.getSettlementStatus() == BatchStatus.COMPLETED) {
-                                    taskExecutionDto.getSummary().put(RUN_STL_NOT_READY_JOB_NAME, showSummary(settlementJobExecution));
+                                    taskExecutionDto.getSummary().put(RUN_STL_NOT_READY_JOB_NAME, showSummary(settlementJobExecution, null));
                                 }
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementStatus(), "GESQ"));
                             }
@@ -180,7 +180,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 } else if (taskExecutionDto.getSettlementReadyStatus().isUnsuccessful()) {
                                     taskExecutionDto.setExitMessage(processFailedMessage(settlementJobExecution));
                                 } else if (taskExecutionDto.getSettlementReadyStatus() == BatchStatus.COMPLETED) {
-                                    taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution));
+                                    taskExecutionDto.getSummary().put(RUN_STL_READY_JOB_NAME, showSummary(settlementJobExecution, null));
                                 }
                                 taskExecutionDto.setStatus(convertStatus(taskExecutionDto.getSettlementReadyStatus(), "Settlement Ready"));
                             }

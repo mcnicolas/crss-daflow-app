@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunDto;
 import com.pemc.crss.dataflow.app.dto.DistinctAddtlCompDto;
 import com.pemc.crss.dataflow.app.support.*;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -139,6 +140,12 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_INTS_QUERY),
                 new String[]{"%", dto.getStartDate(), dto.getEndDate(), dto.getPricingCondition()},
                 getJobInstanceExtractor(start, count));
+    }
+
+    public List<JobInstance> findAddtlCompCompleteFinalizeInstances(final int start, final int count,
+        final String startDate, final String endDate, final String pricingCondition) {
+        return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_COMPLETE_FINALIZE_QUERY),
+                new String[]{startDate, endDate, pricingCondition}, getJobInstanceExtractor(start, count));
     }
 
     public Long countDistinctAddtlCompJobInstances() {

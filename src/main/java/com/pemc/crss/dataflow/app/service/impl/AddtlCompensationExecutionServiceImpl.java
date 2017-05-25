@@ -132,7 +132,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                             });
 
                     if (distinctAddtlCompDto != null && distinctAddtlCompDto.getTaggingStatus() != null
-                            && distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)){
+                            && distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)) {
                         // get generated AC files folder name
                         Optional<JobInstance> genFileJobInstanceOpt = jobExplorer.findJobInstancesByJobName(
                                 GENERATE_ADDTL_COMP_JOB_NAME + "-" + distinctAddtlCompDto.getGroupId(),
@@ -194,6 +194,14 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto, Long currentTimeMillis) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_JOB_NAME) == 0,
                 "There is an existing ".concat(ADDTL_COMP_JOB_NAME).concat(" job running"));
+
+        List<JobInstance> finalizeJobInstances = dataFlowJdbcJobExecutionDao.findAddtlCompCompleteFinalizeInstances(0,
+                Integer.MAX_VALUE, addtlCompensationDto.getBillingStartDate(),
+                addtlCompensationDto.getBillingEndDate(), addtlCompensationDto.getPricingCondition());
+
+        Preconditions.checkState(finalizeJobInstances.isEmpty(), String.format("Additional Compensation for billing period "
+                + " [%s to %s] with %s pricing condition has already been finalized.", addtlCompensationDto.getBillingStartDate(),
+                addtlCompensationDto.getBillingEndDate(), addtlCompensationDto.getPricingCondition()));
 
         long groupId = currentTimeMillis == null ? System.currentTimeMillis() : currentTimeMillis;
         String startDate = addtlCompensationDto.getBillingStartDate();

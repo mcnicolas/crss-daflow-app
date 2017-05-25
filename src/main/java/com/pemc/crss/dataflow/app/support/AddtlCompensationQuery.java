@@ -86,6 +86,27 @@ public class AddtlCompensationQuery {
             + "    and F.KEY_NAME = 'acPC' "
             + "ORDER BY D.DATE_VAL DESC, E.DATE_VAL DESC";
 
+    public static final String ADDTL_COMP_COMPLETE_FINALIZE_QUERY
+            = "SELECT "
+            + "    A.JOB_INSTANCE_ID, A.JOB_NAME "
+            + "FROM "
+            + "    %PREFIX%JOB_INSTANCE A "
+            + "JOIN "
+            + "    %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID "
+            + "JOIN "
+            + "    %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID "
+            + "JOIN "
+            + "    %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID "
+            + "JOIN "
+            + "    %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID "
+            + "WHERE "
+            + "    A.JOB_NAME like 'calculateAddtlCompGmrVat%' "
+            + "    and B.STATUS = 'COMPLETED' "
+            + "    and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd') like ? and D.KEY_NAME = 'startDate') "
+            + "    and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd') like ? and E.KEY_NAME = 'endDate') "
+            + "    and (F.STRING_VAL like ? and F.KEY_NAME = 'acPC') "
+            + "ORDER BY JOB_INSTANCE_ID desc";
+
     public static final String ADDTL_COMP_DISTINCT_COUNT_QUERY
             = "SELECT"
             + "    COUNT(*)"

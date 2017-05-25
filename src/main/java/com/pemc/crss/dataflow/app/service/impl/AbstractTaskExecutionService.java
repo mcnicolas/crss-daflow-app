@@ -214,9 +214,11 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         }
     }
 
-    protected List<TaskSummaryDto> showSummary(JobExecution jobExecution) {
+    protected List<TaskSummaryDto> showSummary(JobExecution jobExecution, List<String> filterList) {
         return jobExecution.getStepExecutions().parallelStream()
-                .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
+                .filter(stepExecution -> filterList == null || filterList.isEmpty()
+                    ? stepExecution.getStepName().endsWith("Step")
+                    : filterList.contains(stepExecution.getStepName()))
                 .map(stepExecution -> {
                     TaskSummaryDto taskSummaryDto = new TaskSummaryDto();
                     taskSummaryDto.setStepName(stepExecution.getStepName());

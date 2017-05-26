@@ -7,7 +7,7 @@ public class DistinctAddtlCompDto {
     private String endDate;
     private String pricingCondition;
     private Long jobId;
-    private Long groupId;
+    private String groupId;
     private BatchStatus taggingStatus;
     private BatchStatus genFileStatus;
     private String genFileFolderName;
@@ -51,11 +51,11 @@ public class DistinctAddtlCompDto {
         this.jobId = jobId;
     }
 
-    public Long getGroupId() {
+    public String getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(Long groupId) {
+    public void setGroupId(String groupId) {
         this.groupId = groupId;
     }
 

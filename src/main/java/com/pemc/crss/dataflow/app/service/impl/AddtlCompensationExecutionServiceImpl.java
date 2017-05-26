@@ -109,7 +109,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     JobExecution jobExecution = jobExecutionList.get(0);
                                     JobParameters parameters = jobExecution.getJobParameters();
 
-                                    Long groupId = parameters.getLong(GROUP_ID);
+                                    String groupId = parameters.getString(GROUP_ID);
 
                                     AddtlCompensationExecDetailsDto addtlCompensationExecDetailsDto = new AddtlCompensationExecDetailsDto();
                                     addtlCompensationExecDetailsDto.setRunId(parameters.getLong(RUN_ID));
@@ -174,11 +174,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     public void launchGroupAddtlCompensation(AddtlCompensationRunListDto addtlCompensationRunDtos, Principal principal) throws URISyntaxException {
         if (!CollectionUtils.isEmpty(addtlCompensationRunDtos.getAddtlCompensationRunDtos())) {
-            Iterator<AddtlCompensationRunDto> iterator =  addtlCompensationRunDtos.getAddtlCompensationRunDtos().iterator();
-            long groupId = System.currentTimeMillis();
 
-            while (iterator.hasNext()) {
-                AddtlCompensationRunDto addtlCompensationRunDto = iterator.next();
+            // only get the first instance since all of them have the same start / end / pc
+            AddtlCompensationRunDto addtlCompRunDto = addtlCompensationRunDtos.getAddtlCompensationRunDtos().get(0);
+            final String groupId = buildGroupId(addtlCompRunDto);
+
+            for (AddtlCompensationRunDto addtlCompensationRunDto : addtlCompensationRunDtos.getAddtlCompensationRunDtos()) {
                 addtlCompensationRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
                 launchAddtlCompensation(addtlCompensationRunDto, groupId);
             }
@@ -188,10 +189,15 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto) throws URISyntaxException {
-        launchAddtlCompensation(addtlCompensationDto, null);
+        launchAddtlCompensation(addtlCompensationDto, buildGroupId(addtlCompensationDto));
     }
 
-    public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto, Long currentTimeMillis) throws URISyntaxException {
+    private String buildGroupId(AddtlCompensationRunDto runDto) {
+        String groupId = runDto.getBillingStartDate() + runDto.getBillingEndDate() + runDto.getPricingCondition();
+        return groupId.replaceAll("-",""); // produces: YYYYMMDDYYYYMMDDPC ex: 2017012602170225AP
+    }
+
+    public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto, String groupId) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_JOB_NAME) == 0,
                 "There is an existing ".concat(ADDTL_COMP_JOB_NAME).concat(" job running"));
 
@@ -203,7 +209,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 + " [%s to %s] with %s pricing condition has already been finalized.", addtlCompensationDto.getBillingStartDate(),
                 addtlCompensationDto.getBillingEndDate(), addtlCompensationDto.getPricingCondition()));
 
-        long groupId = currentTimeMillis == null ? System.currentTimeMillis() : currentTimeMillis;
         String startDate = addtlCompensationDto.getBillingStartDate();
         String endDate = addtlCompensationDto.getBillingEndDate();
 
@@ -220,7 +225,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(GROUP_ID, String.valueOf(groupId), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(AC_BILLING_ID, addtlCompensationDto.getBillingId()));
         arguments.add(concatKeyValue(AC_MTN, addtlCompensationDto.getMtn()));
         arguments.add(concatKeyValue(AC_APPROVED_RATE, addtlCompensationDto.getApprovedRate().toString(), "double"));
@@ -250,7 +255,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(GROUP_ID, addtlCompensationFinalizeDto.getGroupId(), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, addtlCompensationFinalizeDto.getGroupId()));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
@@ -346,7 +351,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(GROUP_ID, String.valueOf(groupId), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
@@ -388,7 +393,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    private void saveAddtlCompParam(AddtlCompensationRunDto addtlCompensationDto, long groupId) {
+    private void saveAddtlCompParam(AddtlCompensationRunDto addtlCompensationDto, String groupId) {
         LocalDateTime start = null;
         LocalDateTime end = null;
 
@@ -452,8 +457,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                         mtn, start, end, pc));
     }
 
-    private BatchStatus extractTaggingStatus(Long groupId) {
-        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(ADDTL_COMP_GMR_BASE_JOB_NAME.concat("*-").concat(String.valueOf(groupId)), 0, 1);
+    private BatchStatus extractTaggingStatus(String groupId) {
+        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(ADDTL_COMP_GMR_BASE_JOB_NAME.concat("*-").concat(groupId), 0, 1);
         if (!taggingJobInstances.isEmpty()) {
             List<JobExecution> finalizeJobExecs = getJobExecutions(taggingJobInstances.get(0));
             if (!finalizeJobExecs.isEmpty()) {

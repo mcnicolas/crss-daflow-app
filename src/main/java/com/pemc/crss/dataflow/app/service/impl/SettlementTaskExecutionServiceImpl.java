@@ -743,8 +743,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
             if (jobExecutionOpt.isPresent()) {
                 Long runId = jobExecutionOpt.get().getJobParameters().getLong(TaskUtil.RUN_ID);
-                Long billingPeriodId = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId").getLongVal();
-                String supplyMonth = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth").getStringVal();
+                BatchJobAddtlParams addtlParamsBP = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "billingPeriodId");
+                Long billingPeriodId = addtlParamsBP != null ? addtlParamsBP.getLongVal() : null;
+                BatchJobAddtlParams addtlParamsSM = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "supplyMonth");
+                String supplyMonth = addtlParamsSM != null ? addtlParamsSM.getStringVal() : null;
 
                 if (StringUtils.isNotEmpty(supplyMonth) && billingPeriodId != null) {
                     return billingPeriodId + " - " + supplyMonth;

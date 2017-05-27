@@ -44,6 +44,7 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjVatRun;
 import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjVatRunRepository;
+import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.*;
 
@@ -77,6 +78,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
+    @Autowired
+    private BatchJobAddtlParamsService batchJobAddtlParamsService;
+
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
         return null;
@@ -105,11 +109,15 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
                                     String groupId = parameters.getString(GROUP_ID);
 
+                                    String acBillingId = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parameters.getLong(RUN_ID), AC_BILLING_ID);
+                                    String acMtn = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parameters.getLong(RUN_ID), AC_MTN);
+                                    Double acApprovedRate = batchJobAddtlParamsService.getBatchJobAddtlParamsDoubleVal(parameters.getLong(RUN_ID), AC_APPROVED_RATE);
+
                                     AddtlCompensationExecDetailsDto addtlCompensationExecDetailsDto = new AddtlCompensationExecDetailsDto();
                                     addtlCompensationExecDetailsDto.setRunId(parameters.getLong(RUN_ID));
-                                    addtlCompensationExecDetailsDto.setBillingId(parameters.getString(AC_BILLING_ID));
-                                    addtlCompensationExecDetailsDto.setMtn(parameters.getString(AC_MTN));
-                                    addtlCompensationExecDetailsDto.setApprovedRate(BigDecimal.valueOf(parameters.getDouble(AC_APPROVED_RATE)));
+                                    addtlCompensationExecDetailsDto.setBillingId(acBillingId);
+                                    addtlCompensationExecDetailsDto.setMtn(acMtn);
+                                    addtlCompensationExecDetailsDto.setApprovedRate(BigDecimal.valueOf(acApprovedRate));
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
                                     addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_FILTER_STEP_LIST));
 

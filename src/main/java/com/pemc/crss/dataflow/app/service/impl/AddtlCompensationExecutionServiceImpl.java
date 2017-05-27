@@ -117,7 +117,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     addtlCompensationExecDetailsDto.setRunId(parameters.getLong(RUN_ID));
                                     addtlCompensationExecDetailsDto.setBillingId(acBillingId);
                                     addtlCompensationExecDetailsDto.setMtn(acMtn);
-                                    addtlCompensationExecDetailsDto.setApprovedRate(BigDecimal.valueOf(acApprovedRate));
+                                    addtlCompensationExecDetailsDto.setApprovedRate(acApprovedRate != null ? BigDecimal.valueOf(acApprovedRate) : BigDecimal.ZERO);
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
                                     addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_FILTER_STEP_LIST));
 

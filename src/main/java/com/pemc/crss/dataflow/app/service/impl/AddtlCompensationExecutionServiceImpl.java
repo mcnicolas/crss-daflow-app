@@ -225,14 +225,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
+        arguments.add(concatKeyValue(PARENT_JOB, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(GROUP_ID, groupId));
-        arguments.add(concatKeyValue(AC_BILLING_ID, addtlCompensationDto.getBillingId()));
-        arguments.add(concatKeyValue(AC_MTN, addtlCompensationDto.getMtn()));
-        arguments.add(concatKeyValue(AC_APPROVED_RATE, addtlCompensationDto.getApprovedRate().toString(), "double"));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
-        arguments.add(concatKeyValue(AC_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
         arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
+        saveAddltCompCalcAdditionalParams(runId, addtlCompensationDto);
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
@@ -279,12 +277,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             e.printStackTrace();
         }
 
-        // jobId is not required for finalize job
-        String jobId = addtlCompensationFinalizeDto.getJobId() != null ? addtlCompensationFinalizeDto.getJobId() : "0";
-
+        // jobId is null for finalize job
         BatchJobAdjVatRun adjVatRun = new BatchJobAdjVatRun();
         adjVatRun.setAdditionalCompensation(true);
-        adjVatRun.setJobId(jobId);
+        adjVatRun.setJobId(null);
         adjVatRun.setGroupId(addtlCompensationFinalizeDto.getGroupId());
         adjVatRun.setMeterProcessType(determineProcessType(jobName));
         adjVatRun.setBillingPeriodStart(start);
@@ -391,6 +387,39 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         } catch (ParseException e) {
             log.error("Error parsing additional batch job params for AC AMS: {}", e);
         }
+    }
+
+    private void saveAddltCompCalcAdditionalParams(final Long runId, final AddtlCompensationRunDto addtlCompensationDto) {
+        log.debug("Saving AC Calc additional params. addtlCompensationDto: {}", addtlCompensationDto);
+
+        BatchJobAddtlParams batchJobAddtlParamsBillingId = new BatchJobAddtlParams();
+        batchJobAddtlParamsBillingId.setRunId(runId);
+        batchJobAddtlParamsBillingId.setType("STRING");
+        batchJobAddtlParamsBillingId.setKey(AC_BILLING_ID);
+        batchJobAddtlParamsBillingId.setStringVal(addtlCompensationDto.getBillingId());
+        batchJobAddtlParamsRepository.save(batchJobAddtlParamsBillingId);
+
+        BatchJobAddtlParams batchJobAddtlParamsMtn = new BatchJobAddtlParams();
+        batchJobAddtlParamsMtn.setRunId(runId);
+        batchJobAddtlParamsBillingId.setType("STRING");
+        batchJobAddtlParamsBillingId.setKey(AC_MTN);
+        batchJobAddtlParamsBillingId.setStringVal(addtlCompensationDto.getMtn());
+        batchJobAddtlParamsRepository.save(batchJobAddtlParamsMtn);
+
+        BatchJobAddtlParams batchJobAddtlParamPricingCondition = new BatchJobAddtlParams();
+        batchJobAddtlParamPricingCondition.setRunId(runId);
+        batchJobAddtlParamPricingCondition.setType("STRING");
+        batchJobAddtlParamPricingCondition.setKey(AC_PRICING_CONDITION);
+        batchJobAddtlParamPricingCondition.setStringVal(addtlCompensationDto.getPricingCondition());
+        batchJobAddtlParamsRepository.save(batchJobAddtlParamPricingCondition);
+
+        BatchJobAddtlParams batchJobAddtlParamApprovedRate = new BatchJobAddtlParams();
+        batchJobAddtlParamApprovedRate.setRunId(runId);
+        batchJobAddtlParamApprovedRate.setType("DOUBLE");
+        batchJobAddtlParamApprovedRate.setKey(AC_APPROVED_RATE);
+        batchJobAddtlParamApprovedRate.setDoubleVal(addtlCompensationDto.getApprovedRate().doubleValue());
+        batchJobAddtlParamsRepository.save(batchJobAddtlParamApprovedRate);
+
     }
 
     private void saveAddtlCompParam(AddtlCompensationRunDto addtlCompensationDto, String groupId) {

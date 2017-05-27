@@ -401,9 +401,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         BatchJobAddtlParams batchJobAddtlParamsMtn = new BatchJobAddtlParams();
         batchJobAddtlParamsMtn.setRunId(runId);
-        batchJobAddtlParamsBillingId.setType("STRING");
-        batchJobAddtlParamsBillingId.setKey(AC_MTN);
-        batchJobAddtlParamsBillingId.setStringVal(addtlCompensationDto.getMtn());
+        batchJobAddtlParamsMtn.setType("STRING");
+        batchJobAddtlParamsMtn.setKey(AC_MTN);
+        batchJobAddtlParamsMtn.setStringVal(addtlCompensationDto.getMtn());
         batchJobAddtlParamsRepository.save(batchJobAddtlParamsMtn);
 
         BatchJobAddtlParams batchJobAddtlParamPricingCondition = new BatchJobAddtlParams();

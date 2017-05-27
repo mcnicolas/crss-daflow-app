@@ -1,5 +1,29 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
+import java.math.BigDecimal;
+import java.net.URISyntaxException;
+import java.security.Principal;
+import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.pemc.crss.dataflow.app.dto.AddtlCompensationExecDetailsDto;
@@ -20,38 +44,8 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjVatRun;
 import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjVatRunRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.JobParameters;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
-import java.math.BigDecimal;
-import java.net.URISyntaxException;
-import java.security.Principal;
-import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static com.pemc.crss.shared.commons.util.TaskUtil.AC_APPROVED_RATE;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AC_BILLING_ID;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AC_MTN;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AC_PRICING_CONDITION;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_DUE_DATE;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_INVOICE_DATE;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_REMARKS_INV;
-import static com.pemc.crss.shared.commons.util.TaskUtil.GROUP_ID;
+import static com.pemc.crss.shared.commons.util.TaskUtil.*;
 
 @Slf4j
 @Service("addtlCompensationExecutionService")
@@ -229,6 +223,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
+        arguments.add(concatKeyValue(AC_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
         arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
         saveAddltCompCalcAdditionalParams(runId, addtlCompensationDto);
 

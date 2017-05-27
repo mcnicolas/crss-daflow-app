@@ -225,7 +225,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(PARENT_JOB, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(AC_BILLING_ID, addtlCompensationDto.getBillingId()));
         arguments.add(concatKeyValue(AC_MTN, addtlCompensationDto.getMtn()));
@@ -256,7 +255,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(PARENT_JOB, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(GROUP_ID, addtlCompensationFinalizeDto.getGroupId()));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));

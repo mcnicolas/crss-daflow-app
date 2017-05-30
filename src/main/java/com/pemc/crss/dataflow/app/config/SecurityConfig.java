@@ -12,7 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler;
 
 @Configuration
-@Import({OauthResourceConfig.class, CORSFilter.class, SecurityConfig.MethodSecurityConfiguration.class})
+@Import({OauthResourceConfig.class, SecurityConfig.MethodSecurityConfiguration.class})
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override

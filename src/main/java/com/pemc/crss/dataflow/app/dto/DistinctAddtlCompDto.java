@@ -2,6 +2,9 @@ package com.pemc.crss.dataflow.app.dto;
 
 import org.springframework.batch.core.BatchStatus;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DistinctAddtlCompDto {
     private String startDate;
     private String endDate;
@@ -12,6 +15,8 @@ public class DistinctAddtlCompDto {
     private BatchStatus genFileStatus;
     private String genFileFolderName;
     private String genFileEndTime;
+    private List<TaskSummaryDto> finalizeAcRunSummary = new ArrayList<>();
+
 
     public DistinctAddtlCompDto(String startDate, String endDate, String pricingCondition) {
         this.startDate = startDate;
@@ -93,5 +98,13 @@ public class DistinctAddtlCompDto {
 
     public void setGenFileEndTime(String genFileEndTime) {
         this.genFileEndTime = genFileEndTime;
+    }
+
+    public List<TaskSummaryDto> getFinalizeAcRunSummary() {
+        return finalizeAcRunSummary;
+    }
+
+    public void setFinalizeAcRunSummary(List<TaskSummaryDto> finalizeAcRunSummary) {
+        this.finalizeAcRunSummary = finalizeAcRunSummary;
     }
 }

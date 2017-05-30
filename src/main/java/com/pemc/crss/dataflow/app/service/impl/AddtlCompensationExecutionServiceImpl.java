@@ -64,8 +64,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";
 
     private static final String AC_FILE_GEN_FOLDERNAME = "AC_FILE_GEN_FOLDERNAME";
-    private static final List<String> AC_FILTER_STEP_LIST = Arrays.asList("calculateAddtlCompStep",
+    private static final List<String> AC_CALC_STEP_LIST = Arrays.asList("calculateAddtlCompStep",
             "calculateAddtlCompAllocStep", "calculateAddtlCompVatStep", "calculateAddtlCompVatAllocStep");
+    private static final List<String> AC_FINALIZE_STEP_LIST = Arrays.asList("calculateAddtlCompGmrStep");
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
@@ -119,11 +120,14 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     addtlCompensationExecDetailsDto.setMtn(acMtn);
                                     addtlCompensationExecDetailsDto.setApprovedRate(acApprovedRate != null ? BigDecimal.valueOf(acApprovedRate) : BigDecimal.ZERO);
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
-                                    addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_FILTER_STEP_LIST));
+                                    addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_CALC_STEP_LIST));
 
-                                    BatchStatus taggingStatus = extractTaggingStatus(groupId);
+                                    Optional.ofNullable(getLatestFinalizeAcJob(groupId)).ifPresent(finalizeJobExec -> {
+                                        distinctAddtlCompDto.setTaggingStatus(finalizeJobExec.getStatus());
+                                        distinctAddtlCompDto.setFinalizeAcRunSummary(
+                                                showSummary(finalizeJobExec, AC_FINALIZE_STEP_LIST));
+                                    });
 
-                                    distinctAddtlCompDto.setTaggingStatus(taggingStatus);
                                     distinctAddtlCompDto.setGroupId(groupId);
 
                                     // do not include finalize ac jobs
@@ -489,13 +493,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                         mtn, start, end, pc));
     }
 
-    private BatchStatus extractTaggingStatus(String groupId) {
+    private JobExecution getLatestFinalizeAcJob(String groupId) {
         List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(ADDTL_COMP_GMR_BASE_JOB_NAME.concat("*-").concat(groupId), 0, 1);
         if (!taggingJobInstances.isEmpty()) {
             List<JobExecution> finalizeJobExecs = getJobExecutions(taggingJobInstances.get(0));
             if (!finalizeJobExecs.isEmpty()) {
-                JobExecution finalizeJobExec = finalizeJobExecs.get(0);
-                return finalizeJobExec.getStatus();
+                return finalizeJobExecs.get(0);
             }
         }
         return null;

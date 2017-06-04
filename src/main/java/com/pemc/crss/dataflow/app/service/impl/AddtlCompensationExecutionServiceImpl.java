@@ -90,10 +90,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
         final Pageable pageable = pageableRequest.getPageable();
-        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances();
+        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances(pageableRequest.getMapParams());
 
         List<AddtlCompensationExecutionDto> addtlCompensationExecutionDtoList = dataFlowJdbcJobExecutionDao
-                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize())
+                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest.getMapParams())
                 .stream()
                 .map(distinctAddtlCompDto -> {
                     AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();

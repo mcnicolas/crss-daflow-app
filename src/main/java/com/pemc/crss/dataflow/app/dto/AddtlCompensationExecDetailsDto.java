@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.dto;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class AddtlCompensationExecDetailsDto {
@@ -11,6 +12,9 @@ public class AddtlCompensationExecDetailsDto {
     private BigDecimal approvedRate;
     private String status;
     private List<TaskSummaryDto> taskSummaryList = new ArrayList<>();
+
+    // progress bar and status
+    private List<String> runningSteps = new ArrayList<>();
 
     public Long getRunId() {
         return runId;
@@ -58,5 +62,13 @@ public class AddtlCompensationExecDetailsDto {
 
     public void setTaskSummaryList(List<TaskSummaryDto> taskSummaryList) {
         this.taskSummaryList = taskSummaryList;
+    }
+
+    public List<String> getRunningSteps() {
+        return runningSteps;
+    }
+
+    public void setRunningSteps(List<String> runningSteps) {
+        this.runningSteps = runningSteps;
     }
 }

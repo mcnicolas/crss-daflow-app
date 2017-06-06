@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 public class DistinctAddtlCompDto {
+
     private Date startDate;
     private Date endDate;
     private String pricingCondition;
@@ -17,7 +18,7 @@ public class DistinctAddtlCompDto {
     private String genFileFolderName;
     private String genFileEndTime;
     private List<TaskSummaryDto> finalizeAcRunSummary = new ArrayList<>();
-
+    private List<String> finalizeRunningSteps = new ArrayList<>();
 
     public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition) {
         this.startDate = startDate;
@@ -107,5 +108,13 @@ public class DistinctAddtlCompDto {
 
     public void setFinalizeAcRunSummary(List<TaskSummaryDto> finalizeAcRunSummary) {
         this.finalizeAcRunSummary = finalizeAcRunSummary;
+    }
+
+    public List<String> getFinalizeRunningSteps() {
+        return finalizeRunningSteps;
+    }
+
+    public void setFinalizeRunningSteps(List<String> finalizeRunningSteps) {
+        this.finalizeRunningSteps = finalizeRunningSteps;
     }
 }

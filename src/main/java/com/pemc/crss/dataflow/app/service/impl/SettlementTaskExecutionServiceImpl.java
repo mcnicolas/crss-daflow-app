@@ -1,26 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.pemc.crss.dataflow.app.dto.*;
-import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
-import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.commons.util.TaskUtil;
-import com.pemc.crss.shared.core.dataflow.entity.*;
-import com.pemc.crss.shared.core.dataflow.repository.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.batch.core.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -28,6 +8,42 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
+import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
+import com.pemc.crss.dataflow.app.dto.StlTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.commons.util.TaskUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
+import com.pemc.crss.shared.core.dataflow.entity.LatestAdjustmentLock;
+import com.pemc.crss.shared.core.dataflow.entity.RunningAdjustmentLock;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
+import com.pemc.crss.shared.core.dataflow.repository.LatestAdjustmentLockRepository;
+import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockRepository;
 
 import static java.util.stream.Collectors.toList;
 
@@ -69,9 +85,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
-
-    @Autowired
-    private BatchJobAdjVatRunRepository batchJobAdjVatRunRepository;
 
     @Autowired
     private RunningAdjustmentLockRepository runningAdjustmentLockRepository;
@@ -498,7 +511,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         log.debug("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
                                 + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
-                        saveAdjVatRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                     }
 
                     String activeProfile = finalBased ? "monthlyAdjustedStlAmtsMtrFinCalculation" : "monthlyAdjustedStlAmtsMtrAdjCalculation";
@@ -513,7 +525,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         log.debug("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
                                 + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
-                        saveAdjVatRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), Long.parseLong(taskRunDto.getGroupId()), baseStartDate, baseEndDate);
                     }
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlAmtsCalculation")));
                 }
@@ -792,25 +803,13 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private void saveAdjRun(MeterProcessType type, String jobId, Long groupId, LocalDateTime start, LocalDateTime end) {
         BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
         batchJobAdjRun.setJobId(jobId);
+        batchJobAdjRun.setAdditionalCompensation(false);
         batchJobAdjRun.setGroupId(String.valueOf(groupId));
         batchJobAdjRun.setMeterProcessType(type);
         batchJobAdjRun.setBillingPeriodStart(start);
         batchJobAdjRun.setBillingPeriodEnd(end);
         batchJobAdjRun.setOutputReady(false);
         batchJobAdjRunRepository.save(batchJobAdjRun);
-    }
-
-    private void saveAdjVatRun(MeterProcessType type, String jobId, Long groupId, LocalDateTime start, LocalDateTime end) {
-        BatchJobAdjVatRun adjVatRun = new BatchJobAdjVatRun();
-        adjVatRun.setAdditionalCompensation(false);
-        adjVatRun.setJobId(jobId);
-        adjVatRun.setGroupId(String.valueOf(groupId));
-        adjVatRun.setMeterProcessType(type);
-        adjVatRun.setBillingPeriodStart(start);
-        adjVatRun.setBillingPeriodEnd(end);
-        adjVatRun.setOutputReady(false);
-
-        batchJobAdjVatRunRepository.save(adjVatRun);
     }
 
 }

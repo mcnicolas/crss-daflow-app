@@ -40,10 +40,9 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjVatRun;
 import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjVatRunRepository;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.*;
@@ -71,7 +70,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
     @Autowired
-    private BatchJobAdjVatRunRepository batchJobAdjVatRunRepository;
+    private BatchJobAdjRunRepository batchJobAdjRunRepository;
 
     @Autowired
     private AddtlCompParamsRepository addtlCompParamsRepository;
@@ -310,7 +309,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         String result;
         if (hasAdjusted) {
-            result = batchJobAdjVatRunRepository.isLatestFinalizedBillingPeriodAc(start, end);
+            result = batchJobAdjRunRepository.isLatestFinalizedBillingPeriodAc(start, end);
             if (result != null && result.equals("Y")) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompGmrVatAcCalculation")));
                 return ADDTL_COMP_GMR_AC_JOB_NAME;
@@ -319,7 +318,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 return ADDTL_COMP_GMR_ADJ_JOB_NAME;
             }
         } else {
-            result = batchJobAdjVatRunRepository.findLatestFinalizedAcByBillingPeriod(start, end);
+            result = batchJobAdjRunRepository.findLatestFinalizedAcByBillingPeriod(start, end);
             if (result == null) {
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalAddtlCompGmrVatCalculation")));
                 return ADDTL_COMP_GMR_FINAL_JOB_NAME;

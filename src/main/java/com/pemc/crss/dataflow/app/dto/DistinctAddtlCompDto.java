@@ -3,11 +3,13 @@ package com.pemc.crss.dataflow.app.dto;
 import org.springframework.batch.core.BatchStatus;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class DistinctAddtlCompDto {
-    private String startDate;
-    private String endDate;
+
+    private Date startDate;
+    private Date endDate;
     private String pricingCondition;
     private Long jobId;
     private String groupId;
@@ -16,27 +18,27 @@ public class DistinctAddtlCompDto {
     private String genFileFolderName;
     private String genFileEndTime;
     private List<TaskSummaryDto> finalizeAcRunSummary = new ArrayList<>();
+    private List<String> finalizeRunningSteps = new ArrayList<>();
 
-
-    public DistinctAddtlCompDto(String startDate, String endDate, String pricingCondition) {
+    public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.pricingCondition = pricingCondition;
     }
 
-    public String getStartDate() {
+    public Date getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(String startDate) {
+    public void setStartDate(Date startDate) {
         this.startDate = startDate;
     }
 
-    public String getEndDate() {
+    public Date getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
@@ -72,7 +74,7 @@ public class DistinctAddtlCompDto {
         this.taggingStatus = taggingStatus;
     }
 
-    public static DistinctAddtlCompDto create(final String startDate, final String endDate, final String pricingCondition) {
+    public static DistinctAddtlCompDto create(final Date startDate, final Date endDate, final String pricingCondition) {
         return new DistinctAddtlCompDto(startDate, endDate, pricingCondition);
     }
 
@@ -106,5 +108,13 @@ public class DistinctAddtlCompDto {
 
     public void setFinalizeAcRunSummary(List<TaskSummaryDto> finalizeAcRunSummary) {
         this.finalizeAcRunSummary = finalizeAcRunSummary;
+    }
+
+    public List<String> getFinalizeRunningSteps() {
+        return finalizeRunningSteps;
+    }
+
+    public void setFinalizeRunningSteps(List<String> finalizeRunningSteps) {
+        this.finalizeRunningSteps = finalizeRunningSteps;
     }
 }

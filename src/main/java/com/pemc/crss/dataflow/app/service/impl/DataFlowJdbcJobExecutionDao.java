@@ -1,9 +1,13 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunDto;
 import com.pemc.crss.dataflow.app.dto.DistinctAddtlCompDto;
-import com.pemc.crss.dataflow.app.support.*;
+import com.pemc.crss.dataflow.app.support.FinalizeJobQuery;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.dataflow.app.support.StlCalculationQuery;
+import com.pemc.crss.dataflow.app.support.StlJobQuery;
+import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
@@ -22,10 +26,14 @@ import org.springframework.util.Assert;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.*;
+import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_COMPLETE_FINALIZE_QUERY;
+import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_DISTINCT_COUNT_QUERY;
+import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_DISTINCT_QUERY;
+import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_INTS_QUERY;
 
 @Slf4j
 public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
@@ -129,16 +137,11 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     }
 
     // Additional Compensation Queries
-    public Long countAddtlCompJobInstances(final DistinctAddtlCompDto dto) {
-        log.debug("Querying Additional Compensation Job Count query with processType: {}");
-        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_INTS_COUNT_QUERY), Long.class,
-                new String[]{"%", dto.getStartDate(), dto.getEndDate(), dto.getPricingCondition()});
-    }
-
     public List<JobInstance> findAddtlCompJobInstances(final int start, final int count, final DistinctAddtlCompDto dto) {
         log.debug("Querying Additional Compensation Job Select query with processType: {}");
         return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_INTS_QUERY),
-                new String[]{"%", dto.getStartDate(), dto.getEndDate(), dto.getPricingCondition()},
+                new String[]{"%", DateUtil.convertToString(dto.getStartDate(), DateUtil.DEFAULT_DATE_FORMAT),
+                        DateUtil.convertToString(dto.getEndDate(), DateUtil.DEFAULT_DATE_FORMAT), dto.getPricingCondition()},
                 getJobInstanceExtractor(start, count));
     }
 
@@ -148,14 +151,27 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 new String[]{startDate, endDate, pricingCondition}, getJobInstanceExtractor(start, count));
     }
 
-    public Long countDistinctAddtlCompJobInstances() {
-        log.debug("Querying Additional Compensation Job Distinct Count query with processType: {}");
-        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_DISTINCT_COUNT_QUERY), Long.class, new String[]{"%"});
+    public Long countDistinctAddtlCompJobInstances(final Map<String, String> mapParams) {
+        log.debug("Querying Additional Compensation Job Distinct Count query with params: {}", mapParams);
+        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_DISTINCT_COUNT_QUERY), Long.class,
+                resolveAddtlCompFilterParams(mapParams));
     }
 
-    public List<DistinctAddtlCompDto> findDistinctAddtlCompJobInstances(final int start, final int count) {
-        log.debug("Querying Additional Compensation Job Distinct Select query with processType: {}");
-        return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_DISTINCT_QUERY), new String[]{"%"}, getAddtlCompExtractor(start, count));
+    public List<DistinctAddtlCompDto> findDistinctAddtlCompJobInstances(final int start, final int count,
+                                                                        final Map<String, String> mapParams) {
+        log.debug("Querying Additional Compensation Job Distinct Select query with params: {}", mapParams);
+
+        return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_DISTINCT_QUERY),
+                resolveAddtlCompFilterParams(mapParams), getAddtlCompExtractor(start, count));
+    }
+
+    private String[] resolveAddtlCompFilterParams(final Map<String, String> mapParams) {
+        String status = "%"; // filter all statuses
+        String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
+        String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
+        String pricingCondition = resolveQueryParam(mapParams.getOrDefault("pricingCondition", null));
+
+        return new String[]{status, startDate, endDate, pricingCondition};
     }
 
     public Long countFinalizeJobInstances(MeterProcessType type, String startDate, String endDate) {
@@ -218,6 +234,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     private String resolveQueryParam(String param) {
         return StringUtils.isEmpty(param) ? "%" : param;
     }
+
     private String getStringValFromMap(final Map<String, String> mapParams, final String key, final String defaultValue) {
         return mapParams.containsKey(key) && mapParams.get(key) != null ? mapParams.get(key) : defaultValue;
     }
@@ -255,8 +272,8 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
             }
 
             while (rowNum < start + count && rs.next()) {
-                String startDate = rs.getString("start_date");
-                String endDate = rs.getString("end_date");
+                Date startDate = rs.getDate("start_date");
+                Date endDate = rs.getDate("end_date");
                 String pricingCondition = rs.getString("pricing_condition");
                 list.add(DistinctAddtlCompDto.create(startDate, endDate, pricingCondition));
                 ++rowNum;

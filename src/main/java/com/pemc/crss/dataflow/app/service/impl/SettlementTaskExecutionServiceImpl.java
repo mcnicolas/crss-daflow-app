@@ -93,10 +93,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         Long jobId = jobExecution.getJobId();
                         BatchStatus jobStatus = jobExecution.getStatus();
                         if (BatchStatus.COMPLETED != jobStatus) {
-                            log.debug("Job processStlReady with id {} removed with status: {} ", jobId, jobStatus.name());
+                            log.info("Job processStlReady with id {} removed with status: {} ", jobId, jobStatus.name());
                             return null;
                         }
-                        log.debug("Processing processStlReady jobId {}", jobId);
+                        log.info("Processing processStlReady jobId {}", jobId);
 
                         String parentId = jobInstance.getJobName().split("-")[1];
                         if (StringUtils.isEmpty(parentId)) {
@@ -109,9 +109,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         Date endDate = jobParameters.getDate(END_DATE);
                         Date date = jobParameters.getDate(DATE);
                         boolean isDaily = jobParameters.getString(PROCESS_TYPE) == null;
-                        log.debug("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
+                        log.info("Date Range -> from {} to {} | Date -> {}", startDate, endDate, date);
 
-                        final String billingPeriodStr = isDaily ? "" : resolveBillingPeriod(Long.valueOf(parentId));
+//                        final String billingPeriodStr = isDaily ? "" : resolveBillingPeriod(Long.valueOf(parentId));
 
                         StlTaskExecutionDto taskExecutionDto = new StlTaskExecutionDto();
                         taskExecutionDto.setId(Long.parseLong(parentId));
@@ -140,7 +140,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         parentStlJobGroupDto.setGroupId(jobId);
                         parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));
                         parentStlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
-                        parentStlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+//                        parentStlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                         Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
 
                     /* CALCULATION START */
@@ -169,7 +169,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                 stlJobGroupDto.setHeader(jobId.equals(groupId));
                                 stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
-                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+//                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 if (currentStatus.isRunning()) {
                                     // for validation of gmr calculation in case stl amt is recalculated
@@ -272,7 +272,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_GMR_CALC));
                                     stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
                                     stlJobGroupDto.setGroupId(groupId);
-                                    stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+//                                    stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                                     stlJobGroupDto.setGmrCalcRunDate(calcGmrJobExecution.getStartTime());
 
                                     Optional.ofNullable(gmrJobCalculationDtoMap.get(calcGmrStlJobName)).ifPresent(
@@ -325,7 +325,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_TAGGING));
                                 stlJobGroupDto.setTaggingStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
-                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+//                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 JobCalculationDto finalizeJobDto = new JobCalculationDto(tagJobExecution.getStartTime(),
                                         tagJobExecution.getEndTime(), tagStartDate, tagEndDate,
@@ -372,7 +372,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
                                 stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
                                 stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
-                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
+//                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                 if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
                                     updateProgress(generationJobExecution, stlJobGroupDto);
@@ -465,7 +465,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         Date start = null;
         Date end = null;
 
-        log.debug("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
+        log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
                 taskRunDto.getBaseType());
 
         if (COMPUTE_STL_JOB_NAME.equals(taskRunDto.getJobName())) {
@@ -495,7 +495,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
-                        log.debug("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
+                        log.info("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
                                 + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                         saveAdjVatRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
@@ -510,7 +510,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 } else if (MeterProcessType.FINAL.name().equals(type)) {
 
                     if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
-                        log.debug("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
+                        log.info("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
                                 + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                         saveAdjVatRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), Long.parseLong(taskRunDto.getGroupId()), baseStartDate, baseEndDate);
@@ -641,17 +641,17 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             arguments.add(concatKeyValue(PROCESS_TYPE, type));
             jobName = "crss-settlement-task-validation";
         }
-        log.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+        log.info("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         if (jobName != null) {
-            log.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+            log.info("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
         }
     }
 
     private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
-        log.debug("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
             batchJobAddtlParamsInvoiceDate.setRunId(runId);

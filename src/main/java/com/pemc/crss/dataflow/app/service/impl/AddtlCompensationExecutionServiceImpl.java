@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
@@ -9,6 +10,7 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -90,10 +92,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
         final Pageable pageable = pageableRequest.getPageable();
-        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances();
+        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances(pageableRequest.getMapParams());
 
         List<AddtlCompensationExecutionDto> addtlCompensationExecutionDtoList = dataFlowJdbcJobExecutionDao
-                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize())
+                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest.getMapParams())
                 .stream()
                 .map(distinctAddtlCompDto -> {
                     AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
@@ -121,11 +123,13 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     addtlCompensationExecDetailsDto.setApprovedRate(acApprovedRate != null ? BigDecimal.valueOf(acApprovedRate) : BigDecimal.ZERO);
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
                                     addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_CALC_STEP_LIST));
+                                    addtlCompensationExecDetailsDto.setRunningSteps(getProgress(jobExecution));
 
                                     Optional.ofNullable(getLatestFinalizeAcJob(groupId)).ifPresent(finalizeJobExec -> {
                                         distinctAddtlCompDto.setTaggingStatus(finalizeJobExec.getStatus());
                                         distinctAddtlCompDto.setFinalizeAcRunSummary(
                                                 showSummary(finalizeJobExec, AC_FINALIZE_STEP_LIST));
+                                        distinctAddtlCompDto.setFinalizeRunningSteps(getProgress(finalizeJobExec));
                                     });
 
                                     distinctAddtlCompDto.setGroupId(groupId);
@@ -502,6 +506,25 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             }
         }
         return null;
+    }
+
+    private List<String> getProgress(final JobExecution jobExecution) {
+        List<String> runningTasks = Lists.newArrayList();
+        if (!jobExecution.getStepExecutions().isEmpty()) {
+            jobExecution.getStepExecutions().parallelStream()
+                    .filter(stepExecution -> stepExecution.getStatus().isRunning())
+                    .forEach(stepExecution -> {
+                        Map<String, String> map = SettlementStepUtil.getProgressNameTaskMap();
+                        String stepName = stepExecution.getStepName();
+                        if (map.containsKey(stepName)) {
+                            runningTasks.add(map.get(stepName));
+                        } else {
+                            log.warn("Step name {} not existing in current mapping.", stepName);
+                        }
+                    });
+        }
+
+        return runningTasks;
     }
 
 }

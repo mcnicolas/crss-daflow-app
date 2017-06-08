@@ -5,6 +5,7 @@ import java.util.List;
 public class AddtlCompensationExecutionDto extends BaseTaskExecutionDto {
 
     private DistinctAddtlCompDto distinctAddtlCompDto;
+
     private List<AddtlCompensationExecDetailsDto> addtlCompensationExecDetailsDtos;
 
     public DistinctAddtlCompDto getDistinctAddtlCompDto() {

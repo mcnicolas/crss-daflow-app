@@ -10,9 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.repository.ExecutionContextSerializer;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.dao.*;
+import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
+import org.springframework.batch.support.DatabaseType;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
@@ -30,6 +32,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.support.incrementer.AbstractDataFieldMaxValueIncrementer;
 import org.springframework.jdbc.support.incrementer.DataFieldMaxValueIncrementer;
 import org.springframework.orm.jpa.JpaVendorAdapter;
@@ -43,7 +46,6 @@ import javax.sql.DataSource;
 import java.util.List;
 
 @Configuration
-@EnableBatchProcessing
 @EnableConfigurationProperties({JpaProperties.class})
 public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
@@ -66,7 +68,18 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public BatchConfigurer configurer(DataSource dataSource) {
-        return new DefaultBatchConfigurer(dataSource);
+        return new DefaultBatchConfigurer(dataSource) {
+
+            @Override
+            protected JobRepository createJobRepository() throws Exception {
+                JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+                factory.setDataSource(dataSource);
+                factory.setTransactionManager(new DataSourceTransactionManager(dataSource));
+                factory.setDatabaseType(DatabaseType.POSTGRES.name());
+                factory.afterPropertiesSet();
+                return factory.getObject();
+            }
+        };
     }
 
 
@@ -192,7 +205,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-    public MessageListener taskRetryListener(){
+    public MessageListener taskRetryListener() {
         return new TaskRetryListener();
     }
 

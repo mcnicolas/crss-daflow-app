@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
@@ -514,7 +514,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             jobExecution.getStepExecutions().parallelStream()
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .forEach(stepExecution -> {
-                        Map<String, String> map = SettlementStepUtil.getProgressNameTaskMap();
+                        Map<String, String> map = StlAddtlCompStepUtil.getProgressNameTaskMap();
                         String stepName = stepExecution.getStepName();
                         if (map.containsKey(stepName)) {
                             runningTasks.add(map.get(stepName));

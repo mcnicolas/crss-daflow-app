@@ -43,9 +43,9 @@ public class StlJobGroupDto {
 
     private boolean stlCalculation;
 
-    private Date maxPartialCalcRunEndDate;
+    private Date maxPartialCalcRunDate;
 
-    private Date gmrCalcRunEndDate;
+    private Date gmrCalcRunDate;
 
     public BatchStatus getGmrVatMFeeCalculationStatus() {
         return gmrVatMFeeCalculationStatus;
@@ -209,28 +209,28 @@ public class StlJobGroupDto {
         this.stlCalculation = stlCalculation;
     }
 
-    public Date getMaxPartialCalcRunEndDate() {
-        return maxPartialCalcRunEndDate;
+    public Date getMaxPartialCalcRunDate() {
+        return maxPartialCalcRunDate;
     }
 
-    public void setMaxPartialCalcRunEndDate(Date maxPartialCalcRunEndDate) {
-        this.maxPartialCalcRunEndDate = maxPartialCalcRunEndDate;
+    public void setMaxPartialCalcRunDate(Date maxPartialCalcRunDate) {
+        this.maxPartialCalcRunDate = maxPartialCalcRunDate;
     }
 
-    public Date getGmrCalcRunEndDate() {
-        return gmrCalcRunEndDate;
+    public Date getGmrCalcRunDate() {
+        return gmrCalcRunDate;
     }
 
-    public void setGmrCalcRunEndDate(Date gmrCalcRunEndDate) {
-        this.gmrCalcRunEndDate = gmrCalcRunEndDate;
+    public void setGmrCalcRunDate(Date gmrCalcRunDate) {
+        this.gmrCalcRunDate = gmrCalcRunDate;
     }
 
     // helper methods / properties
 
-    // consider gmr/vat recalculation if max partial calculation runEndDate > gmr calculation runEndDate
+    // consider gmr/vat recalculation if max partial calculation runDate > gmr calculation runDate
     public boolean isForGmrRecalculation() {
-        return (maxPartialCalcRunEndDate != null && gmrCalcRunEndDate != null) &&
-                maxPartialCalcRunEndDate.compareTo(gmrCalcRunEndDate) > 0;
+        return (maxPartialCalcRunDate != null && gmrCalcRunDate != null) &&
+                maxPartialCalcRunDate.compareTo(gmrCalcRunDate) > 0;
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

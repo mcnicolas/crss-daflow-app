@@ -8,8 +8,6 @@ import com.pemc.crss.dataflow.app.listener.TaskRetryListener;
 import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
-import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.dao.*;
@@ -63,12 +61,6 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Autowired
     private JedisConnectionFactory jedisConnectionFactory;
-
-    @Bean
-    public BatchConfigurer configurer(DataSource dataSource) {
-        return new DefaultBatchConfigurer(dataSource);
-    }
-
 
     @Bean
     public JpaVendorAdapter jpaVendorAdapter() {
@@ -192,7 +184,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-    public MessageListener taskRetryListener(){
+    public MessageListener taskRetryListener() {
         return new TaskRetryListener();
     }
 

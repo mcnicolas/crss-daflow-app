@@ -1,18 +1,26 @@
-import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
+import groovy.json.*
 
 ext {
-    dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    //dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
+    // need to uniquely generate version since scdf doesn't force pull image yet.
+    dockerImageVersion = project.version + "." + 'git rev-parse --short HEAD'.execute().text.trim();
     scdfUrl = project.hasProperty('scdfUrl') ? project.getProperty('scdfUrl') : 'http://scdf.pemc.com'
     descriptorPath = project.hasProperty('descriptorPath') ? project.getProperty('descriptorPath') : 'http://pemc-storage.southeastasia.cloudapp.azure.com/descriptors'
     appProfile = project.hasProperty('appProfile') ? project.getProperty('appProfile') : 'dev'
     marathonUrl = project.hasProperty('marathonUrl') ? project.getProperty('marathonUrl') : ''
+    environmentSet = project.hasProperty('environmentSet') ? project.getProperty('environmentSet') : ''
+
 }
+
+def appId = ''
 
 task setupDeployer() {
     doLast {
         println "Setting up deployer: ${project.name}"
         def dockerPath = "registry.marathon.l4lb.thisdcos.directory:5000/${project.name}:$project.dockerImageVersion"
+
+        println dockerPath;
+
         def deployerFile = "$rootDir/buildtools/deployer/${project.name}.json"
         def outputDir = new File("$project.buildDir/deployer/")
         outputDir.mkdirs()
@@ -25,19 +33,25 @@ task setupDeployer() {
 
         json.container.docker.image = dockerPath
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
+        json.id = "${project.environmentSet}" + json.id;
+        json.container.docker.portMappings[0].labels.VIP_0 = "${json.id}:8082"
+
+        appId = "${json.id}"
+
+        println "${appId}"
 
         def builder = new JsonBuilder(json)
         outputFile.text = builder.toPrettyString()
     }
 }
 
-
-task stopApp() {
+task stopApp(dependsOn: setupDeployer)  {
     doLast {
         // stop process app
-        println "Stopping current deployed app: ${project.name}"
 
-        def proc = "curl -X DELETE $project.marathonUrl/${project.name}".execute()
+        println "Stopping current deployed app: ${appId}"
+        def proc = "curl -X DELETE $project.marathonUrl/${appId}".execute()
+        println "curl -X DELETE $project.marathonUrl$appId"
         Thread.start { System.err << proc.err }
         proc.waitFor()
         println "Stopped"
@@ -47,7 +61,7 @@ task stopApp() {
 task deployApp(dependsOn: setupDeployer) {
     doLast {
         exec {
-            println "Deploying new app: ${project.name}"
+            println "Deploying new app: ${appId}"
             commandLine "$rootDir/buildtools/deployer/deploy.sh"
             args "$project.marathonUrl"
             args "$project.buildDir/deployer/${project.name}.json"

@@ -77,7 +77,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                             } else if (jobExecution.getStatus().isUnsuccessful()) {
                                 mtrTaskExecutionDto.setExitMessage(processFailedMessage(jobExecution));
                             } else if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-                                mtrTaskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution));
+                                mtrTaskExecutionDto.getSummary().put(RUN_MTR_JOB_NAME, showSummary(jobExecution, null));
                             }
                             return mtrTaskExecutionDto;
                         } else {

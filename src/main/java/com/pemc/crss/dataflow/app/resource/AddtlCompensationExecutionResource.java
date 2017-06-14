@@ -55,16 +55,16 @@ public class AddtlCompensationExecutionResource {
     }
 
     @RequestMapping(value = "/finalize", method = RequestMethod.POST)
-    public ResponseEntity finalize(@RequestBody AddtlCompensationFinalizeDto addtlCompensationFinalizeDto) throws URISyntaxException {
+    public ResponseEntity finalize(@RequestBody AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, Principal principal) throws URISyntaxException {
         log.debug("Running job request. addtlCompensationFinalizeDto={}", addtlCompensationFinalizeDto);
-        ((AddtlCompensationExecutionServiceImpl)taskExecutionService).finalizeAC(addtlCompensationFinalizeDto);
+        ((AddtlCompensationExecutionServiceImpl)taskExecutionService).finalizeAC(addtlCompensationFinalizeDto, principal);
         return new ResponseEntity(HttpStatus.OK);
     }
 
     @PostMapping(value = "/generate-files")
-    public ResponseEntity generateFiles(@RequestBody AddtlCompensationGenFilesDto addtlCompensationGenFilesDto) throws URISyntaxException {
+    public ResponseEntity generateFiles(@RequestBody AddtlCompensationGenFilesDto addtlCompensationGenFilesDto, Principal principal) throws URISyntaxException {
         log.debug("Running job request. addtlCompensationGenFilesDto={}", addtlCompensationGenFilesDto);
-        ((AddtlCompensationExecutionServiceImpl)taskExecutionService).generateFilesAc(addtlCompensationGenFilesDto);
+        ((AddtlCompensationExecutionServiceImpl)taskExecutionService).generateFilesAc(addtlCompensationGenFilesDto, principal);
         return new ResponseEntity(HttpStatus.OK);
     }
 

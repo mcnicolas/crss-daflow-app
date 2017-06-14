@@ -250,7 +250,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
-    public void finalizeAC(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto) throws URISyntaxException {
+    public void finalizeAC(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, Principal principal) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_GMR_BASE_JOB_NAME) == 0,
                 "There is an existing ".concat(ADDTL_COMP_GMR_BASE_JOB_NAME).concat(" job running"));
         String startDate = addtlCompensationFinalizeDto.getStartDate();
@@ -268,6 +268,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
 
         String jobName = determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
         saveAdjRun(addtlCompensationFinalizeDto, jobName);
@@ -345,7 +346,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    public void generateFilesAc(AddtlCompensationGenFilesDto genFilesDto) throws URISyntaxException {
+    public void generateFilesAc(AddtlCompensationGenFilesDto genFilesDto, Principal principal) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(GENERATE_ADDTL_COMP_JOB_NAME) == 0,
                 "There is an existing ".concat(GENERATE_ADDTL_COMP_JOB_NAME).concat(" job running"));
         String startDate = genFilesDto.getStartDate();
@@ -362,6 +363,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompFileGeneration")));
 

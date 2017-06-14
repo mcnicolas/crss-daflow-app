@@ -58,6 +58,7 @@ liquibase {
             referenceUrl "hibernate:spring:com.pemc.crss.shared.core.dataflow?dialect=${dbDialect}"
             changeLogFile "${dataflowChangeLogFile}"
             defaultSchemaName "dataflow"
+            outputFile "${sqlOutputFile}"
         }
     }
 

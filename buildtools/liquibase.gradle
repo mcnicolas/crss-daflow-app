@@ -11,19 +11,23 @@ dependencies {
 
 
 def profile  = project.hasProperty('env') ? project.getProperty('env') : 'local'
-def action = project.hasProperty('action') ? project.getProperty('action') : '';
+def currentTask = project.gradle.startParameter.taskNames;
 
 ext {
     dbDriver = "org.postgresql.Driver"
     dbDialect = "org.hibernate.dialect.PostgreSQL81Dialect"
 
 
-    if(action == 'diffSchema') {
+    if(currentTask[0] == 'diffChangelog') {
         dataflowChangeLogFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/dataflow/changelog-schema-tmp.groovy"
     }
     else {
         dataflowChangeLogFile = "${project.file('src/main/resources')}/liquibase/changelogs/changelog-dataflow.groovy"
     }
+
+    println "Processing changelog file: ${dataflowChangeLogFile}"
+
+    sqlOutputFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/dataflow/dataflow.sql"
 
     switch (profile) {
         case 'dev':

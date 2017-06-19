@@ -156,6 +156,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
                                     Optional.ofNullable(jobExecution.getExecutionContext().get(AC_FILE_GEN_FOLDERNAME))
                                             .ifPresent(val -> distinctAddtlCompDto.setGenFileFolderName((String) val));
+
+                                    // always get the steps of the latest generate files job execution
+                                    distinctAddtlCompDto.setGenerateFileRunningSteps(getProgress(jobExecution));
                                 })
                         );
                     }

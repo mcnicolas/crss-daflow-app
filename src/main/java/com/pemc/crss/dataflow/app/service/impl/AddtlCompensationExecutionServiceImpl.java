@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
-import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
@@ -156,6 +156,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
                                     Optional.ofNullable(jobExecution.getExecutionContext().get(AC_FILE_GEN_FOLDERNAME))
                                             .ifPresent(val -> distinctAddtlCompDto.setGenFileFolderName((String) val));
+
+                                    // always get the steps of the latest generate files job execution
+                                    distinctAddtlCompDto.setGenerateFileRunningSteps(getProgress(jobExecution));
                                 })
                         );
                     }
@@ -250,7 +253,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
-    public void finalizeAC(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto) throws URISyntaxException {
+    public void finalizeAC(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, Principal principal) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_GMR_BASE_JOB_NAME) == 0,
                 "There is an existing ".concat(ADDTL_COMP_GMR_BASE_JOB_NAME).concat(" job running"));
         String startDate = addtlCompensationFinalizeDto.getStartDate();
@@ -268,6 +271,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
 
         String jobName = determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
         saveAdjRun(addtlCompensationFinalizeDto, jobName);
@@ -345,7 +349,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    public void generateFilesAc(AddtlCompensationGenFilesDto genFilesDto) throws URISyntaxException {
+    public void generateFilesAc(AddtlCompensationGenFilesDto genFilesDto, Principal principal) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(GENERATE_ADDTL_COMP_JOB_NAME) == 0,
                 "There is an existing ".concat(GENERATE_ADDTL_COMP_JOB_NAME).concat(" job running"));
         String startDate = genFilesDto.getStartDate();
@@ -362,6 +366,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompFileGeneration")));
 
@@ -514,7 +519,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             jobExecution.getStepExecutions().parallelStream()
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .forEach(stepExecution -> {
-                        Map<String, String> map = SettlementStepUtil.getProgressNameTaskMap();
+                        Map<String, String> map = StlAddtlCompStepUtil.getProgressNameTaskMap();
                         String stepName = stepExecution.getStepName();
                         if (map.containsKey(stepName)) {
                             runningTasks.add(map.get(stepName));

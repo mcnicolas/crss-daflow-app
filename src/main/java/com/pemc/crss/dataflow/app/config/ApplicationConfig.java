@@ -119,8 +119,8 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
 
     @Bean
-    public XStreamExecutionContextStringSerializer serializer() {
-        return new XStreamExecutionContextStringSerializer();
+    public ExecutionContextSerializer serializer() {
+        return new Jackson2ExecutionContextStringSerializer();
     }
 
     @Bean

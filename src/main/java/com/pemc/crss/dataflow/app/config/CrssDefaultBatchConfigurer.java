@@ -6,7 +6,9 @@ import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.explore.support.JobExplorerFactoryBean;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.batch.support.DatabaseType;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -28,7 +30,7 @@ public class CrssDefaultBatchConfigurer implements BatchConfigurer {
     private JobRepository jobRepository;
     private JobLauncher jobLauncher;
     private JobExplorer jobExplorer;
-
+    private ExecutionContextSerializer executionContextSerializer;
 
     public CrssDefaultBatchConfigurer(DataSource dataSource) {
         this.setDataSource(dataSource);
@@ -37,6 +39,7 @@ public class CrssDefaultBatchConfigurer implements BatchConfigurer {
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
         this.transactionManager = new DataSourceTransactionManager(dataSource);
+        this.executionContextSerializer = new Jackson2ExecutionContextStringSerializer();
     }
 
 
@@ -47,6 +50,7 @@ public class CrssDefaultBatchConfigurer implements BatchConfigurer {
             JobExplorerFactoryBean e1 = new JobExplorerFactoryBean();
             e1.setDataSource(this.dataSource);
             e1.afterPropertiesSet();
+            e1.setSerializer(this.executionContextSerializer);
             this.jobExplorer = e1.getObject();
             this.jobLauncher = this.createJobLauncher();
         } catch (Exception var3) {
@@ -60,6 +64,7 @@ public class CrssDefaultBatchConfigurer implements BatchConfigurer {
         factory.setDataSource(this.dataSource);
         factory.setTransactionManager(new DataSourceTransactionManager(this.dataSource));
         factory.setDatabaseType(DatabaseType.POSTGRES.name());
+        factory.setSerializer(this.executionContextSerializer);
         factory.afterPropertiesSet();
         return factory.getObject();
     }

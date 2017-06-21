@@ -36,6 +36,12 @@ ext {
             dbPasswordDataflow = "postgres"
             break
 
+        case 'dev2':
+            dbUrlDataflow = "jdbc:postgresql://192.168.233.9:5432/crss?currentSchema=dataflow"
+            dbUserDataflow = "crss_dataflow"
+            dbPasswordDataflow = "crss_dataflow"
+            break
+
         default:
             println "setting up liquibase gradle local properties"
             dbUrlDataflow = "jdbc:postgresql://localhost:5432/crss?currentSchema=dataflow"

@@ -460,4 +460,10 @@ databaseChangeLog {
         addUniqueConstraint(columnNames: 'group_id', constraintName: 'uk_batch_job_adj_run', tableName: 'batch_job_adj_run')
     }
 
+    changeSet(id: '1498125026890-1', author: 'dmendoza (generated)') {
+        addColumn(tableName:'batch_job_adj_run'){
+            column(name:'output_ready_datetime', type:'TIMESTAMP WITHOUT TIME ZONE')
+        }
+    }
+
 }

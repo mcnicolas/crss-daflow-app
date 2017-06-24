@@ -59,7 +59,7 @@ public class AddtlCompensationQuery {
             + "JOIN "
             + "    %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID "
             + "WHERE "
-            + "    A.JOB_NAME like 'calcAc%' "
+            + "    A.JOB_NAME like 'calcAcGmrVat%' "
             + "    and B.STATUS = 'COMPLETED' "
             + "    and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd') like ? and D.KEY_NAME = 'startDate') "
             + "    and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd') like ? and E.KEY_NAME = 'endDate') "

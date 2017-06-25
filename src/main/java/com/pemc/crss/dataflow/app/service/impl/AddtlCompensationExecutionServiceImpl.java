@@ -55,11 +55,11 @@ import static com.pemc.crss.shared.commons.util.TaskUtil.*;
 @Transactional
 public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecutionService {
 
-    private static final String ADDTL_COMP_JOB_NAME = "calculateAddtlComp";
-    private static final String ADDTL_COMP_GMR_BASE_JOB_NAME = "calculateAddtlCompGmrVat";
-    private static final String ADDTL_COMP_GMR_AC_JOB_NAME = "calculateAddtlCompGmrVatAc";
-    private static final String ADDTL_COMP_GMR_ADJ_JOB_NAME = "calculateAddtlCompGmrVatAdjusted";
-    private static final String ADDTL_COMP_GMR_FINAL_JOB_NAME = "calculateAddtlCompGmrVatFinal";
+    private static final String ADDTL_COMP_JOB_NAME = "calcAc";
+    private static final String ADDTL_COMP_GMR_BASE_JOB_NAME = "calcAcGmrVat";
+    private static final String ADDTL_COMP_GMR_AC_JOB_NAME = "calcAcGmrVatAc";
+    private static final String ADDTL_COMP_GMR_ADJ_JOB_NAME = "calcAcGmrVatA";
+    private static final String ADDTL_COMP_GMR_FINAL_JOB_NAME = "calcAcGmrVatF";
     private static final String GENERATE_ADDTL_COMP_JOB_NAME = "generateAddtlCompFiles";
 
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation-addtlcomp";

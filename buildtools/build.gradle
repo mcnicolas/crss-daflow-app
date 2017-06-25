@@ -26,22 +26,22 @@ buildscript {
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.3'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.8.3'
 
-        classpath ('com.pemc.crss:crss-shared-commons-model:2.0.0.RC6'){
+        classpath ('com.pemc.crss:crss-shared-commons-model:2.1.0.BUILD-SNAPSHOT'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-nmms:2.0.0.RC6'){
+        classpath ('com.pemc.crss:crss-shared-core-nmms:2.1.0.BUILD-SNAPSHOT'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-metering:2.0.0.RC6'){
+        classpath ('com.pemc.crss:crss-shared-core-metering:2.1.0.BUILD-SNAPSHOT'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-registration:2.0.0.RC6'){
+        classpath ('com.pemc.crss:crss-shared-core-registration:2.1.0.BUILD-SNAPSHOT'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-dataflow:2.0.0.RC6'){
+        classpath ('com.pemc.crss:crss-shared-core-dataflow:2.1.0.BUILD-SNAPSHOT'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-meterprocess-core-main:2.0.0.RC6'){
+        classpath ('com.pemc.crss:crss-meterprocess-core-main:2.1.0.BUILD-SNAPSHOT'){
             transitive = false
         }
     }

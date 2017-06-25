@@ -8,11 +8,18 @@ buildscript {
         maven {
             url 'https://plugins.gradle.org/m2/'
         }
+        maven {
+            url "http://pemc-storage.southeastasia.cloudapp.azure.com:8081/repository/pemc-snapshots/"
+        }
+        maven {
+            url "http://pemc-storage.southeastasia.cloudapp.azure.com:8081/repository/pemc-releases/"
+        }
         mavenLocal()
     }
     dependencies {
         classpath 'gradle.plugin.org.liquibase:liquibase-gradle-plugin:1.2.3'
-        classpath 'org.postgresql:postgresql:9.4.1211'
+        classpath 'org.postgresql:postgresql:42.1.1'
+        classpath 'com.edb:edb-jdbc17:1.0.0'
         classpath 'org.liquibase.ext:liquibase-hibernate5:3.6'
         classpath 'org.springframework:spring-test:4.3.2.RELEASE'
         classpath 'org.springframework:spring-jdbc:4.3.2.RELEASE'
@@ -25,23 +32,10 @@ buildscript {
         //classpath 'org.jadira.usertype:usertype.core:5.0.0.GA'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.3'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.8.3'
-
         classpath ('com.pemc.crss:crss-shared-commons-model:2.0.0.RC6'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-nmms:2.0.0.RC6'){
-            transitive = false
-        }
-        classpath ('com.pemc.crss:crss-shared-core-metering:2.0.0.RC6'){
-            transitive = false
-        }
-        classpath ('com.pemc.crss:crss-shared-core-registration:2.0.0.RC6'){
-            transitive = false
-        }
         classpath ('com.pemc.crss:crss-shared-core-dataflow:2.0.0.RC6'){
-            transitive = false
-        }
-        classpath ('com.pemc.crss:crss-meterprocess-core-main:2.0.0.RC6'){
             transitive = false
         }
     }
@@ -49,14 +43,13 @@ buildscript {
 
 liquibase {
     activities {
-
         dataflow {
-            url "${dbUrlDataflow}"
-            username "${dbUserDataflow}"
-            password "${dbPasswordDataflow}"
+            url "${dbUrl}"
+            username "${dbUser}"
+            password "${dbPassword}"
             driver "${dbDriver}"
             referenceUrl "hibernate:spring:com.pemc.crss.shared.core.dataflow?dialect=${dbDialect}"
-            changeLogFile "${dataflowChangeLogFile}"
+            changeLogFile "${changeLogFile}"
             defaultSchemaName "dataflow"
             outputFile "${sqlOutputFile}"
         }

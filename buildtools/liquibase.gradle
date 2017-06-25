@@ -5,49 +5,42 @@ repositories {
     mavenLocal()
 }
 
-dependencies {
-
-}
-
-
-def profile  = project.hasProperty('env') ? project.getProperty('env') : 'local'
+def profile = project.hasProperty('env') ? project.getProperty('env') : 'local'
 def currentTask = project.gradle.startParameter.taskNames;
 
 ext {
     dbDriver = "org.postgresql.Driver"
-    dbDialect = "org.hibernate.dialect.PostgreSQL81Dialect"
+    dbDialect = "org.hibernate.dialect.PostgreSQLDialect"
+    currentMillis = new Date().getTime()
 
 
-    if(currentTask[0] == 'diffChangelog') {
-        dataflowChangeLogFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/dataflow/changelog-schema-tmp.groovy"
+    if (currentTask[0] == 'diffChangelog') {
+        changeLogFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/schema/changelog-${currentMillis}.groovy"
+    } else {
+        changeLogFile = "${project.file('src/main/resources')}/liquibase/changelog.groovy"
     }
-    else {
-        dataflowChangeLogFile = "${project.file('src/main/resources')}/liquibase/changelogs/changelog-dataflow.groovy"
-    }
 
-    println "Processing changelog file: ${dataflowChangeLogFile}"
+    println "Processing changelog file: ${changeLogFile}"
 
-    sqlOutputFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/dataflow/dataflow.sql"
+    sqlOutputFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/sql/nmms-${currentMillis}.sql"
 
     switch (profile) {
         case 'test':
-            dbUrlDataflow = "jdbc:postgresql://localhost:5433/crss_test?currentSchema=dataflow"
-            dbUserDataflow = "postgres"
-            dbPasswordDataflow = "postgres"
+            dbUrl = "jdbc:postgresql://localhost:5432/crss_test?currentSchema=dataflow"
+            dbUser = "postgres"
+            dbPassword = "postgres"
             break
 
         case 'dev2':
-            dbUrlDataflow = "jdbc:postgresql://192.168.233.9:5432/crss?currentSchema=dataflow"
-            dbUserDataflow = "crss_dataflow"
-            dbPasswordDataflow = "crss_dataflow"
+            dbUrl = "jdbc:postgresql://192.168.233.9:5432/crss?currentSchema=dataflow"
+            dbUser = "crss_dataflow"
+            dbPassword = "crss_dataflow"
             break
 
         default:
-            println "setting up liquibase gradle local properties"
-            dbUrlDataflow = "jdbc:postgresql://localhost:5432/crss?currentSchema=dataflow"
-            dbUserDataflow = "postgres"
-            dbPasswordDataflow = "postgres"
-
+            dbUrl = "jdbc:postgresql://localhost:5432/crss?currentSchema=dataflow"
+            dbUser = "postgres"
+            dbPassword = "postgres"
     }
 
 }

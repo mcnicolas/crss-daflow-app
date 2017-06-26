@@ -75,7 +75,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     private static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
 
     private static final List<String> STL_CALC_STEP_WITH_SKIP_LOGS = Arrays.asList(SettlementStepUtil.RETRIEVE_DATA_STEP,
-            SettlementStepUtil.RETRIEVE_BCQ_STEP, SettlementStepUtil.CALC_SCALING_FACTOR);
+            SettlementStepUtil.RETRIEVE_BCQ_STEP, SettlementStepUtil.CALC_RTA, SettlementStepUtil.CALC_SCALING_FACTOR);
 
     private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Arrays.asList(SettlementStepUtil.CALC_MARKET_FEE,
             SettlementStepUtil.CALC_RESERVE_MARKET_FEE, SettlementStepUtil.CALC_GMR_VAT);

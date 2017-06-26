@@ -9,6 +9,7 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,9 +67,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";
 
     private static final String AC_FILE_GEN_FOLDERNAME = "AC_FILE_GEN_FOLDERNAME";
-    private static final List<String> AC_CALC_STEP_LIST = Arrays.asList("calculateAddtlCompStep",
-            "calculateAddtlCompAllocStep", "calculateAddtlCompVatStep", "calculateAddtlCompVatAllocStep");
-    private static final List<String> AC_FINALIZE_STEP_LIST = Arrays.asList("calculateAddtlCompGmrStep");
+    private static final List<String> AC_CALC_STEP_LIST = Arrays.asList(StlAddtlCompStepUtil.CALC_ADDTL_COMP_STEP,
+            StlAddtlCompStepUtil.CALC_ADDTL_COMP_ALLOC_STEP, StlAddtlCompStepUtil.CALC_ADDTL_COMP_VAT_STEP,
+            StlAddtlCompStepUtil.CALC_ADDTL_COMP_VAT_ALLOC_STEP);
+    private static final List<String> AC_FINALIZE_STEP_LIST = Collections.singletonList(StlAddtlCompStepUtil.CALC_ADDTL_COMP_GMR_STEP);
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 

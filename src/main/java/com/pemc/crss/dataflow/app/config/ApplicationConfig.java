@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
@@ -61,6 +62,9 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Autowired
     private JedisConnectionFactory jedisConnectionFactory;
+
+    @Autowired
+    private RedisTemplate<String, Long> redisTemplate;
 
     @Bean
     public JpaVendorAdapter jpaVendorAdapter() {
@@ -175,7 +179,9 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public ChannelTopic topic() {
-        return new ChannelTopic("pubsub:retryQueue");
+        // increment retryQueueSubscriberCount as instance count on every startup
+        String topic = "pubsub:retryQueue" + redisTemplate.opsForValue().increment("retryQueueSubscriberCount", 1);
+        return new ChannelTopic(topic);
     }
 
     @Bean

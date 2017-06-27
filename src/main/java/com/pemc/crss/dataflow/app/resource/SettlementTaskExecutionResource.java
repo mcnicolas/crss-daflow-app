@@ -47,10 +47,10 @@ public class SettlementTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/get-batch-job-skip-logs", method = RequestMethod.GET)
-    public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(Pageable pageable, int stepId) {
-        LOG.debug("Finding skip logs request. pageable={}", pageable);
-        return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageable, stepId), HttpStatus.OK);
+    @PostMapping(value = "/get-batch-job-skip-logs")
+    public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest) {
+        LOG.debug("Finding skip logs request. pageable={}", pageableRequest.getPageable());
+        return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageableRequest), HttpStatus.OK);
     }
 
 }

@@ -7,6 +7,7 @@ public class TaskSummaryDto {
     private String stepName;
     private Long stepId;
     private Long jobId;
+    private Long jobExecutionId;
     private int  readCount;
     private int writeCount;
     private int skipCount;
@@ -57,5 +58,13 @@ public class TaskSummaryDto {
 
     public void setJobId(Long jobId) {
         this.jobId = jobId;
+    }
+
+    public Long getJobExecutionId() {
+        return jobExecutionId;
+    }
+
+    public void setJobExecutionId(Long jobExecutionId) {
+        this.jobExecutionId = jobExecutionId;
     }
 }

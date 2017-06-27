@@ -34,6 +34,8 @@ public interface TaskExecutionService {
 
     Page<BatchJobSkipLog> getBatchJobSkipLogs(Pageable pageable, int stepId);
 
+    Page<BatchJobSkipLog> getBatchJobSkipLogs(PageableRequest pageableRequest);
+
     void deleteJob(long jobId);
 
     void relaunchFailedJob(long jobId) throws URISyntaxException;

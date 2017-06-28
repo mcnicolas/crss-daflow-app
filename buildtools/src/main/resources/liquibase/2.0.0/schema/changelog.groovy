@@ -193,4 +193,8 @@ databaseChangeLog {
     }
   }
 
+  changeSet(id: '1498629417240-1', author: 'dmendoza (generated)') {
+    modifyDataType(tableName: 'batch_job_skip_logs', columnName: 'error', newDataType: 'VARCHAR(4000)')
+  }
+
 }

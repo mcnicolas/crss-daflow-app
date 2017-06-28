@@ -7,11 +7,15 @@ import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
+import com.pemc.crss.shared.core.dataflow.entity.QBatchJobSkipLog;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobSkipLogRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
+import com.querydsl.core.BooleanBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +91,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String METER_TYPE_RCOA= "MIRF_MT_RCOA";
 
     @Autowired
+    protected BatchJobSkipLogRepository batchJobSkipLogRepository;
+    @Autowired
     protected ExecutionParamRepository executionParamRepository;
     @Autowired
     protected JobExplorer jobExplorer;
@@ -153,6 +159,18 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         }
 
         return new PageImpl<>(skipLogs, pageable, count);
+    }
+
+    @Override
+    public Page<BatchJobSkipLog> getBatchJobSkipLogs(final PageableRequest pageableRequest) {
+        String parentStepName = pageableRequest.getMapParams().getOrDefault("parentStepName", "");
+        Long jobExecutionId = Long.valueOf(pageableRequest.getMapParams().getOrDefault("jobExecutionId", "0"));
+
+        BooleanBuilder predicate = new BooleanBuilder();
+        predicate.and(QBatchJobSkipLog.batchJobSkipLog.jobExecutionId.eq(jobExecutionId)
+        .and(QBatchJobSkipLog.batchJobSkipLog.parentStepName.eq(parentStepName)));
+
+        return batchJobSkipLogRepository.findAll(predicate, pageableRequest.getPageable());
     }
 
     @Override
@@ -226,6 +244,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                     taskSummaryDto.setWriteCount(stepExecution.getWriteCount());
                     taskSummaryDto.setSkipCount(stepExecution.getSkipCount());
                     taskSummaryDto.setStepId(stepExecution.getId());
+                    taskSummaryDto.setJobExecutionId(stepExecution.getJobExecutionId());
+
                     return taskSummaryDto;
                 })
                 .sorted(comparing(TaskSummaryDto::getStepId))

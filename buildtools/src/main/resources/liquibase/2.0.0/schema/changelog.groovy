@@ -181,4 +181,20 @@ databaseChangeLog {
     addUniqueConstraint(columnNames: 'group_id', constraintName: 'uk_batch_job_adj_run', tableName: 'batch_job_adj_run')
   }
 
+  changeSet(id: '1498464836417-1', author: 'dmendoza (generated)') {
+    addColumn(tableName: 'batch_job_skip_logs') {
+      column(name: 'parent_step_name', type: 'VARCHAR(255)')
+    }
+  }
+
+  changeSet(id: '1498464836417-2', author: 'dmendoza (generated)') {
+    addColumn(tableName: 'batch_job_skip_logs') {
+      column(name: 'job_execution_id', type: 'BIGINT')
+    }
+  }
+
+  changeSet(id: '1498629417240-1', author: 'dmendoza (generated)') {
+    modifyDataType(tableName: 'batch_job_skip_logs', columnName: 'error', newDataType: 'VARCHAR(4000)')
+  }
+
 }

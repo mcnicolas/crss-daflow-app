@@ -209,14 +209,16 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                         // get first stl-calc item's status
                                         stlJobGroupDto.setStatus(jobCalcStatus);
                                     } else {
+                                        String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC);
                                         // get latest status first
-                                        stlJobGroupDto.setStatus(getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC));
+                                        stlJobGroupDto.setStatus(latestStatus);
 
                                         // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
                                         Optional.ofNullable(stlJobGroupDto.getRemainingDatesMap().get(groupId)).ifPresent(remainingDates -> {
                                             if (remainingDates.size() == 0) {
-                                                // set current job execution status of latest job
-                                                stlJobGroupDto.setStatus(convertStatus(currentStatus, STATUS_FULL_STL_CALC));
+                                                // set latest job execution status
+                                                BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
+                                                stlJobGroupDto.setStatus(convertStatus(latestJobExecutionStatus, STATUS_FULL_STL_CALC));
                                             }
                                         });
                                     }

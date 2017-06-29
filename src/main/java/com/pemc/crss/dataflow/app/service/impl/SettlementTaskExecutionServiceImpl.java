@@ -215,7 +215,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                         // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
                                         Optional.ofNullable(stlJobGroupDto.getRemainingDatesMap().get(groupId)).ifPresent(remainingDates -> {
                                             if (remainingDates.size() == 0) {
-                                                stlJobGroupDto.setStatus(convertStatus(BatchStatus.COMPLETED, STATUS_FULL_STL_CALC));
+                                                // set current job execution status of latest job
+                                                stlJobGroupDto.setStatus(convertStatus(currentStatus, STATUS_FULL_STL_CALC));
                                             }
                                         });
                                     }

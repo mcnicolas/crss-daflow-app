@@ -301,9 +301,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                             jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
                                     );
 
-                                    // change status to COMPLETED - FULL-CALCULATION if for GMR Recalculation
+                                    // change status to <latest calc job execution status> - FULL-CALCULATION if for GMR Recalculation
                                     if (stlJobGroupDto.isForGmrRecalculation()) {
-                                        stlJobGroupDto.setStatus(convertStatus(BatchStatus.COMPLETED, STATUS_FULL_STL_CALC));
+                                        String latestJobCalcStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC);
+                                        BatchStatus latestJobExecCalcStatus = BatchStatus.valueOf(latestJobCalcStatus.split("-")[0]);
+
+                                        stlJobGroupDto.setStatus(convertStatus(latestJobExecCalcStatus, STATUS_FULL_STL_CALC));
                                     }
 
                                     if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {

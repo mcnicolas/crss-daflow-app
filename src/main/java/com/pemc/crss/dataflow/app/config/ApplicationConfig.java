@@ -128,7 +128,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
         JdbcExecutionContextDao dao = new JdbcExecutionContextDao();
         dao.setJdbcTemplate(jdbcOperations);
         dao.setTablePrefix(tablePrefix);
-        dao.setSerializer(serializer);
+        dao.setSerializer(new Jackson2ExecutionContextStringSerializer());
         dao.afterPropertiesSet();
         return dao;
     }

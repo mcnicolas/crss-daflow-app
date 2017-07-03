@@ -13,6 +13,7 @@ import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.dao.*;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -118,17 +119,18 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     }
 
 
-    @Bean
-    public ExecutionContextSerializer serializer() {
+    @Bean(name = "jsonContextSerializer")
+    public ExecutionContextSerializer jsonContextSerializer() {
         return new Jackson2ExecutionContextStringSerializer();
     }
 
     @Bean
-    public ExecutionContextDao executionContextDao(JdbcOperations jdbcOperations, ExecutionContextSerializer serializer) throws Exception {
+    public ExecutionContextDao executionContextDao(JdbcOperations jdbcOperations,
+                                                   @Qualifier("jsonContextSerializer") ExecutionContextSerializer jsonContextSerializer) throws Exception {
         JdbcExecutionContextDao dao = new JdbcExecutionContextDao();
         dao.setJdbcTemplate(jdbcOperations);
         dao.setTablePrefix(tablePrefix);
-        dao.setSerializer(new Jackson2ExecutionContextStringSerializer());
+        dao.setSerializer(jsonContextSerializer);
         dao.afterPropertiesSet();
         return dao;
     }

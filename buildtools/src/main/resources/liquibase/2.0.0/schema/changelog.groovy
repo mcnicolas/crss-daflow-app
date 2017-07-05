@@ -197,4 +197,9 @@ databaseChangeLog {
     modifyDataType(tableName: 'batch_job_skip_logs', columnName: 'error', newDataType: 'VARCHAR(4000)')
   }
 
+  changeSet(id: '1499162854493-1', author: 'dmendoza (generated)') {
+    dropNotNullConstraint(tableName: 'batch_job_adj_run', columnName: 'job_id')
+  }
+
+
 }

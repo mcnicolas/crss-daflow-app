@@ -294,7 +294,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             e.printStackTrace();
         }
 
-        // jobId is null for finalize job
         BatchJobAdjRun adjVatRun = new BatchJobAdjRun();
         adjVatRun.setAdditionalCompensation(true);
         adjVatRun.setJobId(null);

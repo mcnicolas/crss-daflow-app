@@ -282,6 +282,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 BatchStatus currentStatus = calcGmrJobExecution.getStatus();
 
+                                // add gmr calculations for view calculations
+                                Optional.ofNullable(gmrJobCalculationDtoMap.get(calcGmrStlJobName)).ifPresent(
+                                        jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
+                                );
+
                                 if (currentStatus.isRunning()) {
                                     stlJobGroupDto.setStlCalculation(false);
                                 }
@@ -296,10 +301,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setGroupId(groupId);
 //                                    stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
                                     stlJobGroupDto.setGmrCalcRunDate(calcGmrJobExecution.getStartTime());
-
-                                    Optional.ofNullable(gmrJobCalculationDtoMap.get(calcGmrStlJobName)).ifPresent(
-                                            jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
-                                    );
 
                                     // change status to <latest calc job execution status> - FULL-CALCULATION if for GMR Recalculation
                                     if (stlJobGroupDto.isForGmrRecalculation()) {

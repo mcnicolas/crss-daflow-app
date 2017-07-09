@@ -276,14 +276,14 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
 
         String jobName = determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
-        saveAdjRun(addtlCompensationFinalizeDto, jobName);
+        saveAdjRun(addtlCompensationFinalizeDto, jobName, hasAdjusted);
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
         lockJob(ADDTL_COMP_GMR_BASE_JOB_NAME);
     }
 
-    private void saveAdjRun(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, String jobName) {
+    private void saveAdjRun(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, String jobName, boolean hasAdjusted) {
         LocalDateTime start = null;
         LocalDateTime end = null;
 
@@ -298,7 +298,13 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         adjVatRun.setAdditionalCompensation(true);
         adjVatRun.setJobId(null);
         adjVatRun.setGroupId(addtlCompensationFinalizeDto.getGroupId());
-        adjVatRun.setMeterProcessType(determineProcessType(jobName));
+        MeterProcessType processType = determineProcessType(jobName);
+
+        if (processType == null) {
+            processType = hasAdjusted ? MeterProcessType.ADJUSTED : MeterProcessType.FINAL;
+        }
+
+        adjVatRun.setMeterProcessType(processType);
         adjVatRun.setBillingPeriodStart(start);
         adjVatRun.setBillingPeriodEnd(end);
         adjVatRun.setOutputReady(false);

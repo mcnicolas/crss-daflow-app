@@ -33,6 +33,16 @@ public class TaskRunDto {
     private String supplyMonth;
     private String billingPeriodName;
 
+
+    //MTR, possible values: ALL or specific msp
+    private String msp;
+
+    //MTR, possible values: ALL or comma separated sein
+    private String seins;
+
+    //Meter process, possible values: ALL or comma separated mtn
+    private String mtns;
+
     public String getJobName() {
         return jobName;
     }
@@ -209,32 +219,35 @@ public class TaskRunDto {
         this.meterType = meterType;
     }
 
-    @Override
-    public String toString() {
-        return "TaskRunDto{" +
-                "jobName='" + jobName + '\'' +
-                ", parentJob='" + parentJob + '\'' +
-                ", meterProcessType='" + meterProcessType + '\'' +
-                ", tradingDate='" + tradingDate + '\'' +
-                ", startDate='" + startDate + '\'' +
-                ", endDate='" + endDate + '\'' +
-                ", marketInformationType='" + marketInformationType + '\'' +
-                ", amsInvoiceDate='" + amsInvoiceDate + '\'' +
-                ", amsDueDate='" + amsDueDate + '\'' +
-                ", amsRemarksInv='" + amsRemarksInv + '\'' +
-                ", amsRemarksMf='" + amsRemarksMf + '\'' +
-                ", billingPeriodId=" + billingPeriodId +
-                ", billingPeriod=" + billingPeriod +
-                ", supplyMonth='" + supplyMonth + '\'' +
-                ", billingPeriodName='" + billingPeriodName + '\'' +
-                '}';
-    }
-
     public String getCurrentUser() {
         return currentUser;
     }
 
     public void setCurrentUser(String currentUser) {
         this.currentUser = currentUser;
+    }
+
+    public String getMsp() {
+        return msp;
+    }
+
+    public void setMsp(String msp) {
+        this.msp = msp;
+    }
+
+    public String getSeins() {
+        return seins;
+    }
+
+    public void setSeins(String seins) {
+        this.seins = seins;
+    }
+
+    public String getMtns() {
+        return mtns;
+    }
+
+    public void setMtns(String mtns) {
+        this.mtns = mtns;
     }
 }

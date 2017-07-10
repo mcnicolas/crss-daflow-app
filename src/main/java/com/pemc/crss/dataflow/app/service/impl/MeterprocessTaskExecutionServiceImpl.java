@@ -10,6 +10,7 @@ import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.pemc.crss.shared.commons.util.AuditUtil.*;
 import static com.pemc.crss.shared.commons.util.reference.Activity.*;
@@ -57,6 +59,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
+    @Autowired
+    private BatchJobAddtlParamsService batchJobAddtlParamsService;
+
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -79,8 +84,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         if (getJobExecutions(jobInstance).iterator().hasNext()) {
                             JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
-                            Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                            String wesmUser = (String) jobParameters.getOrDefault(WESM_USERNAME, "");
+                            Map<String, Object> jobParameters = jobExecution.getJobParameters().getParameters()
+                                    .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                            jobParameters.put("seins", jobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
+                            jobParameters.put("mtns", jobExecution.getExecutionContext().getString("mtns", StringUtils.EMPTY));
+                            String wesmUser = jobParameters.getOrDefault(WESM_USERNAME, "").toString();
 
                             TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
                             taskExecutionDto.setId(jobInstance.getId());
@@ -107,6 +115,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
 
                                 jobParameters = Maps.transformValues(rcoaJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                                jobParameters.put("seins", rcoaJobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
                                 String rcoaUser = (String) jobParameters.getOrDefault(RCOA_USERNAME, "");
 
                                 taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
@@ -280,6 +289,17 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
             }
+
+            // temporarily save in additional params to lessen task id length in chronos
+            if (StringUtils.isNotEmpty(taskRunDto.getMtns())) {
+                BatchJobAddtlParams paramsSelectedMtns = new BatchJobAddtlParams();
+                paramsSelectedMtns.setRunId(runId);
+                paramsSelectedMtns.setType(PARAMS_TYPE_STRING);
+                paramsSelectedMtns.setKey(MTNS);
+                paramsSelectedMtns.setStringVal(taskRunDto.getMtns());
+                batchJobAddtlParamsRepository.save(paramsSelectedMtns);
+            }
+
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));

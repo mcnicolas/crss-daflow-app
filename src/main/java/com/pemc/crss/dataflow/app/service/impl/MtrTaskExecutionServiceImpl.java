@@ -7,7 +7,8 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
-import com.pemc.crss.shared.commons.util.reference.Activity;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.launch.NoSuchJobException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -27,9 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.pemc.crss.shared.commons.util.AuditUtil.*;
-import static com.pemc.crss.shared.commons.util.reference.Function.METER_PROCESS;
-import static com.pemc.crss.shared.commons.util.reference.Module.METERING;
 import static java.util.stream.Collectors.toList;
 
 @Service("mtrTaskExecutionService")
@@ -39,6 +38,9 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
     private static final Logger LOG = LoggerFactory.getLogger(MeterprocessTaskExecutionServiceImpl.class);
 
     private static final String RUN_MTR_JOB_NAME = "generateMtr";
+
+    @Autowired
+    private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Override
     public Page<MtrTaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -120,10 +122,21 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMtr")));
             }
+            String runId = String.valueOf(System.currentTimeMillis());
             arguments.add(concatKeyValue(METER_TYPE, taskRunDto.getMeterType()));
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
+            arguments.add(concatKeyValue(RUN_ID, runId, "long"));
             arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+            arguments.add(concatKeyValue(MSP, StringUtils.isNotEmpty(taskRunDto.getMsp()) ? taskRunDto.getMsp() : StringUtils.EMPTY));
             jobName = "crss-meterprocess-task-mtr";
+
+            if (StringUtils.isNotEmpty(taskRunDto.getSeins())) {
+                BatchJobAddtlParams mtrSeins = new BatchJobAddtlParams();
+                mtrSeins.setRunId(Long.valueOf(runId));
+                mtrSeins.setType("string");
+                mtrSeins.setKey(SEINS);
+                mtrSeins.setStringVal(taskRunDto.getSeins());
+                batchJobAddtlParamsRepository.save(mtrSeins);
+            }
         }
 
         if (jobName != null) {

@@ -32,10 +32,10 @@ buildscript {
         //classpath 'org.jadira.usertype:usertype.core:5.0.0.GA'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.3'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.8.3'
-        classpath ('com.pemc.crss:crss-shared-commons-model:2.1.0.BUILD-SNAPSHOT'){
+        classpath ('com.pemc.crss:crss-shared-commons-model:2.2.0.BUILD-SNAPSHOT'){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-dataflow:2.1.0.BUILD-SNAPSHOT'){
+        classpath ('com.pemc.crss:crss-shared-core-dataflow:2.2.0.BUILD-SNAPSHOT'){
             transitive = false
         }
     }

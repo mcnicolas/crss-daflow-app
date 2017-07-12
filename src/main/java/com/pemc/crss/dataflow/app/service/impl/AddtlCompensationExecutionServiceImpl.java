@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -126,6 +127,11 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
                                     addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_CALC_STEP_LIST));
                                     addtlCompensationExecDetailsDto.setRunningSteps(getProgress(jobExecution));
+
+                                    // add run id for completed ac runs
+                                    if (Objects.equals(addtlCompensationExecDetailsDto.getStatus(), BatchStatus.COMPLETED.toString())) {
+                                        distinctAddtlCompDto.getSuccessfullAcRuns().add(addtlCompensationExecDetailsDto.getRunId());
+                                    }
 
                                     Optional.ofNullable(getLatestFinalizeAcJob(groupId)).ifPresent(finalizeJobExec -> {
                                         distinctAddtlCompDto.setTaggingStatus(finalizeJobExec.getStatus());

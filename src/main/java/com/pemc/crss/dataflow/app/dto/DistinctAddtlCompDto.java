@@ -20,6 +20,7 @@ public class DistinctAddtlCompDto {
     private List<TaskSummaryDto> finalizeAcRunSummary = new ArrayList<>();
     private List<String> finalizeRunningSteps = new ArrayList<>();
     private List<String> generateFileRunningSteps = new ArrayList<>();
+    private List<Long> successfullAcRuns = new ArrayList<>();
 
     public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition) {
         this.startDate = startDate;
@@ -125,5 +126,13 @@ public class DistinctAddtlCompDto {
 
     public void setGenerateFileRunningSteps(List<String> generateFileRunningSteps) {
         this.generateFileRunningSteps = generateFileRunningSteps;
+    }
+
+    public List<Long> getSuccessfullAcRuns() {
+        return successfullAcRuns;
+    }
+
+    public void setSuccessfullAcRuns(List<Long> successfullAcRuns) {
+        this.successfullAcRuns = successfullAcRuns;
     }
 }

@@ -126,20 +126,13 @@ dependencyManagement {
         mavenBom "org.springframework.boot:spring-boot-dependencies:$springbootVersion"
         mavenBom "org.springframework.cloud.stream.app:spring-cloud-stream-app-dependencies:1.0.4.RELEASE"
     }
+
+    dependencies {
+        // DB Pooling
+        dependency 'com.zaxxer:HikariCP:2.6.1'
+    }
 }
 
-/*task pathingJar(type: Jar) {
-    dependsOn configurations.runtime
-    appendix = 'pathing'
-
-    doFirst {
-        manifest {
-            attributes "Class-Path": configurations.runtime.files.collect {
-                it.toURL().toString().replaceFirst(/file:\/+/, '/')
-            }.join(' ')
-        }
-    }
-}*/
 
 bootRun {
     systemProperties = System.properties

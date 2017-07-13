@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -63,8 +64,10 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                         if (getJobExecutions(jobInstance).iterator().hasNext()) {
                             JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
 
-                            Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                            String user = (String) jobParameters.getOrDefault(USERNAME, "");
+                            Map<String, Object> jobParameters = jobExecution.getJobParameters().getParameters()
+                                    .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                            jobParameters.put("seins", jobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
+                            String user = jobParameters.getOrDefault(USERNAME, "").toString();
 
                             MtrTaskExecutionDto mtrTaskExecutionDto = new MtrTaskExecutionDto();
                             mtrTaskExecutionDto.setId(jobInstance.getId());

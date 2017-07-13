@@ -114,7 +114,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             if (!rcoaJobs.isEmpty()) {
                                 JobExecution rcoaJobExecution = getJobExecutions(rcoaJobs.get(0)).iterator().next();
 
-                                jobParameters = Maps.transformValues(rcoaJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                                jobParameters = rcoaJobExecution.getJobParameters().getParameters()
+                                        .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                                 jobParameters.put("seins", rcoaJobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
                                 String rcoaUser = (String) jobParameters.getOrDefault(RCOA_USERNAME, "");
 

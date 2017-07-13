@@ -117,7 +117,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 jobParameters = rcoaJobExecution.getJobParameters().getParameters()
                                         .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                                 jobParameters.put("seins", rcoaJobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
-                                String rcoaUser = (String) jobParameters.getOrDefault(RCOA_USERNAME, "");
+                                String rcoaUser = jobParameters.getOrDefault(RCOA_USERNAME, "").toString();
 
                                 taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());
                                 taskExecutionDto.setRcoaUser(rcoaUser);
@@ -140,7 +140,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution mqReportJobExecution = getJobExecutions(mqReportJobs.get(0)).iterator().next();
                                 Map mqReportJobParameters = Maps.transformValues(mqReportJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
                                 taskExecutionDto.setMqReportStatus(mqReportJobExecution.getStatus());
-                                mqReportStatusAfterFinalized = (String) mqReportJobParameters.getOrDefault(MQ_REPORT_STAT_AFTER_FINALIZE, "");
+                                mqReportStatusAfterFinalized = mqReportJobParameters.getOrDefault(MQ_REPORT_STAT_AFTER_FINALIZE, "").toString();
 
                                 if (taskExecutionDto.getMqReportStatus().isRunning()) {
                                     calculateProgress(mqReportJobExecution, taskExecutionDto);
@@ -158,7 +158,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution settlementJobExecution = getJobExecutions(settlementNotReadyJobs.get(0)).iterator().next();
 
                                 jobParameters = Maps.transformValues(settlementJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                                String stlNotReadyUser = (String) jobParameters.getOrDefault(STL_NOT_READY_USERNAME, "");
+                                String stlNotReadyUser = jobParameters.getOrDefault(STL_NOT_READY_USERNAME, "").toString();
 
                                 taskExecutionDto.setSettlementStatus(settlementJobExecution.getStatus());
                                 taskExecutionDto.setStlNotReadyUser(stlNotReadyUser);
@@ -180,7 +180,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 JobExecution settlementJobExecution = getJobExecutions(settlementJobs.get(0)).iterator().next();
 
                                 jobParameters = Maps.transformValues(settlementJobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                                String stlReadyUser = (String) jobParameters.getOrDefault(STL_READY_USERNAME, "");
+                                String stlReadyUser = jobParameters.getOrDefault(STL_READY_USERNAME, "").toString();
 
                                 taskExecutionDto.setSettlementReadyStatus(settlementJobExecution.getStatus());
                                 taskExecutionDto.setStlReadyUser(stlReadyUser);

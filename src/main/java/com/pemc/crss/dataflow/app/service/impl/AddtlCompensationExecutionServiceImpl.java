@@ -200,6 +200,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             AddtlCompensationRunDto addtlCompRunDto = addtlCompensationRunDtos.getAddtlCompensationRunDtos().get(0);
             final String groupId = buildGroupId(addtlCompRunDto);
 
+            // validate all ac dtos first before running
+            validateAddtlCompDtos(addtlCompensationRunDtos.getAddtlCompensationRunDtos());
+
             for (AddtlCompensationRunDto addtlCompensationRunDto : addtlCompensationRunDtos.getAddtlCompensationRunDtos()) {
                 addtlCompensationRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
                 launchAddtlCompensation(addtlCompensationRunDto, groupId);
@@ -218,27 +221,37 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         return groupId.replaceAll("-",""); // produces: YYYYMMDDYYYYMMDDPC ex: 2017012602170225AP
     }
 
-    public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto, String groupId) throws URISyntaxException {
+    private void validateAddtlCompDtos(List<AddtlCompensationRunDto> addtlCompensationRunDtos) {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_JOB_NAME) == 0,
                 "There is an existing ".concat(ADDTL_COMP_JOB_NAME).concat(" job running"));
 
-        List<JobInstance> finalizeJobInstances = dataFlowJdbcJobExecutionDao.findAddtlCompCompleteFinalizeInstances(0,
-                Integer.MAX_VALUE, addtlCompensationDto.getBillingStartDate(),
-                addtlCompensationDto.getBillingEndDate(), addtlCompensationDto.getPricingCondition());
-
-        Preconditions.checkState(finalizeJobInstances.isEmpty(), String.format("Additional Compensation for billing period "
-                + " [%s to %s] with %s pricing condition has already been finalized.", addtlCompensationDto.getBillingStartDate(),
-                addtlCompensationDto.getBillingEndDate(), addtlCompensationDto.getPricingCondition()));
-
+        // get first instance for billing period dates
+        AddtlCompensationRunDto addtlCompensationDto = addtlCompensationRunDtos.get(0);
         String startDate = addtlCompensationDto.getBillingStartDate();
         String endDate = addtlCompensationDto.getBillingEndDate();
+
+        List<JobInstance> finalizeJobInstances = dataFlowJdbcJobExecutionDao.findAddtlCompCompleteFinalizeInstances(0,
+                Integer.MAX_VALUE, startDate, endDate, addtlCompensationDto.getPricingCondition());
+
+        Preconditions.checkState(finalizeJobInstances.isEmpty(), String.format("Additional Compensation for billing period "
+                        + " [%s to %s] with %s pricing condition has already been finalized.", startDate, endDate,
+                addtlCompensationDto.getPricingCondition()));
 
         boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
         Preconditions.checkState(hasAdjusted || dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0,
                 "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
 
         checkTimeValidity(endDate);
-        checkDuplicate(addtlCompensationDto);
+
+        for (AddtlCompensationRunDto runDto : addtlCompensationRunDtos) {
+            checkDuplicate(runDto);
+        }
+    }
+
+    public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto, String groupId) throws URISyntaxException {
+        String startDate = addtlCompensationDto.getBillingStartDate();
+        String endDate = addtlCompensationDto.getBillingEndDate();
+
         saveAddtlCompParam(addtlCompensationDto, groupId);
 
         List<String> properties = Lists.newArrayList();
@@ -254,6 +267,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
         saveAddltCompCalcAdditionalParams(runId, addtlCompensationDto);
 
+        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
 

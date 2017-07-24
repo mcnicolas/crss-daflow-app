@@ -20,7 +20,7 @@ import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -62,7 +62,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     private JpaProperties properties;
 
     @Autowired
-    private JedisConnectionFactory jedisConnectionFactory;
+    private LettuceConnectionFactory lettuceConnectionFactory;
 
     @Autowired
     private RedisTemplate<String, Long> redisTemplate;
@@ -200,7 +200,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     public RedisMessageListenerContainer redisContainer() {
         final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 
-        container.setConnectionFactory(jedisConnectionFactory);
+        container.setConnectionFactory(lettuceConnectionFactory);
         container.addMessageListener(messageListener(), topic());
 
         return container;

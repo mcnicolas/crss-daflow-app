@@ -1,4 +1,22 @@
 import groovy.json.*
+import groovyx.net.http.RESTClient
+import static groovyx.net.http.ContentType.JSON
+
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies {
+        classpath('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2') {
+            exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+            exclude group: 'org.codehaus.groovy', module: 'groovy'
+        }
+    }
+}
 
 ext {
     //dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
@@ -59,15 +77,31 @@ task stopApp(dependsOn: setupDeployer)  {
 }
 
 task deployApp(dependsOn: setupDeployer) {
-    doLast {
-        exec {
-            println "Deploying new app: ${appId}"
-            commandLine "$rootDir/buildtools/deployer/deploy.sh"
-            args "$project.marathonUrl"
-            args "$project.buildDir/deployer/${project.name}.json"
 
+    doFirst {
+        if (!project.hasProperty('marathonUrl')) {
+            throw new GradleException("Property marathonUrl not supplied. Please supply via -PmarathonUrl=http//ip.marathon/v2")
         }
-        println "Deployed"
+    }
+    doLast {
+        def definitionFile = "$project.buildDir/deployer/${project.name}.json"
+        def marathonDefinition = new groovy.json.JsonSlurper().parse(file(definitionFile))
+
+        def marathonClient = new RESTClient("$marathonUrl/$appId?force=true", JSON)
+
+        if (project.hasProperty('dcosToken')) {
+            marathonClient.setHeaders([Authorization: "token=${project.ext.dcosToken}"])
+            marathonClient.ignoreSSLIssues()
+        }
+
+        def response = marathonClient.put(body: marathonDefinition).getData()
+
+        def metadata = "marathon-deployment-$project.name"
+        file(metadata).createNewFile()
+        file(metadata).text = response
+
+        logger.quiet "Deployed using appId=$marathonDefinition.id and marathonDefinition=" + definitionFile
+        logger.quiet "Marthon details = [deploymentId: $response.deploymentId, version: $response.version]"
     }
 }
 

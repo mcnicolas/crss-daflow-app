@@ -55,8 +55,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     // Job names
     private static final String COMPUTE_STL_JOB_NAME = "calcSTL_AMT";
     private static final String COMPUTE_GMRVAT_MFEE_JOB_NAME = "calcGMR_MFEE";
-    private static final String FINALIZE_JOB_NAME = "tasAsOutputReady";
-    private static final String GENERATE_INVOICE_STL_JOB_NAME = "generateInvoiceSettlement";
+    private static final String FINALIZE_JOB_NAME = "tagOR";
+    private static final String GENERATE_INVOICE_STL_JOB_NAME = "genFile";
     private static final String STL_VALIDATION_JOB_NAME = "stlValidation";
 
     private static final String AMS_INVOICE_DATE = "amsInvoiceDate";

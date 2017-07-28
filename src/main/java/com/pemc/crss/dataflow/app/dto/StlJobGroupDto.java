@@ -6,6 +6,7 @@ import org.springframework.batch.core.BatchStatus;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -237,7 +238,7 @@ public class StlJobGroupDto {
         return jobCalculationDtos
                 .stream()
                 // sort by runEndDate desc
-                .sorted(Collections.reverseOrder((dto1, dto2) -> dto1.getRunDate().compareTo(dto2.getRunDate())))
+                .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
                 .collect(Collectors.toList());
     }
 }

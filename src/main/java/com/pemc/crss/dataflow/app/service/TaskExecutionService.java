@@ -1,6 +1,6 @@
 package com.pemc.crss.dataflow.app.service;
 
-import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -14,14 +14,14 @@ import java.net.URISyntaxException;
  */
 public interface TaskExecutionService {
 
-    Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable);
+    Page<? extends StubTaskExecutionDto> findJobInstances(Pageable pageable);
 
-    Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type,
+    Page<? extends StubTaskExecutionDto> findJobInstances(Pageable pageable, String type,
                                                           String status, String mode,
                                                           String runStartDate, String tradingStartDate,
                                                           String tradingEndDate, String username);
 
-    Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest);
+    Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest);
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 

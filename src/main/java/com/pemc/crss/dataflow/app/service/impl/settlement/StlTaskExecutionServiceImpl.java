@@ -1,0 +1,260 @@
+package com.pemc.crss.dataflow.app.service.impl.settlement;
+
+import com.google.common.collect.Lists;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
+import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
+import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+@Slf4j
+public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
+
+    private static final String GROUP_ID = "groupId";
+    private static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
+    private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
+    private static final String STAGE_TAGGING = "TAGGING";
+    private static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
+
+
+    List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
+        final Pageable pageable = pageableRequest.getPageable();
+
+        return dataFlowJdbcJobExecutionDao.findStlJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest);
+    }
+
+    List<JobExecution> getCompletedJobExecutions(final JobInstance jobInstance) {
+        return getJobExecutions(jobInstance).stream().filter(jobExecution -> jobExecution.getStatus() == BatchStatus.COMPLETED)
+                .collect(Collectors.toList());
+    }
+
+    SettlementTaskExecutionDto initializeTaskExecutionDto(final JobExecution jobExecution, final String parentId) {
+        JobParameters jobParameters = jobExecution.getJobParameters();
+
+        SettlementTaskExecutionDto taskExecutionDto = new SettlementTaskExecutionDto();
+        taskExecutionDto.setParentId(Long.parseLong(parentId));
+        taskExecutionDto.setStlReadyJobId(jobExecution.getJobId());
+        taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
+        taskExecutionDto.setStatus(convertStatus(jobExecution.getStatus(), "SETTLEMENT"));
+        taskExecutionDto.setStlReadyStatus(jobExecution.getStatus());
+        taskExecutionDto.setBillPeriodStartDate(jobParameters.getDate(START_DATE));
+        taskExecutionDto.setBillPeriodEndDate(jobParameters.getDate(END_DATE));
+        taskExecutionDto.setDailyDate(jobParameters.getDate(DATE));
+
+        String processType = jobParameters.getString(PROCESS_TYPE) != null ? jobParameters.getString(PROCESS_TYPE) : "DAILY";
+
+        taskExecutionDto.setProcessType(processType);
+
+        return taskExecutionDto;
+    }
+
+    List<JobInstance> findJobInstancesByJobNameAndParentId(final String jobName, final String parentId) {
+        String calcQueryString = jobName.concat("*-").concat(parentId).concat("-*");
+        return jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
+    }
+
+    JobExecution getJobExecutionFromJobInstance(final JobInstance jobInstance) {
+        List<JobExecution> jobExecutions = getJobExecutions(jobInstance);
+
+        // most of the time one jobInstance contains only one jobExecution.
+        if (jobExecutions.size() > 1) {
+            log.info("Found multiple job executions for JobInstance with id: {}", jobInstance.getInstanceId());
+        }
+
+        // by default jobExecutions are ordered by job_execution_id desc. We need to only get the first instance
+        // since spring batch does not allow repeated job executions if the previous job execution is COMPLETED
+        return jobExecutions.isEmpty() ? null : jobExecutions.get(0);
+    }
+
+    void initializeGenInputWorkSpace(final List<JobInstance> generateInputWsJobInstances,
+                                     final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                                     final SettlementTaskExecutionDto taskExecutionDto,
+                                     final Long stlReadyJobId) {
+
+        Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+
+        for (JobInstance genWsStlJobInstance : generateInputWsJobInstances) {
+
+            JobExecution genWsJobExec = getJobExecutionFromJobInstance(genWsStlJobInstance);
+            boolean isDaily = taskExecutionDto.getProcessType().equals("DAILY");
+
+            Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
+            Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
+
+            BatchStatus currentStatus = genWsJobExec.getStatus();
+            JobParameters calcJobParameters = genWsJobExec.getJobParameters();
+            Long groupId = calcJobParameters.getLong(GROUP_ID);
+            Date calcStartDate = calcJobParameters.getDate(START_DATE);
+            Date calcEndDate = calcJobParameters.getDate(END_DATE);
+
+            if (!isDaily && !remainingDatesMap.containsKey(groupId)) {
+                remainingDatesMap.put(groupId, createRange(billPeriodStartDate, billPeriodEndDate));
+            }
+
+            final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
+
+            if (currentStatus.isRunning()) {
+                // for validation of gmr calculation in case stl amt is recalculated
+                stlJobGroupDto.setStlCalculation(true);
+            }
+
+
+            boolean fullCalculation = billPeriodStartDate != null && billPeriodEndDate != null
+                    && calcStartDate.compareTo(billPeriodStartDate) == 0 && calcEndDate.compareTo(billPeriodEndDate) == 0;
+
+            final String jobCalcStatus = fullCalculation
+                    ? convertStatus(currentStatus, STATUS_FULL_GENERATE_INPUT_WS)
+                    : convertStatus(currentStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
+
+            List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
+
+            if (jobCalculationDtoList.isEmpty()) {
+                stlJobGroupDto.setRunStartDateTime(genWsJobExec.getStartTime());
+                stlJobGroupDto.setRunEndDateTime(genWsJobExec.getEndTime());
+
+                // get first stl-calc item's status
+                stlJobGroupDto.setStatus(jobCalcStatus);
+            } else {
+                String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_GENERATE_INPUT_WS);
+                // get latest status first
+                stlJobGroupDto.setStatus(latestStatus);
+
+                // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
+                Optional.ofNullable(stlJobGroupDto.getRemainingDatesMap().get(groupId)).ifPresent(remainingDates -> {
+                    if (remainingDates.size() == 0) {
+                        // set latest job execution status
+                        BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
+                        stlJobGroupDto.setStatus(convertStatus(latestJobExecutionStatus, STATUS_FULL_GENERATE_INPUT_WS));
+                    }
+                });
+            }
+
+            JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
+                    genWsJobExec.getEndTime(), calcStartDate, calcEndDate,
+                    jobCalcStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
+
+//            TODO: check if genInputWorkSpace needs Task summary list
+//            partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, STL_CALC_STEP_WITH_SKIP_LOGS));
+
+            jobCalculationDtoList.add(partialCalcDto);
+
+            if (!isDaily && BatchStatus.COMPLETED == currentStatus
+                    && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
+                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
+            }
+
+            stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
+            stlJobGroupDto.setGroupId(groupId);
+
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(genWsJobExec.getStartTime())) {
+                updateProgress(genWsJobExec, stlJobGroupDto);
+            }
+
+            Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()
+                    .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_GENERATE_INPUT_WS))
+                    .map(JobCalculationDto::getRunDate)
+                    .max(Date::compareTo).get();
+
+            stlJobGroupDto.setMaxPartialCalcRunDate(maxPartialCalcDate);
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            if (stlReadyJobId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+        }
+    }
+
+    private SortedSet<LocalDate> createRange(Date start, Date end) {
+        if (start == null || end == null) {
+            return new TreeSet<>();
+        }
+        SortedSet<LocalDate> localDates = new TreeSet<>();
+        LocalDate currentDate = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        while (!currentDate.isAfter(endDate)) {
+            localDates.add(currentDate);
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return localDates;
+    }
+
+    private void updateProgress(JobExecution jobExecution, StlJobGroupDto dto) {
+        List<String> runningTasks = Lists.newArrayList();
+        if (!jobExecution.getStepExecutions().isEmpty()) {
+            jobExecution.getStepExecutions().parallelStream()
+                    .filter(stepExecution -> stepExecution.getStatus().isRunning())
+                    .forEach(stepExecution -> {
+                        Map<String, String> map = SettlementStepUtil.getProgressNameTaskMap();
+                        String stepName = stepExecution.getStepName();
+                        if (map.containsKey(stepName)) {
+                            runningTasks.add(map.get(stepName));
+                        } else {
+                            log.warn("Step name {} not existing in current mapping.", stepName);
+                        }
+                    });
+        }
+
+        dto.setRunningSteps(runningTasks);
+        dto.setLatestJobExecStartDate(jobExecution.getStartTime());
+        dto.setLatestJobExecEndDate(jobExecution.getEndTime());
+    }
+
+    private String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {
+        return stlJobGroupDto.getSortedJobCalculationDtos().stream()
+                .filter(stlJob -> stlJob.getJobStage().equals(stage))
+                .map(JobCalculationDto::getStatus).findFirst().get();
+    }
+
+    private void removeDateRangeFrom(SortedSet<LocalDate> remainingDates, Date calcStartDate, Date calcEndDate) {
+        LocalDate startDate = calcStartDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = calcEndDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        LocalDate ctrDate = startDate;
+        while (ctrDate.isBefore(endDate) || ctrDate.isEqual(endDate)) {
+            remainingDates.remove(ctrDate);
+            ctrDate = ctrDate.plusDays(1);
+        }
+    }
+
+    @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
+        return null;
+    }
+
+    @Override
+    public void relaunchFailedJob(long jobId) throws URISyntaxException {
+
+    }
+
+    @Override
+    public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable) {
+        return null;
+    }
+}

@@ -4,6 +4,7 @@ import org.springframework.batch.core.BatchStatus;
 
 import java.util.Map;
 
+@Deprecated
 public class StlTaskExecutionDto extends BaseTaskExecutionDto {
 
     private BatchStatus stlReadyStatus;

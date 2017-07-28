@@ -4,7 +4,7 @@ import com.pemc.crss.dataflow.app.dto.AddtlCompensationFinalizeDto;
 import com.pemc.crss.dataflow.app.dto.AddtlCompensationGenFilesDto;
 import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunDto;
 import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunListDto;
-import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.AddtlCompensationExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
@@ -34,7 +34,7 @@ public class AddtlCompensationExecutionResource {
     private TaskExecutionService taskExecutionService;
 
     @PostMapping("/job-instances")
-    public ResponseEntity<Page<? extends BaseTaskExecutionDto>> findAllJobInstances(@RequestBody PageableRequest pageableRequest) {
+    public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(@RequestBody PageableRequest pageableRequest) {
         log.debug("Finding job instances request. pageable={}", pageableRequest.getPageable());
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageableRequest), HttpStatus.OK);
     }

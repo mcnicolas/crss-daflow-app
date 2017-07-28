@@ -1,10 +1,8 @@
-package com.pemc.crss.dataflow.app.resource;
+package com.pemc.crss.dataflow.app.resource.settlement;
 
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,22 +14,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URISyntaxException;
-import java.security.Principal;
-
-// TODO: for removal after full implementation of separate settlement calculations
-@Deprecated
 @RestController
-@RequestMapping("/task-executions/settlement")
-public class SettlementTaskExecutionResource {
+@RequestMapping("/task-executions/settlement/trading-amounts")
+public class TradingAmountsTaskExecutionResource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SettlementTaskExecutionResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TradingAmountsTaskExecutionResource.class);
 
     @Autowired
-    @Qualifier("settlementTaskExecutionService")
+    @Qualifier("tradingAmountsTaskExecutionService")
     private TaskExecutionService taskExecutionService;
 
     @PostMapping("/job-instances")
@@ -40,13 +32,13 @@ public class SettlementTaskExecutionResource {
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageableRequest), HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.POST)
+    /*@RequestMapping(method = RequestMethod.POST)
     public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         LOG.debug("Running job request. taskRunDto={}", taskRunDto);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
         return new ResponseEntity(HttpStatus.OK);
-    }
+    }*/
 
     @PostMapping(value = "/get-batch-job-skip-logs")
     public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest) {

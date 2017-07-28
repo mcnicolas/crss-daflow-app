@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import com.google.common.collect.Maps;
+import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 
 import java.util.Date;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.Map;
 /**
  * Created by on 3/2/17.
  */
-public class BaseTaskExecutionDto {
+public class BaseTaskExecutionDto extends StubTaskExecutionDto {
 
     private Long id;
     private Date runDateTime;

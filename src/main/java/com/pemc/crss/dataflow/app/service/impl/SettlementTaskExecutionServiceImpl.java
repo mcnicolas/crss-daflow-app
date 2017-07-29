@@ -68,8 +68,6 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
     // from batch_job_execution_context
     private static final String INVOICE_GENERATION_FILENAME = "INVOICE_GENERATION_FILENAME";
 
-    private static final String GROUP_ID = "groupId";
-
     private static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
     private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
     private static final String STAGE_TAGGING = "TAGGING";

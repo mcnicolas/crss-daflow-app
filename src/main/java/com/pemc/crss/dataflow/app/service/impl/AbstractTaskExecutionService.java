@@ -62,6 +62,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String START_DATE = "startDate";
     protected static final String END_DATE = "endDate";
     protected static final String PROCESS_TYPE_DAILY = "DAILY";
+    protected static final String GROUP_ID = "groupId";
     protected static final String PARENT_JOB = "parentJob";
     protected static final String METER_TYPE = "meterType";
     protected static final String PROCESS_TYPE = "processType";

@@ -1,23 +1,31 @@
 package com.pemc.crss.dataflow.app.service.impl.settlement;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
 import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.net.URISyntaxException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,13 +39,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
-    private static final String GROUP_ID = "groupId";
     private static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
     private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
     private static final String STAGE_TAGGING = "TAGGING";
     private static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
 
+    @Autowired
+    private BatchJobAdjRunRepository batchJobAdjRunRepository;
 
+    /* findJobInstances methods start */
     List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
         final Pageable pageable = pageableRequest.getPageable();
 
@@ -119,7 +129,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 // for validation of gmr calculation in case stl amt is recalculated
                 stlJobGroupDto.setStlCalculation(true);
             }
-
 
             boolean fullCalculation = billPeriodStartDate != null && billPeriodEndDate != null
                     && calcStartDate.compareTo(billPeriodStartDate) == 0 && calcEndDate.compareTo(billPeriodEndDate) == 0;
@@ -243,6 +252,109 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
+    /* findJobInstances methods end */
+
+    /* launchJob methods start */
+    void validateJobName(final String jobName) {
+        Preconditions.checkNotNull(jobName);
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(jobName) == 0,
+                "There is an existing ".concat(jobName).concat(" job running"));
+    }
+
+    private List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final Long groupId) {
+        List<String> arguments = Lists.newArrayList();
+        arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
+        arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, groupId.toString(), "long"));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+
+        return arguments;
+    }
+
+    abstract String getDailyGenInputWorkspaceProfile();
+    abstract String getPrelimGenInputWorkspaceProfile();
+    abstract String getFinalGenInputWorkspaceProfile();
+    abstract String getAdjustedMtrAdjGenInputWorkSpaceProfile();
+    abstract String getAdjustedMtrFinGenInputWorkSpaceProfile();
+
+    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        final Long runId = System.currentTimeMillis();
+        final Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
+        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+
+        List<String> properties = Lists.newArrayList();
+
+        LocalDateTime billPeriodStartDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseStartDate(),
+                DateUtil.DEFAULT_DATE_FORMAT);
+        LocalDateTime billPeriodEndDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseEndDate(),
+                DateUtil.DEFAULT_DATE_FORMAT);
+
+        switch (type) {
+            case "DAILY":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getDailyGenInputWorkspaceProfile())));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
+                break;
+            case "PRELIM":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getPrelimGenInputWorkspaceProfile())));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            case "FINAL":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getFinalGenInputWorkspaceProfile())));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+
+                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), billPeriodStartDate, billPeriodEndDate) < 1) {
+                    log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
+                            groupId.toString(), billPeriodStartDate, billPeriodEndDate);
+                    saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
+                }
+                break;
+            case "ADJUSTED":
+                boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
+
+                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(),
+                        billPeriodStartDate, billPeriodEndDate) < 1) {
+                    log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
+                            groupId.toString(), billPeriodStartDate, billPeriodEndDate);
+                    saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
+                }
+
+                final String activeProfile = finalBased ? getAdjustedMtrFinGenInputWorkSpaceProfile() :
+                        getAdjustedMtrAdjGenInputWorkSpaceProfile();
+
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(activeProfile)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob("crss-settlement-task-calculation", properties, arguments);
+        lockJob(taskRunDto);
+    }
+
+    private void saveAdjRun(MeterProcessType type, String jobId, Long groupId, LocalDateTime start, LocalDateTime end) {
+        BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
+        batchJobAdjRun.setJobId(jobId);
+        batchJobAdjRun.setAdditionalCompensation(false);
+        batchJobAdjRun.setGroupId(String.valueOf(groupId));
+        batchJobAdjRun.setMeterProcessType(type);
+        batchJobAdjRun.setBillingPeriodStart(start);
+        batchJobAdjRun.setBillingPeriodEnd(end);
+        batchJobAdjRun.setOutputReady(false);
+        batchJobAdjRunRepository.save(batchJobAdjRun);
+    }
+
+    /* launchJob methods end */
+
+    // unused inherited methods
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
         return null;

@@ -5,6 +5,8 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.JobExecution;
@@ -20,15 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
+
 @Slf4j
 @Service("tradingAmountsTaskExecutionService")
 @Transactional
 public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
-    private static final String GEN_WS_TRADING_AMTS_JOB_NAME = "genEBRsvIw";
-
     // TODO: for removal. used for mocking purposes only using old data.
-    private static final String COMPUTE_STL_JOB_NAME = "calcSTL_AMT";
+//    private static final String COMPUTE_STL_JOB_NAME = "calcSTL_AMT";
 
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
@@ -55,7 +57,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
                 /* GENERATE INPUT WORKSPACE START */
                 List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                        COMPUTE_STL_JOB_NAME, parentId);
+                        SettlementJobName.GEN_EBRSV_INPUT_WS, parentId);
 
                 initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
@@ -75,6 +77,43 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     @Override
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+        validateJobName(taskRunDto.getJobName());
 
+        log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
+                taskRunDto.getBaseType());
+
+        switch (taskRunDto.getJobName()) {
+            case GEN_EBRSV_INPUT_WS:
+                launchGenerateInputWorkspaceJob(taskRunDto);
+                break;
+            default:
+                throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
+        }
+    }
+
+
+    @Override
+    String getDailyGenInputWorkspaceProfile() {
+        return SettlementJobProfile.GEN_DAILY_EBRSV_INPUT_WS;
+    }
+
+    @Override
+    String getPrelimGenInputWorkspaceProfile() {
+        return SettlementJobProfile.GEN_MONTHLY_PRELIM_EBRSV_INPUT_WS;
+    }
+
+    @Override
+    String getFinalGenInputWorkspaceProfile() {
+        return SettlementJobProfile.GEN_MONTHLY_FINAL_EBRSV_INPUT_WS;
+    }
+
+    @Override
+    String getAdjustedMtrAdjGenInputWorkSpaceProfile() {
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_ADJ_EBRSV_INPUT_WS;
+    }
+
+    @Override
+    String getAdjustedMtrFinGenInputWorkSpaceProfile() {
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_EBRSV_INPUT_WS;
     }
 }

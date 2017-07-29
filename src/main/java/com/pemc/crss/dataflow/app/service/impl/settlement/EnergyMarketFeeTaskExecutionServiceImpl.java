@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-@Service("energyMarkeFeeTaskExecutionService")
+@Service("energyMarketFeeTaskExecutionService")
 @Transactional
 public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
@@ -76,6 +76,40 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
     @Override
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+        validateJobName(taskRunDto.getJobName());
 
+        log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
+                taskRunDto.getBaseType());
+
+        switch (taskRunDto.getJobName()) {
+            default:
+                throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
+        }
+    }
+
+    // TODO: determine emf genInputWorkspace profiles
+    @Override
+    String getDailyGenInputWorkspaceProfile() {
+        return null;
+    }
+
+    @Override
+    String getPrelimGenInputWorkspaceProfile() {
+        return null;
+    }
+
+    @Override
+    String getFinalGenInputWorkspaceProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedMtrAdjGenInputWorkSpaceProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedMtrFinGenInputWorkSpaceProfile() {
+        return null;
     }
 }

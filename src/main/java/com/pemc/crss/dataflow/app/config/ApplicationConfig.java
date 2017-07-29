@@ -10,7 +10,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.repository.ExecutionContextSerializer;
-import org.springframework.batch.core.repository.dao.*;
+import org.springframework.batch.core.repository.dao.AbstractJdbcBatchMetadataDao;
+import org.springframework.batch.core.repository.dao.ExecutionContextDao;
+import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
+import org.springframework.batch.core.repository.dao.JdbcExecutionContextDao;
+import org.springframework.batch.core.repository.dao.JdbcJobExecutionDao;
+import org.springframework.batch.core.repository.dao.JdbcJobInstanceDao;
+import org.springframework.batch.core.repository.dao.JdbcStepExecutionDao;
+import org.springframework.batch.core.repository.dao.JobExecutionDao;
+import org.springframework.batch.core.repository.dao.JobInstanceDao;
+import org.springframework.batch.core.repository.dao.StepExecutionDao;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,7 +29,7 @@ import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -62,7 +71,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     private JpaProperties properties;
 
     @Autowired
-    private LettuceConnectionFactory lettuceConnectionFactory;
+    private JedisConnectionFactory jedisConnectionFactory;
 
     @Autowired
     private RedisTemplate<String, Long> redisTemplate;
@@ -200,7 +209,7 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
     public RedisMessageListenerContainer redisContainer() {
         final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 
-        container.setConnectionFactory(lettuceConnectionFactory);
+        container.setConnectionFactory(jedisConnectionFactory);
         container.addMessageListener(messageListener(), topic());
 
         return container;

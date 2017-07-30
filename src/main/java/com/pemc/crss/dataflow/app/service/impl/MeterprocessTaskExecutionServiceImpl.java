@@ -239,7 +239,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final Long runId = System.currentTimeMillis();
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                checkFinalizeDailyState(taskRunDto.getTradingDate());
+                if (StringUtils.isEmpty(taskRunDto.getMtns())) {
+                    checkFinalizeDailyState(taskRunDto.getTradingDate());
+                }
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
@@ -250,7 +252,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
                 }
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
-                    checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    if (StringUtils.isEmpty(taskRunDto.getMtns())) {
+                        checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    }
                 }
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
@@ -312,14 +316,18 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             boolean isDaily = processType== null;
             if (isDaily) {
                 if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                    if (StringUtils.isEmpty(taskRunDto.getMtns())) {
+                        checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                    }
                 }
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)
                         && !RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
-                            dateFormat.format(jobParameters.getDate(END_DATE)));
+                    if (StringUtils.isEmpty(taskRunDto.getMtns())) {
+                        checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
+                                dateFormat.format(jobParameters.getDate(END_DATE)));
+                    }
                 }
                 arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), PARAMS_TYPE_DATE));

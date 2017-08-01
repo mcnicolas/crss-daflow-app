@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.JobExecution;
@@ -94,21 +95,22 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
     @Override
     String getPrelimGenInputWorkspaceProfile() {
-        return null;
+        return SettlementJobProfile.GEN_MONTHLY_PRELIM_RMF_INPUT_WS;
     }
 
     @Override
     String getFinalGenInputWorkspaceProfile() {
-        return null;
+        return SettlementJobProfile.GEN_MONTHLY_FINAL_RMF_INPUT_WS;
     }
 
+    // determine if profile for adj is split
     @Override
     String getAdjustedMtrAdjGenInputWorkSpaceProfile() {
-        return null;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_RMF_INPUT_WS;
     }
 
     @Override
     String getAdjustedMtrFinGenInputWorkSpaceProfile() {
-        return null;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_RMF_INPUT_WS;
     }
 }

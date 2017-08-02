@@ -54,6 +54,13 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return dataFlowJdbcJobExecutionDao.findStlJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest);
     }
 
+    List<JobInstance> findStlJobInstancesForMarketFee(final PageableRequest pageableRequest) {
+        final Pageable pageable = pageableRequest.getPageable();
+
+        return dataFlowJdbcJobExecutionDao.findMonthlyStlReadyJobInstances(pageable.getOffset(), pageable.getPageSize(),
+                pageableRequest);
+    }
+
     List<JobExecution> getCompletedJobExecutions(final JobInstance jobInstance) {
         return getJobExecutions(jobInstance).stream().filter(jobExecution -> jobExecution.getStatus() == BatchStatus.COMPLETED)
                 .collect(Collectors.toList());

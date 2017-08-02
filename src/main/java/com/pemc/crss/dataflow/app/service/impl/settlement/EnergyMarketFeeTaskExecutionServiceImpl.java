@@ -29,9 +29,9 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
-        final Long totalSize = dataFlowJdbcJobExecutionDao.countStlJobInstances(pageableRequest);
+        final Long totalSize = dataFlowJdbcJobExecutionDao.countMonthlyStlReadyJobInstances(pageableRequest);
 
-        List<JobInstance> stlReadyJobInstances = findStlReadyJobInstances(pageableRequest);
+        List<JobInstance> stlReadyJobInstances = findStlJobInstancesForMarketFee(pageableRequest);
         List<SettlementTaskExecutionDto> taskExecutionDtos = new ArrayList<>();
 
         for (JobInstance jobInstance : stlReadyJobInstances ) {
@@ -83,7 +83,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
         }
     }
 
-    // TODO: determine emf genInputWorkspace profiles
+    // No Daily calculation needed for Market Fee
     @Override
     String getDailyGenInputWorkspaceProfile() {
         return null;

@@ -98,7 +98,6 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     public Long countStlJobInstances(final PageableRequest pageableRequest) {
         StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
 
-        log.debug("Querying Stl Job Count query with processType: {}", processType);
         switch (processType) {
             case ADJUSTED:
             case PRELIM:
@@ -117,7 +116,6 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     public List<JobInstance> findStlJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
         StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
 
-        log.debug("Querying Stl Job Select query with processType: {}", processType);
         switch (processType) {
             case ADJUSTED:
             case PRELIM:
@@ -134,6 +132,22 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 return this.getJdbcTemplate().query(StlJobQuery.stlFilterAllSelectQuery(),
                         getJobInstanceExtractor(start, count));
         }
+    }
+
+    // Find only Monthly stlReady jobs
+    public Long countMonthlyStlReadyJobInstances(final PageableRequest pageableRequest) {
+        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
+
+        return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterMonthlyCountQuery(), Long.class,
+                getStlMonthlyParams(pageableRequest.getMapParams(), processType));
+    }
+
+    public List<JobInstance> findMonthlyStlReadyJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
+        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
+
+        return this.getJdbcTemplate().query(StlJobQuery.stlFilterMonthlySelectQuery(),
+                getStlMonthlyParams(pageableRequest.getMapParams(), processType),
+                getJobInstanceExtractor(start, count));
     }
 
     // Additional Compensation Queries

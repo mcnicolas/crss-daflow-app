@@ -22,7 +22,7 @@ ext {
 
     println "Processing changelog file: ${changeLogFile}"
 
-    sqlOutputFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/sql/nmms-${currentMillis}.sql"
+    sqlOutputFile = "${project.file('src/main/resources')}/liquibase/${project.mainVersion}/sql/dataflow-${currentMillis}.sql"
 
     switch (profile) {
         case 'test':

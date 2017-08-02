@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,11 +26,6 @@ import java.util.Map;
 @Service("reserveMarketFeeTaskExecutionService")
 @Transactional
 public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
-
-    private static final String GEN_WS_RMF_JOB_NAME = "genRmfIw";
-
-    // TODO: for removal. used for mocking purposes only using old data.
-    private static final String COMPUTE_STL_JOB_NAME = "calcSTL_AMT";
 
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
@@ -56,7 +52,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
                 /* GENERATE INPUT WORKSPACE START */
                 List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                        COMPUTE_STL_JOB_NAME, parentId);
+                        SettlementJobName.GEN_RMF_INPUT_WS, parentId);
 
                 initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 

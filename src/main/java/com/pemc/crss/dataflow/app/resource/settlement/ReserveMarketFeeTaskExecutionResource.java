@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +44,7 @@ public class ReserveMarketFeeTaskExecutionResource {
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running runGenInputWorkSpaceJob. taskRunDto={}", taskRunDto);
 
-        //TODO: set job name
-//        taskRunDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
+        taskRunDto.setJobName(SettlementJobName.GEN_RMF_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

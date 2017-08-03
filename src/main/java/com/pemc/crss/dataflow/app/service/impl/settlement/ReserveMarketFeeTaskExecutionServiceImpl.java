@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
+
 @Slf4j
 @Service("reserveMarketFeeTaskExecutionService")
 @Transactional
@@ -52,7 +54,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
                 /* GENERATE INPUT WORKSPACE START */
                 List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                        SettlementJobName.GEN_RMF_INPUT_WS, parentId);
+                        GEN_RMF_INPUT_WS, parentId);
 
                 initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
@@ -78,6 +80,9 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
                 taskRunDto.getBaseType());
 
         switch (taskRunDto.getJobName()) {
+            case GEN_RMF_INPUT_WS:
+                launchGenerateInputWorkspaceJob(taskRunDto);
+                break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }

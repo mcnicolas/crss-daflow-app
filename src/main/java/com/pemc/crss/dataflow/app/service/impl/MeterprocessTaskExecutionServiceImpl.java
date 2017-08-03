@@ -30,11 +30,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.pemc.crss.shared.commons.util.AuditUtil.*;
-import static com.pemc.crss.shared.commons.util.reference.Activity.*;
-import static com.pemc.crss.shared.commons.util.reference.Function.METER_PROCESS;
-import static com.pemc.crss.shared.commons.util.reference.Module.METERING;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Created on 1/22/17.
@@ -86,8 +83,14 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                             Map<String, Object> jobParameters = jobExecution.getJobParameters().getParameters()
                                     .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                            jobParameters.put("seins", jobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
-                            jobParameters.put("mtns", jobExecution.getExecutionContext().getString("mtns", StringUtils.EMPTY));
+                            jobParameters.put(SEINS, jobExecution.getExecutionContext().getString(SEINS, EMPTY));
+                            String mtns = jobExecution.getExecutionContext().getString(MTNS, EMPTY);
+                            if (StringUtils.isEmpty(mtns)) {
+                                String mtnFromAddtlParams = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(jobExecution.getJobParameters().getLong(RUN_ID), MTNS);
+                                jobParameters.put(MTNS, StringUtils.isNotEmpty(mtnFromAddtlParams) ? mtnFromAddtlParams : EMPTY);
+                            } else {
+                                jobParameters.put(MTNS, mtns);
+                            }
                             String wesmUser = jobParameters.getOrDefault(WESM_USERNAME, "").toString();
 
                             TaskExecutionDto taskExecutionDto = new TaskExecutionDto();
@@ -116,7 +119,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                                 jobParameters = rcoaJobExecution.getJobParameters().getParameters()
                                         .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                                jobParameters.put("seins", rcoaJobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
+                                jobParameters.put("seins", rcoaJobExecution.getExecutionContext().getString(SEINS, EMPTY));
                                 String rcoaUser = jobParameters.getOrDefault(RCOA_USERNAME, "").toString();
 
                                 taskExecutionDto.setRcoaStatus(rcoaJobExecution.getStatus());

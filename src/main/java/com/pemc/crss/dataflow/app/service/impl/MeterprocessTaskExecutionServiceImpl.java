@@ -319,18 +319,14 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             boolean isDaily = processType== null;
             if (isDaily) {
                 if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (StringUtils.isEmpty(taskRunDto.getMtns())) {
-                        checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
-                    }
+                    checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                 }
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)
                         && !RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (StringUtils.isEmpty(taskRunDto.getMtns())) {
-                        checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
-                                dateFormat.format(jobParameters.getDate(END_DATE)));
-                    }
+                    checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
+                            dateFormat.format(jobParameters.getDate(END_DATE)));
                 }
                 arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), PARAMS_TYPE_DATE));
@@ -423,12 +419,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private void checkFinalizeDailyState(String date) {
         String errMsq = "You already have a process finalized on the same date: " + date + " !";
-        Preconditions.checkState(executionParamRepository.countDailyRun(date, RUN_STL_READY_JOB_NAME) < 1, errMsq);
+        Preconditions.checkState(executionParamRepository.countDailyRunAllMtn(date, RUN_STL_READY_JOB_NAME) < 1, errMsq);
     }
 
     private void checkFinalizeProcessTypeState(String process, String startDate, String endDate) {
         String errMsq = "You already have a " + process + " finalized on the same billing period!";
-        Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1, errMsq);
+        Preconditions.checkState(executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1, errMsq);
     }
 
     private void checkFinalizedAdjustmentState(Long parentRunId, String process, String startDate, String endDate) {

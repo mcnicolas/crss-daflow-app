@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
@@ -124,8 +125,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     @Value("${dataflow.url}")
     protected String dataFlowUrl;
 
-    @Value("${todi-config.dispatch-interval}")
-    protected String dispatchInterval;
+    @Value("${crss.dispatch.interval}")
+    private int dispatchInterval;
 
     @Value("${todi-config.max-retry}")
     protected int maxRetry;
@@ -139,8 +140,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
 
     @Override
     public int getDispatchInterval() {
-        //TODO connect to global configuration to get dispatch-interval
-        return Integer.valueOf(this.dispatchInterval);
+        return this.dispatchInterval;
     }
 
 

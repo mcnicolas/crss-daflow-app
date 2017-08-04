@@ -62,7 +62,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final String ADDTL_COMP_GMR_AC_JOB_NAME = "calcAcGmrVatAc";
     private static final String ADDTL_COMP_GMR_ADJ_JOB_NAME = "calcAcGmrVatA";
     private static final String ADDTL_COMP_GMR_FINAL_JOB_NAME = "calcAcGmrVatF";
-    private static final String GENERATE_ADDTL_COMP_JOB_NAME = "generateAddtlCompFiles";
+    private static final String GENERATE_ADDTL_COMP_JOB_NAME = "genFileAc";
 
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation-addtlcomp";
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";

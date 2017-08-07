@@ -106,11 +106,11 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     // determine if profile for adj is split
     @Override
     String getAdjustedMtrAdjGenInputWorkSpaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_ADJ_RMF_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_ADJ_RMF_INPUT_WS;
     }
 
     @Override
     String getAdjustedMtrFinGenInputWorkSpaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_ADJ_RMF_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_RMF_INPUT_WS;
     }
 }

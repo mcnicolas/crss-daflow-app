@@ -106,11 +106,11 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     // determine if profile for adj is split
     @Override
     String getAdjustedMtrAdjGenInputWorkSpaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_ADJ_EMF_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_ADJ_EMF_INPUT_WS;
     }
 
     @Override
     String getAdjustedMtrFinGenInputWorkSpaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_ADJ_EMF_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_EMF_INPUT_WS ;
     }
 }

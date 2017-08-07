@@ -208,7 +208,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     @Override
     public int getDispatchInterval() {
         //TODO connect to global configuration to get dispatch-interval
-        return Integer.valueOf(this.dispatchInterval);
+        return Integer.valueOf(super.getDispatchInterval());
     }
 
     public void relaunchFailedJob(long jobId) throws URISyntaxException {

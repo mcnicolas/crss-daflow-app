@@ -285,6 +285,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
+                if (taskRunDto.getBillingPeriod() != null) {
+                    arguments.add(concatKeyValue("bp", String.valueOf(taskRunDto.getBillingPeriod()), PARAMS_TYPE_LONG));
+                }
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
@@ -483,7 +486,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private Date setBillingPeriodStartDate(Date startDate) {
         LocalDateTime localDateTime = new LocalDateTime(startDate);
         // start >= 26 && start <= 31 = same month
-        if (localDateTime.getDayOfMonth() >= 26 && localDateTime.getDayOfMonth() <= 31) {
+        if (localDateTime.getDayOfMonth() > 26 && localDateTime.getDayOfMonth() <= 31) {
             localDateTime.withDayOfMonth(26);
         } else if (localDateTime.getDayOfMonth() < 26) {
             // start < 26 = month - 1
@@ -497,7 +500,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         // end >= 25 && end <= 31 = month + 1
         if (localDateTime.getDayOfMonth() > 25 && localDateTime.getDayOfMonth() <= 31) {
             localDateTime.withDayOfMonth(25).withMonthOfYear(localDateTime.getMonthOfYear() + 1);
-        } else if (localDateTime.getDayOfMonth() <= 25) {
+        } else if (localDateTime.getDayOfMonth() < 25) {
             // end <= 25 = same month
             localDateTime.withDayOfMonth(25);
         }

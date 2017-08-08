@@ -17,10 +17,13 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
 
 @Slf4j
@@ -112,5 +115,10 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     @Override
     String getAdjustedMtrFinGenInputWorkSpaceProfile() {
         return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_RMF_INPUT_WS;
+    }
+
+    @Override
+    List<String> getInputWorkSpaceStepsForSkipLogs() {
+        return Arrays.asList(RETRIEVE_DATA_STEP, GEN_RESERVE_IW_STEP);
     }
 }

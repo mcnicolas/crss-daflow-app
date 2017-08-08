@@ -40,12 +40,19 @@ import java.util.stream.Collectors;
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
     private static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
-    private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
-    private static final String STAGE_TAGGING = "TAGGING";
     private static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
+
+    // Abstract Methods
+
+    abstract String getDailyGenInputWorkspaceProfile();
+    abstract String getPrelimGenInputWorkspaceProfile();
+    abstract String getFinalGenInputWorkspaceProfile();
+    abstract String getAdjustedMtrAdjGenInputWorkSpaceProfile();
+    abstract String getAdjustedMtrFinGenInputWorkSpaceProfile();
+    abstract List<String> getInputWorkSpaceStepsForSkipLogs();
 
     /* findJobInstances methods start */
     List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
@@ -171,8 +178,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     genWsJobExec.getEndTime(), calcStartDate, calcEndDate,
                     jobCalcStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
 
-//            TODO: check if genInputWorkSpace needs Task summary list
-//            partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, STL_CALC_STEP_WITH_SKIP_LOGS));
+            // for skiplogs use
+            partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
 
@@ -277,12 +284,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         return arguments;
     }
-
-    abstract String getDailyGenInputWorkspaceProfile();
-    abstract String getPrelimGenInputWorkspaceProfile();
-    abstract String getFinalGenInputWorkspaceProfile();
-    abstract String getAdjustedMtrAdjGenInputWorkSpaceProfile();
-    abstract String getAdjustedMtrFinGenInputWorkSpaceProfile();
 
     void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();

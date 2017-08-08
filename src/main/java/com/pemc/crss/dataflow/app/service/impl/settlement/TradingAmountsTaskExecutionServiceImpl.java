@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -18,19 +19,19 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_BCQ_STEP;
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
 
 @Slf4j
 @Service("tradingAmountsTaskExecutionService")
 @Transactional
 public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
-
-    // TODO: for removal. used for mocking purposes only using old data.
-//    private static final String COMPUTE_STL_JOB_NAME = "calcSTL_AMT";
 
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
@@ -115,5 +116,10 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     String getAdjustedMtrFinGenInputWorkSpaceProfile() {
         return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_EBRSV_INPUT_WS;
+    }
+
+    @Override
+    List<String> getInputWorkSpaceStepsForSkipLogs() {
+        return Arrays.asList(RETRIEVE_DATA_STEP, RETRIEVE_BCQ_STEP);
     }
 }

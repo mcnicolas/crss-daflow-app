@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service;
 
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
@@ -22,6 +23,8 @@ public interface TaskExecutionService {
                                                           String tradingEndDate, String username);
 
     Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest);
+
+    Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable);
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 

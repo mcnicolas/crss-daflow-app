@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URISyntaxException;
@@ -464,6 +465,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable) {
         return null;
     }
 

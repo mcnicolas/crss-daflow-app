@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -185,6 +186,11 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable) {
         return null;
     }
 

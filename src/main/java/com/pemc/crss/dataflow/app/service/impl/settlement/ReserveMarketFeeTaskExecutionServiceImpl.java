@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl.settlement;
 import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
@@ -12,6 +13,7 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -72,6 +74,11 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
         }
 
         return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), totalSize);
+    }
+
+    @Override
+    public Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable) {
+        return null;
     }
 
     @Override

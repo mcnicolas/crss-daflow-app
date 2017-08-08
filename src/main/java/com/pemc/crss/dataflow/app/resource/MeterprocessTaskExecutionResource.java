@@ -1,5 +1,7 @@
 package com.pemc.crss.dataflow.app.resource;
 
+import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
@@ -32,6 +34,12 @@ public class MeterprocessTaskExecutionResource {
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageable), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/find-by-billing-period", method = RequestMethod.GET)
+    public ResponseEntity<Page<GroupTaskExecutionDto>> findAllJobInstancesGroupByBillingPeriod(Pageable pageable) {
+        LOG.debug("Finding job instances request. pageable={}", pageable);
+        return new ResponseEntity<>(taskExecutionService.findJobInstancesGroupByBillingPeriod(pageable), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)

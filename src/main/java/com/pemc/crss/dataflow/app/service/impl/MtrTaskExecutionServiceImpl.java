@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
@@ -93,6 +94,11 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                     .collect(toList());
         }
         return new PageImpl<>(mtrTaskExecutionDtos, pageable, count);
+    }
+
+    @Override
+    public Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable) {
+        return null;
     }
 
     @Override

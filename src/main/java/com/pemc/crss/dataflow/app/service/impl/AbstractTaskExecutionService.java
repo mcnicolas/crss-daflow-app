@@ -6,8 +6,10 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
+import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.meterprocess.core.main.repository.BillingPeriodRepository;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -133,6 +135,9 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
 
     @Override
     public abstract Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable);
+
+    @Override
+    public abstract Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable);
 
     @Override
     public abstract void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;

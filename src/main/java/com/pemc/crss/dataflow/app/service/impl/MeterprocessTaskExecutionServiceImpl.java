@@ -485,7 +485,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private Date setBillingPeriodStartDate(Date startDate) {
         LocalDateTime localDateTime = new LocalDateTime(startDate);
-        // start >= 26 && start <= 31 = same month
+        // start >= 26 && start <= 31 = same month 
         if (localDateTime.getDayOfMonth() > 26 && localDateTime.getDayOfMonth() <= 31) {
             localDateTime.withDayOfMonth(26);
         } else if (localDateTime.getDayOfMonth() < 26) {

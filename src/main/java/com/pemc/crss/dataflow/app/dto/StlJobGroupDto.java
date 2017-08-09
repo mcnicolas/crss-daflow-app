@@ -48,6 +48,8 @@ public class StlJobGroupDto {
 
     private Date gmrCalcRunDate;
 
+    private boolean hasCompletedGenInputWs;
+
     public BatchStatus getGmrVatMFeeCalculationStatus() {
         return gmrVatMFeeCalculationStatus;
     }
@@ -224,6 +226,14 @@ public class StlJobGroupDto {
 
     public void setGmrCalcRunDate(Date gmrCalcRunDate) {
         this.gmrCalcRunDate = gmrCalcRunDate;
+    }
+
+    public boolean isHasCompletedGenInputWs() {
+        return hasCompletedGenInputWs;
+    }
+
+    public void setHasCompletedGenInputWs(boolean hasCompletedGenInputWs) {
+        this.hasCompletedGenInputWs = hasCompletedGenInputWs;
     }
 
     // helper methods / properties

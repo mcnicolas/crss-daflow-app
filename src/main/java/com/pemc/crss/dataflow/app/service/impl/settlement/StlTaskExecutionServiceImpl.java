@@ -132,7 +132,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
 
-            BatchStatus currentStatus = genWsJobExec.getStatus();
+            BatchStatus currentBatchStatus = genWsJobExec.getStatus();
             JobParameters calcJobParameters = genWsJobExec.getJobParameters();
             Long groupId = calcJobParameters.getLong(GROUP_ID);
             Date calcStartDate = calcJobParameters.getDate(START_DATE);
@@ -145,7 +145,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
             stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
 
-            if (currentStatus.isRunning()) {
+            if (currentBatchStatus.isRunning()) {
                 // for validation of gmr calculation in case stl amt is recalculated
                 stlJobGroupDto.setStlCalculation(true);
             }
@@ -154,8 +154,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     && calcStartDate.compareTo(billPeriodStartDate) == 0 && calcEndDate.compareTo(billPeriodEndDate) == 0;
 
             final String jobCalcStatus = fullCalculation
-                    ? convertStatus(currentStatus, STATUS_FULL_GENERATE_INPUT_WS)
-                    : convertStatus(currentStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
+                    ? convertStatus(currentBatchStatus, STATUS_FULL_GENERATE_INPUT_WS)
+                    : convertStatus(currentBatchStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
 
             List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
 
@@ -189,7 +189,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             jobCalculationDtoList.add(partialCalcDto);
 
-            if (!isDaily && BatchStatus.COMPLETED == currentStatus
+            if (!isDaily && BatchStatus.COMPLETED == currentBatchStatus
                     && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
                 removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
             }
@@ -209,6 +209,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             stlJobGroupDto.setMaxPartialCalcRunDate(maxPartialCalcDate);
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            // for showing calculate stl amt button
+            if (currentBatchStatus == BatchStatus.COMPLETED) {
+                stlJobGroupDto.setHasCompletedGenInputWs(true);
+            }
 
             if (stlReadyJobId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);

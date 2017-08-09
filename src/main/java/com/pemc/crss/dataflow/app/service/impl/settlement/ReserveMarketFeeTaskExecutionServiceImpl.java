@@ -128,4 +128,29 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     List<String> getInputWorkSpaceStepsForSkipLogs() {
         return Arrays.asList(RETRIEVE_DATA_STEP, GEN_RESERVE_IW_STEP);
     }
+
+    @Override
+    String getDailyCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getPrelimCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getFinalCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedMtrAdjCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedMtrFinCalculateProfile() {
+        return null;
+    }
 }

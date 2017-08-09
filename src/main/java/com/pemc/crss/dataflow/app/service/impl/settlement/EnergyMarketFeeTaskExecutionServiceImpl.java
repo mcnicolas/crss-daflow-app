@@ -127,4 +127,31 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     List<String> getInputWorkSpaceStepsForSkipLogs() {
         return Arrays.asList(RETRIEVE_DATA_STEP);
     }
+
+    // no DAILY calculation for EMF
+    @Override
+    String getDailyCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getPrelimCalculateProfile() {
+        return SettlementJobProfile.CALC_EMF_MONTHLY_PRELIM;
+    }
+
+    @Override
+    String getFinalCalculateProfile() {
+        return SettlementJobProfile.CALC_EMF_MONTHLY_FINAL;
+    }
+
+    // TODO determine if calculation will be separate for Adj
+    @Override
+    String getAdjustedMtrAdjCalculateProfile() {
+        return SettlementJobProfile.CALC_EMF_MONTHLY_ADJUSTED;
+    }
+
+    @Override
+    String getAdjustedMtrFinCalculateProfile() {
+        return SettlementJobProfile.CALC_EMF_MONTHLY_ADJUSTED;
+    }
 }

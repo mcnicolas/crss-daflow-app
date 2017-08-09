@@ -54,6 +54,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     abstract String getAdjustedMtrFinGenInputWorkSpaceProfile();
     abstract List<String> getInputWorkSpaceStepsForSkipLogs();
 
+    abstract String getDailyCalculateProfile();
+    abstract String getPrelimCalculateProfile();
+    abstract String getFinalCalculateProfile();
+    abstract String getAdjustedMtrAdjCalculateProfile();
+    abstract String getAdjustedMtrFinCalculateProfile();
+
     /* findJobInstances methods start */
     List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
         final Pageable pageable = pageableRequest.getPageable();
@@ -342,7 +348,52 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
 
-        log.info("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+        log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob("crss-settlement-task-calculation", properties, arguments);
+        lockJob(taskRunDto);
+    }
+
+    void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        final Long runId = System.currentTimeMillis();
+        final Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
+        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (type) {
+            case "DAILY":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getDailyCalculateProfile())));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
+                break;
+            case "PRELIM":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getPrelimCalculateProfile())));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            case "FINAL":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getFinalCalculateProfile())));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            case "ADJUSTED":
+                boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
+
+                final String activeProfile = finalBased ? getAdjustedMtrFinCalculateProfile() :
+                        getAdjustedMtrAdjCalculateProfile();
+
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(activeProfile)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running calculate job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob("crss-settlement-task-calculation", properties, arguments);
         lockJob(taskRunDto);

@@ -50,6 +50,18 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/calculate")
+    public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running calculateJob. taskRunDto={}", taskRunDto);
+
+//        TODO: add jobName
+//        taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping(value = "/get-batch-job-skip-logs")
     public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest) {
         LOG.debug("Finding skip logs request. pageable={}", pageableRequest.getPageable());

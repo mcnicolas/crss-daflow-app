@@ -129,4 +129,29 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     List<String> getInputWorkSpaceStepsForSkipLogs() {
         return Arrays.asList(RETRIEVE_DATA_STEP, RETRIEVE_BCQ_STEP);
     }
+
+    @Override
+    String getDailyCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getPrelimCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getFinalCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedMtrAdjCalculateProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedMtrFinCalculateProfile() {
+        return null;
+    }
 }

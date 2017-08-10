@@ -62,6 +62,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     abstract String getFinalCalculateProfile();
     abstract String getAdjustedMtrAdjCalculateProfile();
     abstract String getAdjustedMtrFinCalculateProfile();
+    abstract List<String> getCalculateStepsForSkipLogs();
 
     /* findJobInstances methods start */
     List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
@@ -293,8 +294,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
                     jobCalcStatus, STAGE_PARTIAL_CALC);
 
-            // TODO: deterime steps used in calculation for skip logs
-            // partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getInputWorkSpaceStepsForSkipLogs()));
+             partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getCalculateStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
 

@@ -153,4 +153,10 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     String getAdjustedMtrFinCalculateProfile() {
         return null;
     }
+
+    // TODO: add steps with skip logs
+    @Override
+    List<String> getCalculateStepsForSkipLogs() {
+        return new ArrayList<>();
+    }
 }

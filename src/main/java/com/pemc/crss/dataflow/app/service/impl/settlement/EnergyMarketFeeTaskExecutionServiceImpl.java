@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_MARKET_FEE;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
 
@@ -159,5 +160,10 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     @Override
     String getAdjustedMtrFinCalculateProfile() {
         return SettlementJobProfile.CALC_EMF_MONTHLY_ADJUSTED;
+    }
+
+    @Override
+    List<String> getCalculateStepsForSkipLogs() {
+        return Arrays.asList(CALC_MARKET_FEE);
     }
 }

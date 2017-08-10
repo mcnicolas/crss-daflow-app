@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.DISAGGREGATE_BCQ;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_BCQ_STEP;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
@@ -159,5 +161,10 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     String getAdjustedMtrFinCalculateProfile() {
         return SettlementJobProfile.CALC_MONTHLY_ADJ_STL_AMTS_MTR_FIN;
+    }
+
+    @Override
+    List<String> getCalculateStepsForSkipLogs() {
+        return Arrays.asList(DISAGGREGATE_BCQ, CALC_SCALING_FACTOR);
     }
 }

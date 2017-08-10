@@ -51,7 +51,7 @@ public class EnergyMarketFeeTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @PostMapping("/calculate")
+    @PostMapping("/calculate-stl-amount")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running calculateJob. taskRunDto={}", taskRunDto);
 

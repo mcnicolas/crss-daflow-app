@@ -54,8 +54,7 @@ public class TradingAmountsTaskExecutionResource {
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running calculateJob. taskRunDto={}", taskRunDto);
 
-//        TODO: add jobName
-//        taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
+        taskRunDto.setJobName(SettlementJobName.CALC_STL);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

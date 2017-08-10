@@ -6,7 +6,6 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +27,7 @@ import java.util.Map;
 
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_BCQ_STEP;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
 
 @Slf4j
@@ -65,6 +65,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* SETTLEMENT CALCULATION START */
+                List<JobInstance> calculationJobInstances = findJobInstancesByJobNameAndParentId(CALC_STL, parentId);
+
+                initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* CALCULATE GMR START */
                 /* FINALIZE START */
@@ -93,6 +96,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         switch (taskRunDto.getJobName()) {
             case GEN_EBRSV_INPUT_WS:
                 launchGenerateInputWorkspaceJob(taskRunDto);
+                break;
+            case CALC_STL:
+                launchCalculateJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -132,26 +138,26 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     @Override
     String getDailyCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_DAILY_STL_AMTS;
     }
 
     @Override
     String getPrelimCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_MONTHLY_PRELIM_STL_AMTS;
     }
 
     @Override
     String getFinalCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_MONTHLY_FINAL_STL_AMTS;
     }
 
     @Override
     String getAdjustedMtrAdjCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_MONTHLY_ADJ_STL_AMTS_MTR_ADJ;
     }
 
     @Override
     String getAdjustedMtrFinCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_MONTHLY_ADJ_STL_AMTS_MTR_FIN;
     }
 }

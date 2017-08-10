@@ -150,7 +150,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
         return SettlementJobProfile.CALC_EMF_MONTHLY_FINAL;
     }
 
-    // TODO determine if calculation will be separate for Adj
+    // Energy Market Fee uses only one profile for Adjusted Calculate jobs
     @Override
     String getAdjustedMtrAdjCalculateProfile() {
         return SettlementJobProfile.CALC_EMF_MONTHLY_ADJUSTED;

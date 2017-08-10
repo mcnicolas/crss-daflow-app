@@ -40,11 +40,17 @@ public class StlJobGroupDto {
 
     private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();
 
-    private Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+    private Map<Long, SortedSet<LocalDate>> remainingDatesMapCalc = new HashMap<>();
 
-    private boolean stlCalculation;
+    private Map<Long, SortedSet<LocalDate>> remainingDatesMapGenIw = new HashMap<>();
+
+    private boolean runningStlCalculation;
+
+    private boolean runningGenInputWorkspace;
 
     private Date maxPartialCalcRunDate;
+
+    private Date maxPartialGenIwRunDate;
 
     private Date gmrCalcRunDate;
 
@@ -164,12 +170,20 @@ public class StlJobGroupDto {
         this.invoiceGenFolder = invoiceGenFolder;
     }
 
-    public Map<Long, SortedSet<LocalDate>> getRemainingDatesMap() {
-        return remainingDatesMap;
+    public Map<Long, SortedSet<LocalDate>> getRemainingDatesMapCalc() {
+        return remainingDatesMapCalc;
     }
 
-    public void setRemainingDatesMap(Map<Long, SortedSet<LocalDate>> remainingDatesMap) {
-        this.remainingDatesMap = remainingDatesMap;
+    public void setRemainingDatesMapCalc(Map<Long, SortedSet<LocalDate>> remainingDatesMapCalc) {
+        this.remainingDatesMapCalc = remainingDatesMapCalc;
+    }
+
+    public Map<Long, SortedSet<LocalDate>> getRemainingDatesMapGenIw() {
+        return remainingDatesMapGenIw;
+    }
+
+    public void setRemainingDatesMapGenIw(Map<Long, SortedSet<LocalDate>> remainingDatesMapGenIw) {
+        this.remainingDatesMapGenIw = remainingDatesMapGenIw;
     }
 
     public Date getLatestJobExecStartDate() {
@@ -204,12 +218,20 @@ public class StlJobGroupDto {
         this.billingPeriodStr = billingPeriodStr;
     }
 
-    public boolean isStlCalculation() {
-        return stlCalculation;
+    public boolean isRunningStlCalculation() {
+        return runningStlCalculation;
     }
 
-    public void setStlCalculation(boolean stlCalculation) {
-        this.stlCalculation = stlCalculation;
+    public void setRunningStlCalculation(boolean runningStlCalculation) {
+        this.runningStlCalculation = runningStlCalculation;
+    }
+
+    public boolean isRunningGenInputWorkspace() {
+        return runningGenInputWorkspace;
+    }
+
+    public void setRunningGenInputWorkspace(boolean runningGenInputWorkspace) {
+        this.runningGenInputWorkspace = runningGenInputWorkspace;
     }
 
     public Date getMaxPartialCalcRunDate() {
@@ -218,6 +240,14 @@ public class StlJobGroupDto {
 
     public void setMaxPartialCalcRunDate(Date maxPartialCalcRunDate) {
         this.maxPartialCalcRunDate = maxPartialCalcRunDate;
+    }
+
+    public Date getMaxPartialGenIwRunDate() {
+        return maxPartialGenIwRunDate;
+    }
+
+    public void setMaxPartialGenIwRunDate(Date maxPartialGenIwRunDate) {
+        this.maxPartialGenIwRunDate = maxPartialGenIwRunDate;
     }
 
     public Date getGmrCalcRunDate() {

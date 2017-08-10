@@ -62,6 +62,9 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
                 initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* SETTLEMENT CALCULATION START */
+                List<JobInstance> calculationJobInstances = findJobInstancesByJobNameAndParentId(CALC_EMF, parentId);
+
+                initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* CALCULATE GMR START */
                 /* FINALIZE START */
@@ -90,6 +93,9 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
         switch (taskRunDto.getJobName()) {
             case GEN_EMF_INPUT_WS:
                 launchGenerateInputWorkspaceJob(taskRunDto);
+                break;
+            case CALC_EMF:
+                launchCalculateJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());

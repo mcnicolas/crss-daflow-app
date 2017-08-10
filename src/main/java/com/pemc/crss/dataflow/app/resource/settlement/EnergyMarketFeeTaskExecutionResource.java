@@ -55,8 +55,7 @@ public class EnergyMarketFeeTaskExecutionResource {
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running calculateJob. taskRunDto={}", taskRunDto);
 
-//        TODO: add jobName
-//        taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
+        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

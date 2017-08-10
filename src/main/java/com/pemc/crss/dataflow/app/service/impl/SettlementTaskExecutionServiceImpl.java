@@ -185,12 +185,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
                                     stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                     stlJobGroupDto.setHeader(jobId.equals(groupId));
-                                    stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
+                                    stlJobGroupDto.setRemainingDatesMapCalc(remainingDatesMap);
 //                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
                                     if (currentStatus.isRunning()) {
                                         // for validation of gmr calculation in case stl amt is recalculated
-                                        stlJobGroupDto.setStlCalculation(true);
+                                        stlJobGroupDto.setRunningStlCalculation(true);
                                     }
 
 
@@ -214,7 +214,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                         stlJobGroupDto.setStatus(latestStatus);
 
                                         // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
-                                        Optional.ofNullable(stlJobGroupDto.getRemainingDatesMap().get(groupId)).ifPresent(remainingDates -> {
+                                        Optional.ofNullable(stlJobGroupDto.getRemainingDatesMapCalc().get(groupId)).ifPresent(remainingDates -> {
                                             if (remainingDates.size() == 0) {
                                                 // set latest job execution status
                                                 BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
@@ -230,8 +230,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     jobCalculationDtoList.add(partialCalcDto);
 
                                     if (!isDaily && BatchStatus.COMPLETED == currentStatus
-                                            && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
-                                        removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
+                                            && stlJobGroupDto.getRemainingDatesMapCalc().containsKey(groupId)) {
+                                        removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapCalc().get(groupId), calcStartDate, calcEndDate);
                                     }
 
                                     stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
@@ -288,10 +288,10 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 );
 
                                 if (currentStatus.isRunning()) {
-                                    stlJobGroupDto.setStlCalculation(false);
+                                    stlJobGroupDto.setRunningStlCalculation(false);
                                 }
 
-                                if (!stlJobGroupDto.isStlCalculation()) {
+                                if (!stlJobGroupDto.isRunningStlCalculation()) {
                                     stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
                                     stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
                                     stlJobGroupDto.setHeader(jobId.equals(groupId));

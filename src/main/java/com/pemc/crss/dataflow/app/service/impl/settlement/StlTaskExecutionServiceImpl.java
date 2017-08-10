@@ -42,6 +42,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
     private static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
 
+    private static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
+    private static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
+
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
 
@@ -133,27 +136,27 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
 
             BatchStatus currentBatchStatus = genWsJobExec.getStatus();
-            JobParameters calcJobParameters = genWsJobExec.getJobParameters();
-            Long groupId = calcJobParameters.getLong(GROUP_ID);
-            Date calcStartDate = calcJobParameters.getDate(START_DATE);
-            Date calcEndDate = calcJobParameters.getDate(END_DATE);
+            JobParameters genInputWsJobParameters = genWsJobExec.getJobParameters();
+            Long groupId = genInputWsJobParameters.getLong(GROUP_ID);
+            Date genInputWsStartDate = genInputWsJobParameters.getDate(START_DATE);
+            Date genInputWsEndDate = genInputWsJobParameters.getDate(END_DATE);
 
             if (!isDaily && !remainingDatesMap.containsKey(groupId)) {
                 remainingDatesMap.put(groupId, createRange(billPeriodStartDate, billPeriodEndDate));
             }
 
             final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-            stlJobGroupDto.setRemainingDatesMap(remainingDatesMap);
+            stlJobGroupDto.setRemainingDatesMapGenIw(remainingDatesMap);
 
             if (currentBatchStatus.isRunning()) {
                 // for validation of gmr calculation in case stl amt is recalculated
-                stlJobGroupDto.setStlCalculation(true);
+                stlJobGroupDto.setRunningGenInputWorkspace(true);
             }
 
-            boolean fullCalculation = billPeriodStartDate != null && billPeriodEndDate != null
-                    && calcStartDate.compareTo(billPeriodStartDate) == 0 && calcEndDate.compareTo(billPeriodEndDate) == 0;
+            boolean fullGenInputWs = billPeriodStartDate != null && billPeriodEndDate != null
+                    && genInputWsStartDate.compareTo(billPeriodStartDate) == 0 && genInputWsEndDate.compareTo(billPeriodEndDate) == 0;
 
-            final String jobCalcStatus = fullCalculation
+            final String jobGenInputWsStatus = fullGenInputWs
                     ? convertStatus(currentBatchStatus, STATUS_FULL_GENERATE_INPUT_WS)
                     : convertStatus(currentBatchStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
 
@@ -164,14 +167,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 stlJobGroupDto.setRunEndDateTime(genWsJobExec.getEndTime());
 
                 // get first stl-calc item's status
-                stlJobGroupDto.setStatus(jobCalcStatus);
+                stlJobGroupDto.setStatus(jobGenInputWsStatus);
             } else {
                 String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_GENERATE_INPUT_WS);
                 // get latest status first
                 stlJobGroupDto.setStatus(latestStatus);
 
-                // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
-                Optional.ofNullable(stlJobGroupDto.getRemainingDatesMap().get(groupId)).ifPresent(remainingDates -> {
+                // if there are no remaining dates for generate input workspace, set status to FULL even if the latest gen input ws run is PARTIAL
+                Optional.ofNullable(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId)).ifPresent(remainingDates -> {
                     if (remainingDates.size() == 0) {
                         // set latest job execution status
                         BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
@@ -181,8 +184,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
-                    genWsJobExec.getEndTime(), calcStartDate, calcEndDate,
-                    jobCalcStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
+                    genWsJobExec.getEndTime(), genInputWsStartDate, genInputWsEndDate,
+                    jobGenInputWsStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
 
             // for skiplogs use
             partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));
@@ -190,8 +193,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             jobCalculationDtoList.add(partialCalcDto);
 
             if (!isDaily && BatchStatus.COMPLETED == currentBatchStatus
-                    && stlJobGroupDto.getRemainingDatesMap().containsKey(groupId)) {
-                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMap().get(groupId), calcStartDate, calcEndDate);
+                    && stlJobGroupDto.getRemainingDatesMapGenIw().containsKey(groupId)) {
+                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId), genInputWsStartDate, genInputWsEndDate);
             }
 
             stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
@@ -202,18 +205,119 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 updateProgress(genWsJobExec, stlJobGroupDto);
             }
 
-            Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()
+            Date maxPartialGenInputWsDate = stlJobGroupDto.getJobCalculationDtos().stream()
                     .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_GENERATE_INPUT_WS))
                     .map(JobCalculationDto::getRunDate)
                     .max(Date::compareTo).get();
 
-            stlJobGroupDto.setMaxPartialCalcRunDate(maxPartialCalcDate);
+            stlJobGroupDto.setMaxPartialGenIwRunDate(maxPartialGenInputWsDate);
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
             // for showing calculate stl amt button
             if (currentBatchStatus == BatchStatus.COMPLETED) {
                 stlJobGroupDto.setHasCompletedGenInputWs(true);
             }
+
+            if (stlReadyJobId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+        }
+    }
+
+    void initializeStlCalculation(final List<JobInstance> stlCalculationJobInstances,
+                                  final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                                  final SettlementTaskExecutionDto taskExecutionDto,
+                                  final Long stlReadyJobId) {
+
+        Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+
+        for (JobInstance stlCalcJobInstance : stlCalculationJobInstances) {
+
+            JobExecution stlCalcJobExec = getJobExecutionFromJobInstance(stlCalcJobInstance);
+            boolean isDaily = taskExecutionDto.getProcessType().equals("DAILY");
+
+            Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
+            Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
+
+            BatchStatus currentBatchStatus = stlCalcJobExec.getStatus();
+            JobParameters calcJobParameters = stlCalcJobExec.getJobParameters();
+            Long groupId = calcJobParameters.getLong(GROUP_ID);
+            Date calcStartDate = calcJobParameters.getDate(START_DATE);
+            Date calcEndDate = calcJobParameters.getDate(END_DATE);
+
+            if (!isDaily && !remainingDatesMap.containsKey(groupId)) {
+                remainingDatesMap.put(groupId, createRange(billPeriodStartDate, billPeriodEndDate));
+            }
+
+            final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            stlJobGroupDto.setRemainingDatesMapCalc(remainingDatesMap);
+
+            if (currentBatchStatus.isRunning()) {
+                // for validation of gmr calculation in case stl amt is recalculated
+                stlJobGroupDto.setRunningStlCalculation(true);
+            }
+
+            boolean fullCalculation = billPeriodStartDate != null && billPeriodEndDate != null
+                    && calcStartDate.compareTo(billPeriodStartDate) == 0 && calcEndDate.compareTo(billPeriodEndDate) == 0;
+
+            final String jobCalcStatus = fullCalculation
+                    ? convertStatus(currentBatchStatus, STATUS_FULL_STL_CALC)
+                    : convertStatus(currentBatchStatus, STAGE_PARTIAL_CALC);
+
+            List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
+
+            if (jobCalculationDtoList.isEmpty()) {
+                stlJobGroupDto.setRunStartDateTime(stlCalcJobExec.getStartTime());
+                stlJobGroupDto.setRunEndDateTime(stlCalcJobExec.getEndTime());
+
+                // get first stl-calc item's status
+                stlJobGroupDto.setStatus(jobCalcStatus);
+            } else {
+                String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC);
+                // get latest status first
+                stlJobGroupDto.setStatus(latestStatus);
+
+                // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
+                Optional.ofNullable(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId)).ifPresent(remainingDates -> {
+                    if (remainingDates.size() == 0) {
+                        // set latest job execution status
+                        BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
+                        stlJobGroupDto.setStatus(convertStatus(latestJobExecutionStatus, STATUS_FULL_STL_CALC));
+                    }
+                });
+            }
+
+            JobCalculationDto partialCalcDto = new JobCalculationDto(stlCalcJobExec.getStartTime(),
+                    stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
+                    jobCalcStatus, STAGE_PARTIAL_CALC);
+
+            // TODO: deterime steps used in calculation for skip logs
+            // partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getInputWorkSpaceStepsForSkipLogs()));
+
+            jobCalculationDtoList.add(partialCalcDto);
+
+            if (!isDaily && BatchStatus.COMPLETED == currentBatchStatus
+                    && stlJobGroupDto.getRemainingDatesMapGenIw().containsKey(groupId)) {
+                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId), calcStartDate, calcEndDate);
+            }
+
+            stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
+            stlJobGroupDto.setGroupId(groupId);
+
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(stlCalcJobExec.getStartTime())) {
+                updateProgress(stlCalcJobExec, stlJobGroupDto);
+            }
+
+            Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()
+                    .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_CALC))
+                    .map(JobCalculationDto::getRunDate)
+                    .max(Date::compareTo).get();
+
+            stlJobGroupDto.setMaxPartialCalcRunDate(maxPartialCalcDate);
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
             if (stlReadyJobId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);

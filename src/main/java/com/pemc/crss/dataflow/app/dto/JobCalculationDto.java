@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-// represents partial calculations / gmr calculations / finalize jobs associated with a groupId
+// represents partial generate input workspaces / partial calculations / gmr calculations / finalize jobs associated with a groupId
 public class JobCalculationDto {
 
     public JobCalculationDto() {

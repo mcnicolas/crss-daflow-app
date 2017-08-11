@@ -41,6 +41,7 @@ import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_GMR;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_OR;
 
 @Slf4j
 @Service("tradingAmountsTaskExecutionService")
@@ -90,6 +91,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* FINALIZE START */
+                List<JobInstance> taggingJobInstances = findJobInstancesByJobNameAndParentId(TAG_OR, parentId);
+
+                initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* GEN FILES START */
 
@@ -119,8 +123,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case CALC_STL:
                 launchCalculateJob(taskRunDto);
+                break;
             case CALC_GMR:
                 launchCalculateGmrJob(taskRunDto);
+                break;
+            case TAG_OR:
+                launchFinalizeJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -235,7 +243,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
-        launchJob("crss-settlement-task-calculation", properties, arguments);
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
         lockJob(taskRunDto);
     }
 
@@ -298,5 +306,20 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     List<String> getCalculateStepsForSkipLogs() {
         return Arrays.asList(DISAGGREGATE_BCQ, CALC_SCALING_FACTOR);
+    }
+
+    @Override
+    String getPrelimTaggingProfile() {
+        return SettlementJobProfile.TAG_MONTHLY_PRELIM;
+    }
+
+    @Override
+    String getFinalTaggingProfile() {
+        return SettlementJobProfile.TAG_MONTHLY_FINAL;
+    }
+
+    @Override
+    String getAdjustedTaggingProfile() {
+        return SettlementJobProfile.TAG_MONTHLY_ADJ;
     }
 }

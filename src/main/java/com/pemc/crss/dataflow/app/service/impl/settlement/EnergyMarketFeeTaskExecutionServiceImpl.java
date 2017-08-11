@@ -166,4 +166,19 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     List<String> getCalculateStepsForSkipLogs() {
         return Arrays.asList(CALC_MARKET_FEE);
     }
+
+    @Override
+    String getPrelimTaggingProfile() {
+        return null;
+    }
+
+    @Override
+    String getFinalTaggingProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedTaggingProfile() {
+        return null;
+    }
 }

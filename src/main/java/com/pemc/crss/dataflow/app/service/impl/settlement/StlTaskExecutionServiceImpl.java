@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.service.impl.settlement;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
@@ -29,11 +30,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
+    static final String SPRING_BATCH_MODULE_STL_CALC = "crss-settlement-task-calculation";
+
     static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
     static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
 
     static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
     static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
+
+    private static final String STAGE_TAGGING = "TAGGING";
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
@@ -63,6 +68,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     abstract String getAdjustedMtrFinCalculateProfile();
 
     abstract List<String> getCalculateStepsForSkipLogs();
+
+    abstract String getPrelimTaggingProfile();
+
+    abstract String getFinalTaggingProfile();
+
+    abstract String getAdjustedTaggingProfile();
 
     /* findJobInstances methods start */
     List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
@@ -330,6 +341,54 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
+    void initializeTagging(final List<JobInstance> taggingJobInstances,
+                           final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                           final SettlementTaskExecutionDto taskExecutionDto,
+                           final Long stlReadyJobId) {
+
+        Set<String> tagNames = Sets.newHashSet();
+
+        for (JobInstance taggingJobInstance : taggingJobInstances) {
+
+            String tagStlJobName = taggingJobInstance.getJobName();
+            if (tagNames.contains(tagStlJobName)) {
+                continue;
+            }
+
+            JobExecution tagJobExecution = getJobExecutionFromJobInstance(taggingJobInstance);
+            JobParameters tagJobParameters = tagJobExecution.getJobParameters();
+            Date tagStartDate = tagJobParameters.getDate(START_DATE);
+            Date tagEndDate = tagJobParameters.getDate(END_DATE);
+            Long groupId = tagJobParameters.getLong(GROUP_ID);
+
+            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            BatchStatus currentStatus = tagJobExecution.getStatus();
+            stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_TAGGING));
+            stlJobGroupDto.setTaggingStatus(currentStatus);
+            stlJobGroupDto.setGroupId(groupId);
+
+            JobCalculationDto finalizeJobDto = new JobCalculationDto(tagJobExecution.getStartTime(),
+                    tagJobExecution.getEndTime(), tagStartDate, tagEndDate,
+                    convertStatus(currentStatus, STAGE_TAGGING), STAGE_TAGGING);
+
+            stlJobGroupDto.getJobCalculationDtos().add(finalizeJobDto);
+
+            if (!stlJobGroupDto.getLatestJobExecStartDate().after(tagJobExecution.getStartTime())) {
+                updateProgress(tagJobExecution, stlJobGroupDto);
+            }
+
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            if (stlReadyJobId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+            tagNames.add(tagStlJobName);
+        }
+    }
+
+
     private SortedSet<LocalDate> createRange(Date start, Date end) {
         if (start == null || end == null) {
             return new TreeSet<>();
@@ -462,7 +521,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
-        launchJob("crss-settlement-task-calculation", properties, arguments);
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
         lockJob(taskRunDto);
     }
 
@@ -507,7 +566,42 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         log.info("Running calculate job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
-        launchJob("crss-settlement-task-calculation", properties, arguments);
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+        lockJob(taskRunDto);
+    }
+
+    void launchFinalizeJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        final Long runId = System.currentTimeMillis();
+        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
+        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (type) {
+            case "PRELIM":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getPrelimTaggingProfile())));
+                break;
+            case "FINAL":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getFinalTaggingProfile())));
+                break;
+            case "ADJUSTED":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getAdjustedTaggingProfile())));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
         lockJob(taskRunDto);
     }
 

@@ -159,4 +159,19 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     List<String> getCalculateStepsForSkipLogs() {
         return new ArrayList<>();
     }
+
+    @Override
+    String getPrelimTaggingProfile() {
+        return null;
+    }
+
+    @Override
+    String getFinalTaggingProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedTaggingProfile() {
+        return null;
+    }
 }

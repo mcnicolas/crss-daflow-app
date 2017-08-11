@@ -62,6 +62,18 @@ public class EnergyMarketFeeTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/finalize")
+    public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running finalize job for emf. taskRunDto={}", taskRunDto);
+
+//        TODO: determine job name once available
+//        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping(value = "/get-batch-job-skip-logs")
     public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest) {
         LOG.debug("Finding skip logs request. pageable={}", pageableRequest.getPageable());

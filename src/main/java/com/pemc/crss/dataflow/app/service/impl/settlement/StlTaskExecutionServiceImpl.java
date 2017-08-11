@@ -29,11 +29,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
-    private static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
-    private static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
+    static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
+    static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
 
-    private static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
-    private static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
+    static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
+    static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
@@ -346,7 +346,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return localDates;
     }
 
-    private void updateProgress(JobExecution jobExecution, StlJobGroupDto dto) {
+    void updateProgress(JobExecution jobExecution, StlJobGroupDto dto) {
         List<String> runningTasks = Lists.newArrayList();
         if (!jobExecution.getStepExecutions().isEmpty()) {
             jobExecution.getStepExecutions().parallelStream()
@@ -367,7 +367,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         dto.setLatestJobExecEndDate(jobExecution.getEndTime());
     }
 
-    private String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {
+    String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {
         return stlJobGroupDto.getSortedJobCalculationDtos().stream()
                 .filter(stlJob -> stlJob.getJobStage().equals(stage))
                 .map(JobCalculationDto::getStatus).findFirst().get();
@@ -393,7 +393,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 "There is an existing ".concat(jobName).concat(" job running"));
     }
 
-    private List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final Long groupId) {
+    List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final Long groupId) {
         List<String> arguments = Lists.newArrayList();
         arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
@@ -468,7 +468,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
-        final Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
+        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
         final String type = taskRunDto.getMeterProcessType();
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);

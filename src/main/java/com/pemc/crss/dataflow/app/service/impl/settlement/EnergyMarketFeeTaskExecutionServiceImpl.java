@@ -67,8 +67,8 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
                 initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
-                /* CALCULATE GMR START */
                 /* FINALIZE START */
+
                 /* GEN FILES START */
 
                 taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);

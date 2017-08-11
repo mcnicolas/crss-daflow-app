@@ -64,8 +64,8 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
                 /* SETTLEMENT CALCULATION START */
 
-                /* CALCULATE GMR START */
                 /* FINALIZE START */
+
                 /* GEN FILES START */
 
                 taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);

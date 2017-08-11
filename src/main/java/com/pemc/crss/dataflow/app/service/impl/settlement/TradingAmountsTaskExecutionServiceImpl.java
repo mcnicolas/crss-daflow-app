@@ -48,8 +48,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN
 public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
     private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
-    private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Arrays.asList(SettlementStepUtil.CALC_MARKET_FEE,
-            SettlementStepUtil.CALC_RESERVE_MARKET_FEE, SettlementStepUtil.CALC_GMR_VAT);
+    private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Arrays.asList(SettlementStepUtil.CALC_GMR_VAT);
 
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
@@ -212,6 +211,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
         arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
 
         List<String> properties = Lists.newArrayList();
 
@@ -219,20 +220,14 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case "PRELIM":
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.CALC_MONTHLY_PRELIM_GMR_VAT)));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
             case "FINAL":
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.CALC_MONTHLY_FINAL_GMR_VAT)));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
             case "ADJUSTED":
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.CALC_MONTHLY_ADJ_GMR_VAT)));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);

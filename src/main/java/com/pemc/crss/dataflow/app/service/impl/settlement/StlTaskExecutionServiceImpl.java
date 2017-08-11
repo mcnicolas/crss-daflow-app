@@ -2,11 +2,7 @@ package com.pemc.crss.dataflow.app.service.impl.settlement;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
-import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -27,13 +23,7 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -51,17 +41,27 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     // Abstract Methods
 
     abstract String getDailyGenInputWorkspaceProfile();
+
     abstract String getPrelimGenInputWorkspaceProfile();
+
     abstract String getFinalGenInputWorkspaceProfile();
+
     abstract String getAdjustedMtrAdjGenInputWorkSpaceProfile();
+
     abstract String getAdjustedMtrFinGenInputWorkSpaceProfile();
+
     abstract List<String> getInputWorkSpaceStepsForSkipLogs();
 
     abstract String getDailyCalculateProfile();
+
     abstract String getPrelimCalculateProfile();
+
     abstract String getFinalCalculateProfile();
+
     abstract String getAdjustedMtrAdjCalculateProfile();
+
     abstract String getAdjustedMtrFinCalculateProfile();
+
     abstract List<String> getCalculateStepsForSkipLogs();
 
     /* findJobInstances methods start */
@@ -268,8 +268,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     : convertStatus(currentBatchStatus, STAGE_PARTIAL_CALC);
 
             List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
+            boolean hasPartcialCalc = jobCalculationDtoList.stream()
+                    .filter(Objects::nonNull)
+                    .anyMatch(jobCalculationDto -> jobCalculationDto.getJobStage().equals(STAGE_PARTIAL_CALC));
 
-            if (jobCalculationDtoList.isEmpty()) {
+            if (jobCalculationDtoList.isEmpty() && !hasPartcialCalc) {
                 stlJobGroupDto.setRunStartDateTime(stlCalcJobExec.getStartTime());
                 stlJobGroupDto.setRunEndDateTime(stlCalcJobExec.getEndTime());
 
@@ -294,7 +297,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
                     jobCalcStatus, STAGE_PARTIAL_CALC);
 
-             partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getCalculateStepsForSkipLogs()));
+            partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getCalculateStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
 

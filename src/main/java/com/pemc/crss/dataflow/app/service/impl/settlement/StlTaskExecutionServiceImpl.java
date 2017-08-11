@@ -272,7 +272,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     .filter(Objects::nonNull)
                     .anyMatch(jobCalculationDto -> jobCalculationDto.getJobStage().equals(STAGE_PARTIAL_CALC));
 
-            if (jobCalculationDtoList.isEmpty() && !hasPartcialCalc) {
+            if (jobCalculationDtoList.isEmpty() || !hasPartcialCalc) {
                 stlJobGroupDto.setRunStartDateTime(stlCalcJobExec.getStartTime());
                 stlJobGroupDto.setRunEndDateTime(stlCalcJobExec.getEndTime());
 

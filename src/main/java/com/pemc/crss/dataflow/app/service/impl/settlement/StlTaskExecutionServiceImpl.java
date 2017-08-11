@@ -299,8 +299,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             jobCalculationDtoList.add(partialCalcDto);
 
             if (!isDaily && BatchStatus.COMPLETED == currentBatchStatus
-                    && stlJobGroupDto.getRemainingDatesMapGenIw().containsKey(groupId)) {
-                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId), calcStartDate, calcEndDate);
+                    && stlJobGroupDto.getRemainingDatesMapCalc().containsKey(groupId)) {
+                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapCalc().get(groupId), calcStartDate, calcEndDate);
             }
 
             stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);

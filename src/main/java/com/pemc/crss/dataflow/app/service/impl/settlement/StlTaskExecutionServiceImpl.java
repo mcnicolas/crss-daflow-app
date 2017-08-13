@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
     static final String SPRING_BATCH_MODULE_STL_CALC = "crss-settlement-task-calculation";
+    static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
     static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
     static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
@@ -39,6 +40,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
 
     private static final String STAGE_TAGGING = "TAGGING";
+
+    // from batch_job_execution_context
+    private static final String INVOICE_GENERATION_FILENAME_KEY = "INVOICE_GENERATION_FILENAME";
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
@@ -74,6 +78,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     abstract String getFinalTaggingProfile();
 
     abstract String getAdjustedTaggingProfile();
+
+    abstract String getPrelimGenFileProfile();
+
+    abstract String getFinalGenFileProfile();
+
+    abstract String getAdjustedGenFileProfile();
 
     /* findJobInstances methods start */
     List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
@@ -388,6 +398,50 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
+    void initializeFileGen(final List<JobInstance> fileGenJobInstances,
+                           final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                           final SettlementTaskExecutionDto taskExecutionDto,
+                           final Long stlReadyJobId) {
+
+        Set<String> generationNames = Sets.newHashSet();
+
+        for (JobInstance genFileJobInstance : fileGenJobInstances) {
+
+            String generationStlJobName = genFileJobInstance.getJobName();
+            if (generationNames.contains(generationStlJobName)) {
+                continue;
+            }
+
+            JobExecution generationJobExecution = getJobExecutionFromJobInstance(genFileJobInstance);
+            JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+            Long groupId = generationJobParameters.getLong(GROUP_ID);
+            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            BatchStatus currentStatus = generationJobExecution.getStatus();
+            stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
+            stlJobGroupDto.setGroupId(groupId);
+            stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
+            stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
+            stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
+
+            if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+                updateProgress(generationJobExecution, stlJobGroupDto);
+            }
+
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            Optional.ofNullable(generationJobExecution.getExecutionContext()
+                    .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
+                    stlJobGroupDto.setInvoiceGenFolder((String) val));
+
+            if (stlReadyJobId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+            generationNames.add(generationStlJobName);
+        }
+    }
+
 
     private SortedSet<LocalDate> createRange(Date start, Date end) {
         if (start == null || end == null) {
@@ -602,6 +656,41 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+        lockJob(taskRunDto);
+    }
+
+    void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        final Long runId = System.currentTimeMillis();
+        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
+        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (type) {
+            case "PRELIM":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getPrelimGenFileProfile())));
+                break;
+            case "FINAL":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getFinalGenFileProfile())));
+                break;
+            case "ADJUSTED":
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getAdjustedGenFileProfile())));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running generate file job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJob(taskRunDto);
     }
 

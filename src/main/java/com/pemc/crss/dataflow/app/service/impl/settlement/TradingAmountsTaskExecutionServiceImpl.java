@@ -41,6 +41,7 @@ import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_GMR;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_FILE;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_OR;
 
 @Slf4j
@@ -96,6 +97,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 /* GEN FILES START */
+                List<JobInstance> genFileJobInstances = findJobInstancesByJobNameAndParentId(GEN_FILE, parentId);
+
+                initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
 
                 taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
                 taskExecutionDtos.add(taskExecutionDto);
@@ -129,6 +133,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case TAG_OR:
                 launchFinalizeJob(taskRunDto);
+                break;
+            case GEN_FILE:
+                launchGenerateFileJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -321,5 +328,20 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     String getAdjustedTaggingProfile() {
         return SettlementJobProfile.TAG_MONTHLY_ADJ;
+    }
+
+    @Override
+    String getPrelimGenFileProfile() {
+        return SettlementJobProfile.GEN_FILE_PRELIM;
+    }
+
+    @Override
+    String getFinalGenFileProfile() {
+        return SettlementJobProfile.GEN_FILE_FINAL;
+    }
+
+    @Override
+    String getAdjustedGenFileProfile() {
+        return SettlementJobProfile.GEN_FILE_ADJ;
     }
 }

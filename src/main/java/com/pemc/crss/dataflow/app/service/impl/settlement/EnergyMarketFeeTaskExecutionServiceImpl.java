@@ -181,4 +181,19 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     String getAdjustedTaggingProfile() {
         return null;
     }
+
+    @Override
+    String getPrelimGenFileProfile() {
+        return null;
+    }
+
+    @Override
+    String getFinalGenFileProfile() {
+        return null;
+    }
+
+    @Override
+    String getAdjustedGenFileProfile() {
+        return null;
+    }
 }

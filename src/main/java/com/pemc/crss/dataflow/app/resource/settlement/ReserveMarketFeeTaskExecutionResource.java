@@ -42,7 +42,7 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running runGenInputWorkSpaceJob. taskRunDto={}", taskRunDto);
+        log.info("Running runGenInputWorkSpaceJob for rmf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setJobName(SettlementJobName.GEN_RMF_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
@@ -53,7 +53,7 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running calculateJob. taskRunDto={}", taskRunDto);
+        log.info("Running calculateJob for rmf. taskRunDto={}", taskRunDto);
 
 //        TODO: add jobName
 //        taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
@@ -65,7 +65,18 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/finalize")
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running finalize job for emf. taskRunDto={}", taskRunDto);
+        log.info("Running finalize job for rmf. taskRunDto={}", taskRunDto);
+
+//        TODO: determine job name once available
+//        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+    @PostMapping("/generate-file")
+    public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running generate file job for rmf. taskRunDto={}", taskRunDto);
 
 //        TODO: determine job name once available
 //        taskRunDto.setJobName(SettlementJobName.CALC_EMF);

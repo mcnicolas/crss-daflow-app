@@ -42,7 +42,7 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running runGenInputWorkSpaceJob. taskRunDto={}", taskRunDto);
+        log.info("Running runGenInputWorkSpaceJob for tta. taskRunDto={}", taskRunDto);
         taskRunDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
@@ -52,7 +52,7 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running calculateJob. taskRunDto={}", taskRunDto);
+        log.info("Running calculateJob for tta. taskRunDto={}", taskRunDto);
 
         taskRunDto.setJobName(SettlementJobName.CALC_STL);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
@@ -63,7 +63,7 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/calculate-gmr")
     public ResponseEntity runCalculateGmrJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running calculateGmrJob. taskRunDto={}", taskRunDto);
+        log.info("Running calculateGmrJob for tta. taskRunDto={}", taskRunDto);
 
         taskRunDto.setJobName(SettlementJobName.CALC_GMR);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
@@ -74,9 +74,20 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/finalize")
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running finalize job for emf. taskRunDto={}", taskRunDto);
+        log.info("Running finalize job for tta. taskRunDto={}", taskRunDto);
 
         taskRunDto.setJobName(SettlementJobName.TAG_OR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/generate-file")
+    public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running generate file job for tta. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setJobName(SettlementJobName.GEN_FILE);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

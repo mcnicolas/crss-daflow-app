@@ -170,18 +170,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                     jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
             );
 
-            stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_GMR_CALC));
+            // set latest status regardless if latest job was gen input ws / calculate / calculate gmr
+            stlJobGroupDto.setStatus(getLatestJobCalcStatus(stlJobGroupDto));
+
             stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
             stlJobGroupDto.setGroupId(groupId);
             stlJobGroupDto.setGmrCalcRunDate(calcGmrJobExecution.getStartTime());
-
-            // change status to <latest calc job execution status> - FULL-CALCULATION if for GMR Recalculation
-            if (stlJobGroupDto.isForGmrRecalculation()) {
-                String latestJobCalcStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC);
-                BatchStatus latestJobExecCalcStatus = BatchStatus.valueOf(latestJobCalcStatus.split("-")[0]);
-
-                stlJobGroupDto.setStatus(convertStatus(latestJobExecCalcStatus, STATUS_FULL_STL_CALC));
-            }
 
             if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
                 updateProgress(calcGmrJobExecution, stlJobGroupDto);

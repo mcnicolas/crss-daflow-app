@@ -277,7 +277,7 @@ public class StlJobGroupDto {
     public List<JobCalculationDto> getSortedJobCalculationDtos() {
         return jobCalculationDtos
                 .stream()
-                // sort by runEndDate desc
+                // sort by runDate desc
                 .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
                 .collect(Collectors.toList());
     }

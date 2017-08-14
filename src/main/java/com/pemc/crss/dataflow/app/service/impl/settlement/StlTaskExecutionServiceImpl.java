@@ -194,15 +194,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_GENERATE_INPUT_WS);
                 // get latest status first
                 stlJobGroupDto.setStatus(latestStatus);
-
-                // if there are no remaining dates for generate input workspace, set status to FULL even if the latest gen input ws run is PARTIAL
-                Optional.ofNullable(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId)).ifPresent(remainingDates -> {
-                    if (remainingDates.size() == 0) {
-                        // set latest job execution status
-                        BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
-                        stlJobGroupDto.setStatus(convertStatus(latestJobExecutionStatus, STATUS_FULL_GENERATE_INPUT_WS));
-                    }
-                });
             }
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
@@ -289,30 +280,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     : convertStatus(currentBatchStatus, STAGE_PARTIAL_CALC);
 
             List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
-            boolean hasPartcialCalc = jobCalculationDtoList.stream()
-                    .filter(Objects::nonNull)
-                    .anyMatch(jobCalculationDto -> jobCalculationDto.getJobStage().equals(STAGE_PARTIAL_CALC));
-
-            if (jobCalculationDtoList.isEmpty() || !hasPartcialCalc) {
-                stlJobGroupDto.setRunStartDateTime(stlCalcJobExec.getStartTime());
-                stlJobGroupDto.setRunEndDateTime(stlCalcJobExec.getEndTime());
-
-                // get first stl-calc item's status
-                stlJobGroupDto.setStatus(jobCalcStatus);
-            } else {
-                String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_CALC);
-                // get latest status first
-                stlJobGroupDto.setStatus(latestStatus);
-
-                // if there are no remaining dates for calculation, set status to FULL even if the latest calc run is PARTIAL
-                Optional.ofNullable(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId)).ifPresent(remainingDates -> {
-                    if (remainingDates.size() == 0) {
-                        // set latest job execution status
-                        BatchStatus latestJobExecutionStatus = BatchStatus.valueOf(latestStatus.split("-")[0]);
-                        stlJobGroupDto.setStatus(convertStatus(latestJobExecutionStatus, STATUS_FULL_STL_CALC));
-                    }
-                });
-            }
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(stlCalcJobExec.getStartTime(),
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
@@ -329,6 +296,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
             stlJobGroupDto.setGroupId(groupId);
+
+            // set latest status regardless if gen input ws / calculate
+            stlJobGroupDto.setStatus(getLatestJobCalcStatus(stlJobGroupDto));
 
             Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
             if (latestJobExecStartDate == null || !latestJobExecStartDate.after(stlCalcJobExec.getStartTime())) {
@@ -484,6 +454,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return stlJobGroupDto.getSortedJobCalculationDtos().stream()
                 .filter(stlJob -> stlJob.getJobStage().equals(stage))
                 .map(JobCalculationDto::getStatus).findFirst().get();
+    }
+
+    String getLatestJobCalcStatus(StlJobGroupDto stlJobGroupDto) {
+        return !stlJobGroupDto.getSortedJobCalculationDtos().isEmpty()
+                ? stlJobGroupDto.getSortedJobCalculationDtos().get(0).getStatus()
+                : null;
     }
 
     private void removeDateRangeFrom(SortedSet<LocalDate> remainingDates, Date calcStartDate, Date calcEndDate) {

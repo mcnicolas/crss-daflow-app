@@ -3,12 +3,16 @@ package com.pemc.crss.dataflow.app.service.impl.settlement;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
+import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
-import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +28,15 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
@@ -86,40 +97,75 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     abstract String getAdjustedGenFileProfile();
 
     /* findJobInstances methods start */
-    List<JobInstance> findStlReadyJobInstances(final PageableRequest pageableRequest) {
-        final Pageable pageable = pageableRequest.getPageable();
 
-        return dataFlowJdbcJobExecutionDao.findStlJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest);
+    // TODO: change groupId datatype to String / Varchar
+    private Long parseGroupId(final DistinctStlReadyJob stlReadyJob, final String parentId) {
+        String billingPeriod = stlReadyJob.getBillingPeriod();
+
+        try {
+            if (Objects.equals(stlReadyJob.getProcessType(), "ADJUSTED")) {
+                return Long.valueOf(String.valueOf(billingPeriod).concat(parentId));
+            } else {
+                return Long.valueOf(billingPeriod);
+            }
+        } catch (Exception e) {
+            log.error("Unable to parse value given billingPeriod {}, processType {}, parentId {}. Returning 0",
+                    billingPeriod, stlReadyJob.getProcessType(), parentId);
+
+            return 0L;
+        }
     }
 
-    List<JobInstance> findStlJobInstancesForMarketFee(final PageableRequest pageableRequest) {
-        final Pageable pageable = pageableRequest.getPageable();
+    private Date extractDateFromBillingPeriod(final String billingPeriod, final String param) {
+        try {
+            String toParse = null;
+            switch (param) {
+                case "startDate":
+                    // returns 160126 from 160126160225
+                    toParse = billingPeriod.substring(0, 6);
+                    break;
+                case "endDate":
+                    // returns 160225 from 160126160225
+                    toParse = billingPeriod.substring(6, billingPeriod.length());
+                    break;
+                case "dailyDate":
+                    toParse = billingPeriod;
+                    break;
+                default:
+                    // do nothing
+            }
 
-        return dataFlowJdbcJobExecutionDao.findMonthlyStlReadyJobInstances(pageable.getOffset(), pageable.getPageSize(),
-                pageableRequest);
+            return DateUtil.convertToDate(toParse, "yyMMdd");
+        } catch (Exception e) {
+            log.error("Unable to parse {} from the provided billing period: {}. Cause: {}",
+                    param, billingPeriod, e);
+
+            // return 1970-01-01 so as not to encounter npes.
+            return new Date(0);
+        }
     }
 
-    List<JobExecution> getCompletedJobExecutions(final JobInstance jobInstance) {
-        return getJobExecutions(jobInstance).stream().filter(jobExecution -> jobExecution.getStatus() == BatchStatus.COMPLETED)
-                .collect(Collectors.toList());
-    }
+    SettlementTaskExecutionDto initializeTaskExecutionDto(final DistinctStlReadyJob stlReadyJob, final String parentId) {
 
-    SettlementTaskExecutionDto initializeTaskExecutionDto(final JobExecution jobExecution, final String parentId) {
-        JobParameters jobParameters = jobExecution.getJobParameters();
+        String billingPeriod = stlReadyJob.getBillingPeriod();
 
         SettlementTaskExecutionDto taskExecutionDto = new SettlementTaskExecutionDto();
         taskExecutionDto.setParentId(Long.parseLong(parentId));
-        taskExecutionDto.setStlReadyJobId(jobExecution.getJobId());
-        taskExecutionDto.setRunDateTime(jobExecution.getStartTime());
-        taskExecutionDto.setStatus(convertStatus(jobExecution.getStatus(), "SETTLEMENT"));
-        taskExecutionDto.setStlReadyStatus(jobExecution.getStatus());
-        taskExecutionDto.setBillPeriodStartDate(jobParameters.getDate(START_DATE));
-        taskExecutionDto.setBillPeriodEndDate(jobParameters.getDate(END_DATE));
-        taskExecutionDto.setDailyDate(jobParameters.getDate(DATE));
+        taskExecutionDto.setStlReadyJobId(parseGroupId(stlReadyJob, parentId));
+        taskExecutionDto.setRunDateTime(DateUtil.convertToDate(stlReadyJob.getMaxJobExecStartTime()));
 
-        String processType = jobParameters.getString(PROCESS_TYPE) != null ? jobParameters.getString(PROCESS_TYPE) : "DAILY";
+        // all queried stlReadyJob instance are filtered for 'COMPLETED' job runs
+        taskExecutionDto.setStatus(convertStatus(BatchStatus.COMPLETED, "SETTLEMENT"));
+        taskExecutionDto.setStlReadyStatus(BatchStatus.COMPLETED);
 
-        taskExecutionDto.setProcessType(processType);
+        if (!Objects.equals(stlReadyJob.getProcessType(), "DAILY")) {
+            taskExecutionDto.setBillPeriodStartDate(extractDateFromBillingPeriod(billingPeriod, "startDate"));
+            taskExecutionDto.setBillPeriodEndDate(extractDateFromBillingPeriod(billingPeriod, "endDate"));
+        } else {
+            taskExecutionDto.setDailyDate(extractDateFromBillingPeriod(billingPeriod, "dailyDate"));
+        }
+
+        taskExecutionDto.setProcessType(stlReadyJob.getProcessType());
 
         return taskExecutionDto;
     }
@@ -145,7 +191,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void initializeGenInputWorkSpace(final List<JobInstance> generateInputWsJobInstances,
                                      final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
                                      final SettlementTaskExecutionDto taskExecutionDto,
-                                     final Long stlReadyJobId) {
+                                     final Long stlReadyGroupId) {
 
         Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
@@ -231,7 +277,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 stlJobGroupDto.setHasCompletedGenInputWs(true);
             }
 
-            if (stlReadyJobId.equals(groupId)) {
+            if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }
@@ -242,7 +288,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void initializeStlCalculation(final List<JobInstance> stlCalculationJobInstances,
                                   final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
                                   final SettlementTaskExecutionDto taskExecutionDto,
-                                  final Long stlReadyJobId) {
+                                  final Long stlReadyGroupId) {
 
         Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
@@ -313,7 +359,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             stlJobGroupDto.setMaxPartialCalcRunDate(maxPartialCalcDate);
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
-            if (stlReadyJobId.equals(groupId)) {
+            if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }
@@ -324,7 +370,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void initializeTagging(final List<JobInstance> taggingJobInstances,
                            final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
                            final SettlementTaskExecutionDto taskExecutionDto,
-                           final Long stlReadyJobId) {
+                           final Long stlReadyGroupId) {
 
         Set<String> tagNames = Sets.newHashSet();
 
@@ -359,7 +405,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
-            if (stlReadyJobId.equals(groupId)) {
+            if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }
@@ -371,7 +417,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void initializeFileGen(final List<JobInstance> fileGenJobInstances,
                            final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
                            final SettlementTaskExecutionDto taskExecutionDto,
-                           final Long stlReadyJobId) {
+                           final Long stlReadyGroupId) {
 
         Set<String> generationNames = Sets.newHashSet();
 
@@ -403,7 +449,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
                     stlJobGroupDto.setInvoiceGenFolder((String) val));
 
-            if (stlReadyJobId.equals(groupId)) {
+            if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }

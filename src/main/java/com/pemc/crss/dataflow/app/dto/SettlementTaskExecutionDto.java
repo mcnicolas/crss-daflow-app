@@ -10,6 +10,7 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
 
     private Long parentId;
 
+    // TODO: rename this to stlReadyGroupId
     private Long stlReadyJobId;
 
     private String status;

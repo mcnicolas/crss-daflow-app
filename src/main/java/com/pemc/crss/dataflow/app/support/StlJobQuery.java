@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.support;
 
+@Deprecated
 public class StlJobQuery {
 
     public static final String DEFAULT_TRADING_DATE_START = "01/01/1970";

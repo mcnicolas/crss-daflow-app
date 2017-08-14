@@ -5,12 +5,14 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -33,47 +35,47 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
 @Transactional
 public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
+    @Autowired
+    private StlReadyJobQueryService stlReadyJobQueryService;
+
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
-        final Long totalSize = dataFlowJdbcJobExecutionDao.countMonthlyStlReadyJobInstances(pageableRequest);
+        Page<DistinctStlReadyJob> stlReadyJobs = stlReadyJobQueryService.findDistinctStlReadyJobsForMarketFee(pageableRequest);
+        List<DistinctStlReadyJob> distinctStlReadyJobs = stlReadyJobs.getContent();
 
-        List<JobInstance> stlReadyJobInstances = findStlJobInstancesForMarketFee(pageableRequest);
         List<SettlementTaskExecutionDto> taskExecutionDtos = new ArrayList<>();
 
-        for (JobInstance jobInstance : stlReadyJobInstances ) {
-            List<JobExecution> stlJobExecutions = getCompletedJobExecutions(jobInstance);
+        for (DistinctStlReadyJob stlReadyJob : distinctStlReadyJobs) {
 
-            for (JobExecution stlJobExecution : stlJobExecutions) {
-                String parentId = jobInstance.getJobName().split("-")[1];
+            String parentId = stlReadyJob.getJobName().split("-")[1];
 
-                if (StringUtils.isEmpty(parentId)) {
-                    log.warn("Parent id not appended for job instance id {}. Skipping...", jobInstance.getId());
-                    continue;
-                }
-
-                SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlJobExecution, parentId);
-                Long stlReadyJobId = taskExecutionDto.getStlReadyJobId();
-
-                Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
-
-                /* GENERATE INPUT WORKSPACE START */
-                List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                        GEN_RMF_INPUT_WS, parentId);
-
-                initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
-
-                /* SETTLEMENT CALCULATION START */
-
-                /* FINALIZE START */
-
-                /* GEN FILES START */
-
-                taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
-                taskExecutionDtos.add(taskExecutionDto);
+            if (StringUtils.isEmpty(parentId)) {
+                log.warn("Parent id not appended for stlReadyJob with name {}. Skipping...", stlReadyJob.getJobName());
+                continue;
             }
+
+            SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
+            Long stlReadyJobId = taskExecutionDto.getStlReadyJobId();
+
+            Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+
+            /* GENERATE INPUT WORKSPACE START */
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
+                    GEN_RMF_INPUT_WS, parentId);
+
+            initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
+
+            /* SETTLEMENT CALCULATION START */
+
+            /* FINALIZE START */
+
+            /* GEN FILES START */
+
+            taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
+            taskExecutionDtos.add(taskExecutionDto);
         }
 
-        return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), totalSize);
+        return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), stlReadyJobs.getTotalElements());
     }
 
     @Override

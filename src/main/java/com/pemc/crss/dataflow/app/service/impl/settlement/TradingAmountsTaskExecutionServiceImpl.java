@@ -8,8 +8,10 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -52,61 +55,62 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
     private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Arrays.asList(SettlementStepUtil.CALC_GMR_VAT);
 
+    @Autowired
+    private StlReadyJobQueryService stlReadyJobQueryService;
+
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
-        final Long totalSize = dataFlowJdbcJobExecutionDao.countStlJobInstances(pageableRequest);
 
-        List<JobInstance> stlReadyJobInstances = findStlReadyJobInstances(pageableRequest);
+        Page<DistinctStlReadyJob> stlReadyJobs = stlReadyJobQueryService.findDistinctStlReadyJobsForTradingAmounts(pageableRequest);
+        List<DistinctStlReadyJob> distinctStlReadyJobs = stlReadyJobs.getContent();
+
         List<SettlementTaskExecutionDto> taskExecutionDtos = new ArrayList<>();
 
-        for (JobInstance jobInstance : stlReadyJobInstances ) {
-            List<JobExecution> stlJobExecutions = getCompletedJobExecutions(jobInstance);
+        for (DistinctStlReadyJob stlReadyJob : distinctStlReadyJobs) {
 
-            for (JobExecution stlJobExecution : stlJobExecutions) {
-                String parentId = jobInstance.getJobName().split("-")[1];
+            String parentId = stlReadyJob.getJobName().split("-")[1];
 
-                if (StringUtils.isEmpty(parentId)) {
-                    log.warn("Parent id not appended for job instance id {}. Skipping...", jobInstance.getId());
-                    continue;
-                }
-
-                SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlJobExecution, parentId);
-                Long stlReadyJobId = taskExecutionDto.getStlReadyJobId();
-
-                Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
-
-                /* GENERATE INPUT WORKSPACE START */
-                List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                        SettlementJobName.GEN_EBRSV_INPUT_WS, parentId);
-
-                initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
-
-                /* SETTLEMENT CALCULATION START */
-                List<JobInstance> calculationJobInstances = findJobInstancesByJobNameAndParentId(CALC_STL, parentId);
-
-                initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
-
-                /* CALCULATE GMR START */
-                List<JobInstance> calculateGmrJobInstances = findJobInstancesByJobNameAndParentId(CALC_GMR, parentId);
-
-                initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
-
-                /* FINALIZE START */
-                List<JobInstance> taggingJobInstances = findJobInstancesByJobNameAndParentId(TAG_OR, parentId);
-
-                initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
-
-                /* GEN FILES START */
-                List<JobInstance> genFileJobInstances = findJobInstancesByJobNameAndParentId(GEN_FILE, parentId);
-
-                initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyJobId);
-
-                taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
-                taskExecutionDtos.add(taskExecutionDto);
+            if (StringUtils.isEmpty(parentId)) {
+                log.warn("Parent id not appended for stlReadyJob with name {}. Skipping...", stlReadyJob.getJobName());
+                continue;
             }
+
+            SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
+            Long stlReadyGroupId = taskExecutionDto.getStlReadyJobId();
+
+            Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+
+            /* GENERATE INPUT WORKSPACE START */
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
+                    SettlementJobName.GEN_EBRSV_INPUT_WS, parentId);
+
+            initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+            /* SETTLEMENT CALCULATION START */
+            List<JobInstance> calculationJobInstances = findJobInstancesByJobNameAndParentId(CALC_STL, parentId);
+
+            initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+            /* CALCULATE GMR START */
+            List<JobInstance> calculateGmrJobInstances = findJobInstancesByJobNameAndParentId(CALC_GMR, parentId);
+
+            initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+            /* FINALIZE START */
+            List<JobInstance> taggingJobInstances = findJobInstancesByJobNameAndParentId(TAG_OR, parentId);
+
+            initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+            /* GEN FILES START */
+            List<JobInstance> genFileJobInstances = findJobInstancesByJobNameAndParentId(GEN_FILE, parentId);
+
+            initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+            taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
+            taskExecutionDtos.add(taskExecutionDto);
         }
 
-        return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), totalSize);
+        return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), stlReadyJobs.getTotalElements());
     }
 
     @Override

@@ -49,6 +49,10 @@ task setupDeployer() {
         def outputFile = new File("$project.buildDir/deployer/${project.name}.json")
         def json = new JsonSlurper().parseText(inputFile.text)
 
+        def isDev2 = "${project.appProfile}".split(",").any({it == "dev2"})
+        def isAzure = "${project.appProfile}".split(",").any({it == "azure"})
+        json.cpus = isDev2 ? json.mem/(3.75*1024) : isAzure ? json.mem/(6.75*1024) : json.cpus
+
         json.container.docker.image = dockerPath
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
         json.id = "${project.environmentSet}" + json.id;

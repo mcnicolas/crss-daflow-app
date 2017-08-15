@@ -150,17 +150,17 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                         taskExecutionDto.setLatestAdjustmentId(latestGroupId);
 
                         StlJobGroupDto parentStlJobGroupDto = new StlJobGroupDto();
-                        parentStlJobGroupDto.setGroupId(jobId);
+                        parentStlJobGroupDto.setGroupId(jobId.toString());
                         parentStlJobGroupDto.setCurrentlyRunning(jobId.equals(lockedGroupId));
                         parentStlJobGroupDto.setLatestAdjustment(jobId.equals(latestGroupId));
 //                        parentStlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
-                        Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+                        Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
 
                     /* CALCULATION START */
                         String calcQueryString = COMPUTE_STL_JOB_NAME.concat("*-").concat(parentId).concat("-*");
                         List<JobInstance> calcStlJobInstances = jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
 
-                        Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+                        Map<String, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
                         for (JobInstance calcStlJobInstance : calcStlJobInstances) {
 
@@ -173,7 +173,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     JobExecution calcJobExecution = calcStlExecIterator.next();
                                     BatchStatus currentStatus = calcJobExecution.getStatus();
                                     JobParameters calcJobParameters = calcJobExecution.getJobParameters();
-                                    Long groupId = calcJobParameters.getLong(GROUP_ID);
+                                    String groupId = calcJobParameters.getString(GROUP_ID);
                                     Date calcStartDate = calcJobParameters.getDate(START_DATE);
                                     Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
@@ -182,9 +182,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     }
 
                                     final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                                    stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                    stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
-                                    stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                    stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId.toString()));
+                                    stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId.toString()));
+                                    stlJobGroupDto.setHeader(jobId.toString().equals(groupId));
                                     stlJobGroupDto.setRemainingDatesMapCalc(remainingDatesMap);
 //                                stlJobGroupDto.setBillingPeriodStr(billingPeriodStr);
 
@@ -278,7 +278,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             if (calcGmrStlExecIterator.hasNext()) {
                                 JobExecution calcGmrJobExecution = calcGmrStlExecIterator.next();
                                 JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
-                                Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
+                                String groupId = calcGmrJobParameters.getString(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
                                 BatchStatus currentStatus = calcGmrJobExecution.getStatus();
 
@@ -292,9 +292,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 }
 
                                 if (!stlJobGroupDto.isRunningStlCalculation()) {
-                                    stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                    stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
-                                    stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                    stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId.toString()));
+                                    stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId.toString()));
+                                    stlJobGroupDto.setHeader(jobId.toString().equals(groupId));
 
                                     stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_GMR_CALC));
                                     stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
@@ -341,12 +341,12 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                 JobParameters tagJobParameters = tagJobExecution.getJobParameters();
                                 Date tagStartDate = tagJobParameters.getDate(START_DATE);
                                 Date tagEndDate = tagJobParameters.getDate(END_DATE);
-                                Long groupId = tagJobParameters.getLong(GROUP_ID);
+                                String groupId = tagJobParameters.getString(GROUP_ID);
 
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
-                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId.toString()));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId.toString()));
+                                stlJobGroupDto.setHeader(jobId.toString().equals(groupId));
                                 BatchStatus currentStatus = tagJobExecution.getStatus();
                                 stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_TAGGING));
                                 stlJobGroupDto.setTaggingStatus(currentStatus);
@@ -387,11 +387,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                             if (generationStlExecIterator.hasNext()) {
                                 JobExecution generationJobExecution = generationStlExecIterator.next();
                                 JobParameters generationJobParameters = generationJobExecution.getJobParameters();
-                                Long groupId = generationJobParameters.getLong(GROUP_ID);
+                                String groupId = generationJobParameters.getString(GROUP_ID);
                                 StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId));
-                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId));
-                                stlJobGroupDto.setHeader(jobId.equals(groupId));
+                                stlJobGroupDto.setCurrentlyRunning(groupId.equals(lockedGroupId.toString()));
+                                stlJobGroupDto.setLatestAdjustment(groupId.equals(latestGroupId.toString()));
+                                stlJobGroupDto.setHeader(jobId.toString().equals(groupId));
                                 BatchStatus currentStatus = generationJobExecution.getStatus();
                                 stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
                                 stlJobGroupDto.setGroupId(groupId);
@@ -489,8 +489,8 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
 
-        Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
-        arguments.add(concatKeyValue(GROUP_ID, groupId.toString(), "long"));
+        String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
+        arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
 
         Date start = null;
@@ -525,9 +525,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                 if (MeterProcessType.ADJUSTED.name().equals(type)) {
                     boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
-                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId, baseStartDate, baseEndDate) < 1) {
                         log.info("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
-                                + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
+                                + "and billingPeriodEnd=[{}]", groupId, baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                     }
 
@@ -539,9 +539,9 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
                 } else if (MeterProcessType.FINAL.name().equals(type)) {
 
-                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), baseStartDate, baseEndDate) < 1) {
+                    if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId, baseStartDate, baseEndDate) < 1) {
                         log.info("Saving to batchjobadjrun and batchjobadjvatrun with groupId=[{}] and billingPeriodStart=[{}] "
-                                + "and billingPeriodEnd=[{}]", groupId.toString(), baseStartDate, baseEndDate);
+                                + "and billingPeriodEnd=[{}]", groupId, baseStartDate, baseEndDate);
                         saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, baseStartDate, baseEndDate);
                     }
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalStlAmtsCalculation")));
@@ -554,19 +554,19 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
             if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())
                     || MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
-                if (runningAdjustmentLockRepository.lockJob(groupId, Long.parseLong(taskRunDto.getParentJob()), start, end) == 0) {
+                if (runningAdjustmentLockRepository.lockJob(Long.valueOf(groupId), Long.parseLong(taskRunDto.getParentJob()), start, end) == 0) {
                     RunningAdjustmentLock lock = new RunningAdjustmentLock();
                     lock.setLocked(true);
-                    lock.setGroupId(groupId);
+                    lock.setGroupId(Long.valueOf(groupId));
                     lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
                     lock.setStartDate(Date.from(baseStartDate.atZone(ZoneId.systemDefault()).toInstant()));
                     lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
                     runningAdjustmentLockRepository.save(lock);
                 }
-                if (taskRunDto.isNewGroup() && latestAdjustmentLockRepository.lockJob(groupId, Long.parseLong(taskRunDto.getParentJob()), start, end) == 0) {
+                if (taskRunDto.isNewGroup() && latestAdjustmentLockRepository.lockJob(Long.valueOf(groupId), Long.parseLong(taskRunDto.getParentJob()), start, end) == 0) {
                     LatestAdjustmentLock lock = new LatestAdjustmentLock();
                     lock.setLocked(true);
-                    lock.setGroupId(groupId);
+                    lock.setGroupId(Long.valueOf(groupId));
                     lock.setParentJobId(Long.parseLong(taskRunDto.getParentJob()));
                     lock.setStartDate(Date.from(baseStartDate.atZone(ZoneId.systemDefault()).toInstant()));
                     lock.setEndDate(Date.from(baseEndDate.atZone(ZoneId.systemDefault()).toInstant()));
@@ -818,11 +818,11 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
         Preconditions.checkState(remainingDate.size() < 1, "Incomplete calculation is not allowed for job: ".concat(COMPUTE_GMRVAT_MFEE_JOB_NAME));
     }
 
-    private void saveAdjRun(MeterProcessType type, String jobId, Long groupId, LocalDateTime start, LocalDateTime end) {
+    private void saveAdjRun(MeterProcessType type, String jobId, String groupId, LocalDateTime start, LocalDateTime end) {
         BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
         batchJobAdjRun.setJobId(jobId);
         batchJobAdjRun.setAdditionalCompensation(false);
-        batchJobAdjRun.setGroupId(String.valueOf(groupId));
+        batchJobAdjRun.setGroupId(groupId);
         batchJobAdjRun.setMeterProcessType(type);
         batchJobAdjRun.setBillingPeriodStart(start);
         batchJobAdjRun.setBillingPeriodEnd(end);

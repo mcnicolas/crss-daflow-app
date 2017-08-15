@@ -55,9 +55,9 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             }
 
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
-            Long stlReadyJobId = taskExecutionDto.getStlReadyJobId();
+            String stlReadyJobId = taskExecutionDto.getStlReadyGroupId();
 
-            Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+            Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
 
             /* GENERATE INPUT WORKSPACE START */
             List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(

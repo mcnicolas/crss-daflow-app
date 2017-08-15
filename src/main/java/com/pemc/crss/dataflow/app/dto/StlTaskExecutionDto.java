@@ -15,7 +15,7 @@ public class StlTaskExecutionDto extends BaseTaskExecutionDto {
 
     private StlJobGroupDto parentStlJobGroupDto;
 
-    private Map<Long, StlJobGroupDto> stlJobGroupDtoMap;
+    private Map<String, StlJobGroupDto> stlJobGroupDtoMap;
 
     public BatchStatus getStlReadyStatus() {
         return stlReadyStatus;
@@ -49,11 +49,11 @@ public class StlTaskExecutionDto extends BaseTaskExecutionDto {
         this.parentStlJobGroupDto = parentStlJobGroupDto;
     }
 
-    public Map<Long, StlJobGroupDto> getStlJobGroupDtoMap() {
+    public Map<String, StlJobGroupDto> getStlJobGroupDtoMap() {
         return stlJobGroupDtoMap;
     }
 
-    public void setStlJobGroupDtoMap(Map<Long, StlJobGroupDto> stlJobGroupDtoMap) {
+    public void setStlJobGroupDtoMap(Map<String, StlJobGroupDto> stlJobGroupDtoMap) {
         this.stlJobGroupDtoMap = stlJobGroupDtoMap;
     }
 }

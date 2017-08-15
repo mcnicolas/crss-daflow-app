@@ -10,8 +10,7 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
 
     private Long parentId;
 
-    // TODO: rename this to stlReadyGroupId
-    private Long stlReadyJobId;
+    private String stlReadyGroupId;
 
     private String status;
 
@@ -21,7 +20,7 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
 
     private StlJobGroupDto parentStlJobGroupDto;
 
-    private Map<Long, StlJobGroupDto> stlJobGroupDtoMap;
+    private Map<String, StlJobGroupDto> stlJobGroupDtoMap;
 
     private Date billPeriodStartDate;
 
@@ -39,12 +38,12 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
         this.parentId = parentId;
     }
 
-    public Long getStlReadyJobId() {
-        return stlReadyJobId;
+    public String getStlReadyGroupId() {
+        return stlReadyGroupId;
     }
 
-    public void setStlReadyJobId(Long stlReadyJobId) {
-        this.stlReadyJobId = stlReadyJobId;
+    public void setStlReadyGroupId(String stlReadyGroupId) {
+        this.stlReadyGroupId = stlReadyGroupId;
     }
 
     public String getStatus() {
@@ -79,11 +78,11 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
         this.parentStlJobGroupDto = parentStlJobGroupDto;
     }
 
-    public Map<Long, StlJobGroupDto> getStlJobGroupDtoMap() {
+    public Map<String, StlJobGroupDto> getStlJobGroupDtoMap() {
         return stlJobGroupDtoMap;
     }
 
-    public void setStlJobGroupDtoMap(Map<Long, StlJobGroupDto> stlJobGroupDtoMap) {
+    public void setStlJobGroupDtoMap(Map<String, StlJobGroupDto> stlJobGroupDtoMap) {
         this.stlJobGroupDtoMap = stlJobGroupDtoMap;
     }
 

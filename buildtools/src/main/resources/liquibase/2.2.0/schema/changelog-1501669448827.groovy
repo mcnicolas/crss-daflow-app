@@ -8,7 +8,7 @@ databaseChangeLog {
       column(name: 'end_date', type: 'TIMESTAMP(6) WITHOUT TIME ZONE') {
         constraints(nullable: false)
       }
-      column(name: 'group_id', type: 'BIGINT') {
+      column(name: 'group_id', type: 'VARCHAR(255)') {
         constraints(nullable: false)
       }
       column(name: 'locked', type: 'BOOLEAN') {

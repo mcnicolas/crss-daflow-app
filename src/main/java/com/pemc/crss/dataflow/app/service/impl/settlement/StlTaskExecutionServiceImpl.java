@@ -98,22 +98,15 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     /* findJobInstances methods start */
 
-    // TODO: change groupId datatype to String / Varchar
-    private Long parseGroupId(final DistinctStlReadyJob stlReadyJob, final String parentId) {
+    private String parseGroupId(final DistinctStlReadyJob stlReadyJob, final String parentId) {
         String billingPeriod = stlReadyJob.getBillingPeriod();
 
-        try {
-            if (Objects.equals(stlReadyJob.getProcessType(), "ADJUSTED")) {
-                return Long.valueOf(String.valueOf(billingPeriod).concat(parentId));
-            } else {
-                return Long.valueOf(billingPeriod);
-            }
-        } catch (Exception e) {
-            log.error("Unable to parse value given billingPeriod {}, processType {}, parentId {}. Returning 0",
-                    billingPeriod, stlReadyJob.getProcessType(), parentId);
-
-            return 0L;
+        if (Objects.equals(stlReadyJob.getProcessType(), "ADJUSTED")) {
+            return billingPeriod.concat(parentId);
+        } else {
+            return billingPeriod;
         }
+
     }
 
     private Date extractDateFromBillingPeriod(final String billingPeriod, final String param) {
@@ -151,7 +144,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         SettlementTaskExecutionDto taskExecutionDto = new SettlementTaskExecutionDto();
         taskExecutionDto.setParentId(Long.parseLong(parentId));
-        taskExecutionDto.setStlReadyJobId(parseGroupId(stlReadyJob, parentId));
+        taskExecutionDto.setStlReadyGroupId(parseGroupId(stlReadyJob, parentId));
         taskExecutionDto.setRunDateTime(DateUtil.convertToDate(stlReadyJob.getMaxJobExecStartTime()));
 
         // all queried stlReadyJob instance are filtered for 'COMPLETED' job runs
@@ -189,11 +182,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void initializeGenInputWorkSpace(final List<JobInstance> generateInputWsJobInstances,
-                                     final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                                     final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
                                      final SettlementTaskExecutionDto taskExecutionDto,
-                                     final Long stlReadyGroupId) {
+                                     final String stlReadyGroupId) {
 
-        Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+        Map<String, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
         for (JobInstance genWsStlJobInstance : generateInputWsJobInstances) {
 
@@ -205,7 +198,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             BatchStatus currentBatchStatus = genWsJobExec.getStatus();
             JobParameters genInputWsJobParameters = genWsJobExec.getJobParameters();
-            Long groupId = genInputWsJobParameters.getLong(GROUP_ID);
+            String groupId = genInputWsJobParameters.getString(GROUP_ID);
             Date genInputWsStartDate = genInputWsJobParameters.getDate(START_DATE);
             Date genInputWsEndDate = genInputWsJobParameters.getDate(END_DATE);
 
@@ -286,11 +279,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void initializeStlCalculation(final List<JobInstance> stlCalculationJobInstances,
-                                  final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                                  final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
                                   final SettlementTaskExecutionDto taskExecutionDto,
-                                  final Long stlReadyGroupId) {
+                                  final String stlReadyGroupId) {
 
-        Map<Long, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
+        Map<String, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
 
         for (JobInstance stlCalcJobInstance : stlCalculationJobInstances) {
 
@@ -302,7 +295,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             BatchStatus currentBatchStatus = stlCalcJobExec.getStatus();
             JobParameters calcJobParameters = stlCalcJobExec.getJobParameters();
-            Long groupId = calcJobParameters.getLong(GROUP_ID);
+            String groupId = calcJobParameters.getString(GROUP_ID);
             Date calcStartDate = calcJobParameters.getDate(START_DATE);
             Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
@@ -368,9 +361,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void initializeTagging(final List<JobInstance> taggingJobInstances,
-                           final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                           final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
                            final SettlementTaskExecutionDto taskExecutionDto,
-                           final Long stlReadyGroupId) {
+                           final String stlReadyGroupId) {
 
         Set<String> tagNames = Sets.newHashSet();
 
@@ -385,7 +378,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             JobParameters tagJobParameters = tagJobExecution.getJobParameters();
             Date tagStartDate = tagJobParameters.getDate(START_DATE);
             Date tagEndDate = tagJobParameters.getDate(END_DATE);
-            Long groupId = tagJobParameters.getLong(GROUP_ID);
+            String groupId = tagJobParameters.getString(GROUP_ID);
 
             StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
             BatchStatus currentStatus = tagJobExecution.getStatus();
@@ -415,9 +408,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void initializeFileGen(final List<JobInstance> fileGenJobInstances,
-                           final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                           final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
                            final SettlementTaskExecutionDto taskExecutionDto,
-                           final Long stlReadyGroupId) {
+                           final String stlReadyGroupId) {
 
         Set<String> generationNames = Sets.newHashSet();
 
@@ -430,7 +423,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobExecution generationJobExecution = getJobExecutionFromJobInstance(genFileJobInstance);
             JobParameters generationJobParameters = generationJobExecution.getJobParameters();
-            Long groupId = generationJobParameters.getLong(GROUP_ID);
+            String groupId = generationJobParameters.getString(GROUP_ID);
+
             StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
             BatchStatus currentStatus = generationJobExecution.getStatus();
             stlJobGroupDto.setInvoiceGenerationStatus(currentStatus);
@@ -528,11 +522,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 "There is an existing ".concat(jobName).concat(" job running"));
     }
 
-    List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final Long groupId) {
+    List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final String groupId) {
         List<String> arguments = Lists.newArrayList();
         arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(GROUP_ID, groupId.toString(), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
 
         return arguments;
@@ -540,7 +534,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
-        final Long groupId = taskRunDto.isNewGroup() ? runId : Long.parseLong(taskRunDto.getGroupId());
+        final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
@@ -568,19 +562,19 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
 
-                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(), billPeriodStartDate, billPeriodEndDate) < 1) {
+                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId, billPeriodStartDate, billPeriodEndDate) < 1) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
-                            groupId.toString(), billPeriodStartDate, billPeriodEndDate);
+                            groupId, billPeriodStartDate, billPeriodEndDate);
                     saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
                 }
                 break;
             case "ADJUSTED":
                 boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
 
-                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId.toString(),
+                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId,
                         billPeriodStartDate, billPeriodEndDate) < 1) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
-                            groupId.toString(), billPeriodStartDate, billPeriodEndDate);
+                            groupId, billPeriodStartDate, billPeriodEndDate);
                     saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
                 }
 
@@ -603,7 +597,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
-        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
+        final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
@@ -648,7 +642,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void launchFinalizeJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
-        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
+        final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
@@ -683,7 +677,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
-        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
+        final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
@@ -716,11 +710,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJob(taskRunDto);
     }
 
-    private void saveAdjRun(MeterProcessType type, String jobId, Long groupId, LocalDateTime start, LocalDateTime end) {
+    private void saveAdjRun(MeterProcessType type, String jobId, String groupId, LocalDateTime start, LocalDateTime end) {
         BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
         batchJobAdjRun.setJobId(jobId);
         batchJobAdjRun.setAdditionalCompensation(false);
-        batchJobAdjRun.setGroupId(String.valueOf(groupId));
+        batchJobAdjRun.setGroupId(groupId);
         batchJobAdjRun.setMeterProcessType(type);
         batchJobAdjRun.setBillingPeriodStart(start);
         batchJobAdjRun.setBillingPeriodEnd(end);

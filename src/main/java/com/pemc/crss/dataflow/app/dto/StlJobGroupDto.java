@@ -23,7 +23,7 @@ public class StlJobGroupDto {
     private boolean currentlyRunning;
     private boolean latestAdjustment;
     private boolean header;
-    private Long groupId;
+    private String groupId;
     private Date runStartDateTime;
     private Date runEndDateTime;
     private Long runId;
@@ -40,9 +40,9 @@ public class StlJobGroupDto {
 
     private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();
 
-    private Map<Long, SortedSet<LocalDate>> remainingDatesMapCalc = new HashMap<>();
+    private Map<String, SortedSet<LocalDate>> remainingDatesMapCalc = new HashMap<>();
 
-    private Map<Long, SortedSet<LocalDate>> remainingDatesMapGenIw = new HashMap<>();
+    private Map<String, SortedSet<LocalDate>> remainingDatesMapGenIw = new HashMap<>();
 
     private boolean runningStlCalculation;
 
@@ -120,11 +120,11 @@ public class StlJobGroupDto {
         this.header = header;
     }
 
-    public Long getGroupId() {
+    public String getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(Long groupId) {
+    public void setGroupId(String groupId) {
         this.groupId = groupId;
     }
 
@@ -170,19 +170,19 @@ public class StlJobGroupDto {
         this.invoiceGenFolder = invoiceGenFolder;
     }
 
-    public Map<Long, SortedSet<LocalDate>> getRemainingDatesMapCalc() {
+    public Map<String, SortedSet<LocalDate>> getRemainingDatesMapCalc() {
         return remainingDatesMapCalc;
     }
 
-    public void setRemainingDatesMapCalc(Map<Long, SortedSet<LocalDate>> remainingDatesMapCalc) {
+    public void setRemainingDatesMapCalc(Map<String, SortedSet<LocalDate>> remainingDatesMapCalc) {
         this.remainingDatesMapCalc = remainingDatesMapCalc;
     }
 
-    public Map<Long, SortedSet<LocalDate>> getRemainingDatesMapGenIw() {
+    public Map<String, SortedSet<LocalDate>> getRemainingDatesMapGenIw() {
         return remainingDatesMapGenIw;
     }
 
-    public void setRemainingDatesMapGenIw(Map<Long, SortedSet<LocalDate>> remainingDatesMapGenIw) {
+    public void setRemainingDatesMapGenIw(Map<String, SortedSet<LocalDate>> remainingDatesMapGenIw) {
         this.remainingDatesMapGenIw = remainingDatesMapGenIw;
     }
 

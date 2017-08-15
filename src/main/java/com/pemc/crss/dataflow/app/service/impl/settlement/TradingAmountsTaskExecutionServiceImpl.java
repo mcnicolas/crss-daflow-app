@@ -76,9 +76,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             }
 
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
-            Long stlReadyGroupId = taskExecutionDto.getStlReadyJobId();
+            String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();
 
-            Map<Long, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+            Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
 
             /* GENERATE INPUT WORKSPACE START */
             List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
@@ -149,9 +149,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     // Calculate GMR is exclusive for TTA
     private void initializeCalculateGmr(final List<JobInstance> calculateGmrJobInstances,
-                                        final Map<Long, StlJobGroupDto> stlJobGroupDtoMap,
+                                        final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
                                         final SettlementTaskExecutionDto taskExecutionDto,
-                                        final Long stlReadyJobId) {
+                                        final String stlReadyGroupId) {
 
         Set<String> calcGmrNames = Sets.newHashSet();
         Map<String, List<JobCalculationDto>> gmrJobCalculationDtoMap = getCalcGmrJobCalculationMap(calculateGmrJobInstances);
@@ -165,7 +165,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             JobExecution calcGmrJobExecution = getJobExecutionFromJobInstance(calcGmrStlJobInstance);
 
             JobParameters calcGmrJobParameters = calcGmrJobExecution.getJobParameters();
-            Long groupId = calcGmrJobParameters.getLong(GROUP_ID);
+            String groupId = calcGmrJobParameters.getString(GROUP_ID);
             StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
             BatchStatus currentStatus = calcGmrJobExecution.getStatus();
 
@@ -187,7 +187,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
-            if (stlReadyJobId.equals(groupId)) {
+            if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }
@@ -219,7 +219,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     // Calculate GMR is exclusive for TTA
     private void launchCalculateGmrJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
-        final Long groupId = Long.parseLong(taskRunDto.getGroupId());
+        final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);

@@ -11,7 +11,13 @@ databaseChangeLog {
       column(name: 'group_id', type: 'VARCHAR(255)') {
         constraints(nullable: false)
       }
-      column(name: 'locked', type: 'BOOLEAN') {
+      column(name: 'locked_ta', type: 'BOOLEAN') {
+        constraints(nullable: false)
+      }
+      column(name: 'locked_emf', type: 'BOOLEAN') {
+        constraints(nullable: false)
+      }
+      column(name: 'locked_rmf', type: 'BOOLEAN') {
         constraints(nullable: false)
       }
       column(name: 'parent_job_id', type: 'BIGINT') {

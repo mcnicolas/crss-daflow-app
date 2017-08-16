@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
+
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
@@ -101,7 +103,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private String parseGroupId(final DistinctStlReadyJob stlReadyJob, final String parentId) {
         String billingPeriod = stlReadyJob.getBillingPeriod();
 
-        if (Objects.equals(stlReadyJob.getProcessType(), "ADJUSTED")) {
+        if (MeterProcessType.valueOf(stlReadyJob.getProcessType()).equals(ADJUSTED)) {
             return billingPeriod.concat(parentId);
         } else {
             return billingPeriod;
@@ -133,7 +135,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             log.error("Unable to parse {} from the provided billing period: {}. Cause: {}",
                     param, billingPeriod, e);
 
-            // return 1970-01-01 so as not to encounter npes.
+            // return 1970-01-01 so as not to encounter npes later on.
             return new Date(0);
         }
     }
@@ -547,17 +549,17 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         LocalDateTime billPeriodEndDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseEndDate(),
                 DateUtil.DEFAULT_DATE_FORMAT);
 
-        switch (type) {
-            case "DAILY":
+        switch (MeterProcessType.valueOf(type)) {
+            case DAILY:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getDailyGenInputWorkspaceProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
                 break;
-            case "PRELIM":
+            case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getPrelimGenInputWorkspaceProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
-            case "FINAL":
+            case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getFinalGenInputWorkspaceProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
@@ -565,17 +567,17 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId, billPeriodStartDate, billPeriodEndDate) < 1) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
                             groupId, billPeriodStartDate, billPeriodEndDate);
-                    saveAdjRun(MeterProcessType.FINAL, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
+                    saveAdjRun(FINAL, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
                 }
                 break;
-            case "ADJUSTED":
-                boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
+            case ADJUSTED:
+                boolean finalBased = MeterProcessType.valueOf(taskRunDto.getBaseType()).equals(FINAL);
 
                 if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId,
                         billPeriodStartDate, billPeriodEndDate) < 1) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
                             groupId, billPeriodStartDate, billPeriodEndDate);
-                    saveAdjRun(MeterProcessType.ADJUSTED, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
+                    saveAdjRun(ADJUSTED, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
                 }
 
                 final String activeProfile = finalBased ? getAdjustedMtrFinGenInputWorkSpaceProfile() :
@@ -605,23 +607,23 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         List<String> properties = Lists.newArrayList();
 
-        switch (type) {
-            case "DAILY":
+        switch (MeterProcessType.valueOf(type)) {
+            case DAILY:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getDailyCalculateProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
                 break;
-            case "PRELIM":
+            case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getPrelimCalculateProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
-            case "FINAL":
+            case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getFinalCalculateProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
-            case "ADJUSTED":
-                boolean finalBased = "FINAL".equals(taskRunDto.getBaseType());
+            case ADJUSTED:
+                boolean finalBased = MeterProcessType.valueOf(taskRunDto.getBaseType()).equals(FINAL);
 
                 final String activeProfile = finalBased ? getAdjustedMtrFinCalculateProfile() :
                         getAdjustedMtrAdjCalculateProfile();
@@ -652,16 +654,16 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         List<String> properties = Lists.newArrayList();
 
-        switch (type) {
-            case "PRELIM":
+        switch (MeterProcessType.valueOf(type)) {
+            case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getPrelimTaggingProfile())));
                 break;
-            case "FINAL":
+            case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getFinalTaggingProfile())));
                 break;
-            case "ADJUSTED":
+            case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getAdjustedTaggingProfile())));
                 break;
@@ -687,16 +689,16 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         List<String> properties = Lists.newArrayList();
 
-        switch (type) {
-            case "PRELIM":
+        switch (MeterProcessType.valueOf(type)) {
+            case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getPrelimGenFileProfile())));
                 break;
-            case "FINAL":
+            case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getFinalGenFileProfile())));
                 break;
-            case "ADJUSTED":
+            case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getAdjustedGenFileProfile())));
                 break;

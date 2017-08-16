@@ -20,8 +20,12 @@ public class StlJobGroupDto {
     private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
     private String status;
+
+    @Deprecated
     private boolean currentlyRunning;
+    @Deprecated
     private boolean latestAdjustment;
+
     private boolean header;
     private String groupId;
     private Date runStartDateTime;
@@ -37,6 +41,9 @@ public class StlJobGroupDto {
     private String invoiceGenFolder;
 
     private String billingPeriodStr;
+
+    // determines if job with group id and parent id is locked (applied only to FINAL / ADJUSTED)
+    private boolean locked = false;
 
     private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();
 
@@ -264,6 +271,14 @@ public class StlJobGroupDto {
 
     public void setHasCompletedGenInputWs(boolean hasCompletedGenInputWs) {
         this.hasCompletedGenInputWs = hasCompletedGenInputWs;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 
     // helper methods / properties

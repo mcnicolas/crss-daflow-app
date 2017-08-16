@@ -12,9 +12,12 @@ import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
+import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
+import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
@@ -38,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.DISAGGREGATE_BCQ;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_BCQ_STEP;
@@ -59,6 +63,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Autowired
     private StlReadyJobQueryService stlReadyJobQueryService;
 
+    @Autowired
+    private SettlementJobLockRepository settlementJobLockRepository;
+
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
 
@@ -79,7 +86,13 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
             String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();
 
+            StlJobGroupDto initialJobGroupDto = new StlJobGroupDto();
+            initialJobGroupDto.setGroupId(stlReadyGroupId);
+
+            taskExecutionDto.setParentStlJobGroupDto(initialJobGroupDto);
+
             Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
+            stlJobGroupDtoMap.put(stlReadyGroupId, initialJobGroupDto);
 
             /* GENERATE INPUT WORKSPACE START */
             List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
@@ -108,10 +121,41 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
+
+            if (Arrays.asList(FINAL, ADJUSTED).contains(MeterProcessType.valueOf(taskExecutionDto.getProcessType()))) {
+                determineIfJobsAreLocked(taskExecutionDto);
+            }
+
             taskExecutionDtos.add(taskExecutionDto);
         }
 
         return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), stlReadyJobs.getTotalElements());
+    }
+
+
+    private void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto) {
+
+        List<SettlementJobLock> stlJobLocks = settlementJobLockRepository.findByStartDateAndEndDate(
+                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
+                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()));
+
+        for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
+
+            stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
+                    && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
+                    .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLockedTa()));
+
+            // additional lock checking for adjusted type
+            if (ADJUSTED.equals(MeterProcessType.valueOf(taskExecutionDto.getProcessType()))) {
+                stlJobLocks.stream().filter(s -> s.getProcessType() == FINAL).findFirst().ifPresent(stlLock -> {
+                    // if FINAL run is not yet tagged, ADJUSTED cannot be run yet.
+                    if (!stlLock.isLockedTa()) {
+                        stlJobGroupDto.setLocked(true);
+                    }
+                });
+            }
+        }
+
     }
 
     @Override

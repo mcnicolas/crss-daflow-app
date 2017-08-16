@@ -49,6 +49,7 @@ import com.pemc.crss.shared.core.dataflow.repository.RunningAdjustmentLockReposi
 import static java.util.stream.Collectors.toList;
 
 // TODO: for removal after full implementation of separate settlement calculations
+@Deprecated
 @Slf4j
 @Service("settlementTaskExecutionService")
 @Transactional(readOnly = true, value = "transactionManager")

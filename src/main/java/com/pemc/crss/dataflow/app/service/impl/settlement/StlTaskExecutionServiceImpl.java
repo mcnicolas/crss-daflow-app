@@ -32,7 +32,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -153,7 +152,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         taskExecutionDto.setStatus(convertStatus(BatchStatus.COMPLETED, "SETTLEMENT"));
         taskExecutionDto.setStlReadyStatus(BatchStatus.COMPLETED);
 
-        if (!Objects.equals(stlReadyJob.getProcessType(), "DAILY")) {
+        if (!MeterProcessType.valueOf(stlReadyJob.getProcessType()).equals(DAILY)) {
             taskExecutionDto.setBillPeriodStartDate(extractDateFromBillingPeriod(billingPeriod, "startDate"));
             taskExecutionDto.setBillPeriodEndDate(extractDateFromBillingPeriod(billingPeriod, "endDate"));
         } else {
@@ -193,7 +192,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         for (JobInstance genWsStlJobInstance : generateInputWsJobInstances) {
 
             JobExecution genWsJobExec = getJobExecutionFromJobInstance(genWsStlJobInstance);
-            boolean isDaily = taskExecutionDto.getProcessType().equals("DAILY");
+            boolean isDaily = MeterProcessType.valueOf(taskExecutionDto.getProcessType()).equals(DAILY);
 
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
@@ -290,7 +289,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         for (JobInstance stlCalcJobInstance : stlCalculationJobInstances) {
 
             JobExecution stlCalcJobExec = getJobExecutionFromJobInstance(stlCalcJobInstance);
-            boolean isDaily = taskExecutionDto.getProcessType().equals("DAILY");
+            boolean isDaily = MeterProcessType.valueOf(taskExecutionDto.getProcessType()).equals(DAILY);
 
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();

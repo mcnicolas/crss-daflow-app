@@ -43,9 +43,9 @@ import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_GMR;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_TA;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_FILE;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_OR;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_TA;
 
 @Slf4j
 @Service("tradingAmountsTaskExecutionService")
@@ -97,12 +97,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
-            List<JobInstance> taggingJobInstances = findJobInstancesByJobNameAndParentId(TAG_OR, parentId);
+            List<JobInstance> taggingJobInstances = findJobInstancesByJobNameAndParentId(TAG_TA, parentId);
 
             initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES START */
-            List<JobInstance> genFileJobInstances = findJobInstancesByJobNameAndParentId(GEN_FILE, parentId);
+            List<JobInstance> genFileJobInstances = findJobInstancesByJobNameAndParentId(FILE_TA, parentId);
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
@@ -135,10 +135,10 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case CALC_GMR:
                 launchCalculateGmrJob(taskRunDto);
                 break;
-            case TAG_OR:
+            case TAG_TA:
                 launchFinalizeJob(taskRunDto);
                 break;
-            case GEN_FILE:
+            case FILE_TA:
                 launchGenerateFileJob(taskRunDto);
                 break;
             default:

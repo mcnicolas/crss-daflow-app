@@ -76,7 +76,7 @@ public class TradingAmountsTaskExecutionResource {
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running finalize job for tta. taskRunDto={}", taskRunDto);
 
-        taskRunDto.setJobName(SettlementJobName.TAG_OR);
+        taskRunDto.setJobName(SettlementJobName.TAG_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 
@@ -87,7 +87,7 @@ public class TradingAmountsTaskExecutionResource {
     public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running generate file job for tta. taskRunDto={}", taskRunDto);
 
-        taskRunDto.setJobName(SettlementJobName.GEN_FILE);
+        taskRunDto.setJobName(SettlementJobName.FILE_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

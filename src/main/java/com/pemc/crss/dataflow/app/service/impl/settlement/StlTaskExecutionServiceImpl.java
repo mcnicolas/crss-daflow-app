@@ -108,7 +108,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private String parseGroupId(final DistinctStlReadyJob stlReadyJob, final String parentId) {
         String billingPeriod = stlReadyJob.getBillingPeriod();
 
-        if (MeterProcessType.valueOf(stlReadyJob.getProcessType()).equals(ADJUSTED)) {
+        if (stlReadyJob.getProcessType().equals(ADJUSTED)) {
             return billingPeriod.concat(parentId);
         } else {
             return billingPeriod;
@@ -158,7 +158,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         taskExecutionDto.setStatus(convertStatus(BatchStatus.COMPLETED, "SETTLEMENT"));
         taskExecutionDto.setStlReadyStatus(BatchStatus.COMPLETED);
 
-        if (!MeterProcessType.valueOf(stlReadyJob.getProcessType()).equals(DAILY)) {
+        if (!stlReadyJob.getProcessType().equals(DAILY)) {
             taskExecutionDto.setBillPeriodStartDate(extractDateFromBillingPeriod(billingPeriod, "startDate"));
             taskExecutionDto.setBillPeriodEndDate(extractDateFromBillingPeriod(billingPeriod, "endDate"));
         } else {
@@ -198,7 +198,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         for (JobInstance genWsStlJobInstance : generateInputWsJobInstances) {
 
             JobExecution genWsJobExec = getJobExecutionFromJobInstance(genWsStlJobInstance);
-            boolean isDaily = MeterProcessType.valueOf(taskExecutionDto.getProcessType()).equals(DAILY);
+            boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
 
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
@@ -295,7 +295,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         for (JobInstance stlCalcJobInstance : stlCalculationJobInstances) {
 
             JobExecution stlCalcJobExec = getJobExecutionFromJobInstance(stlCalcJobInstance);
-            boolean isDaily = MeterProcessType.valueOf(taskExecutionDto.getProcessType()).equals(DAILY);
+            boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
 
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
@@ -511,7 +511,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(true));
 
             // additional lock checking for adjusted type if it's not yet locked
-            if (ADJUSTED.equals(MeterProcessType.valueOf(taskExecutionDto.getProcessType())) && !stlJobGroupDto.isLocked()) {
+            if (ADJUSTED.equals(taskExecutionDto.getProcessType()) && !stlJobGroupDto.isLocked()) {
                 stlJobGroupDto.setLocked(true);
 
                 // release lock if FINAL is already locked

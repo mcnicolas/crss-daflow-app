@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.repository.ViewSettlementJobRepository;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 
 @Slf4j
 @Service
@@ -35,21 +38,21 @@ public class StlReadyJobQueryServiceImpl implements StlReadyJobQueryService {
         final Pageable pageable = pageableRequest.getPageable();
         StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
 
-        List<String> processTypes = new ArrayList<>();
+        List<MeterProcessType> processTypes = new ArrayList<>();
         switch (processType) {
             case FINAL:
-                processTypes.add("FINAL");
+                processTypes.add(FINAL);
                 break;
             case PRELIM:
-                processTypes.add("PRELIM");
+                processTypes.add(PRELIM);
                 break;
             case ADJUSTED:
-                processTypes.add("ADJUSTED");
+                processTypes.add(ADJUSTED);
                 break;
             case ALL:
             case ALL_MONTHLY:
             default:
-                processTypes.addAll(Arrays.asList("PRELIM", "ADJUSTED", "FINAL"));
+                processTypes.addAll(Arrays.asList(PRELIM, ADJUSTED, FINAL));
                 break;
         }
 
@@ -67,24 +70,24 @@ public class StlReadyJobQueryServiceImpl implements StlReadyJobQueryService {
 
         String billingPeriod = resolveBillingPeriod(mapParams);
 
-        List<String> processTypes = new ArrayList<>();
+        List<MeterProcessType> processTypes = new ArrayList<>();
         switch (stlQueryProcessType) {
             case FINAL:
-                processTypes.add("FINAL");
+                processTypes.add(FINAL);
                 break;
             case PRELIM:
-                processTypes.add("PRELIM");
+                processTypes.add(PRELIM);
                 break;
             case ADJUSTED:
-                processTypes.add("ADJUSTED");
+                processTypes.add(ADJUSTED);
                 break;
             case ALL_MONTHLY:
-                processTypes.addAll(Arrays.asList("PRELIM", "ADJUSTED", "FINAL"));
+                processTypes.addAll(Arrays.asList(PRELIM, ADJUSTED, FINAL));
                 break;
             case ALL:
             default:
                 billingPeriod = WILD_CARD;
-                processTypes.addAll(Arrays.asList("PRELIM", "ADJUSTED", "FINAL", "DAILY"));
+                processTypes.addAll(Arrays.asList(PRELIM, ADJUSTED, FINAL, DAILY));
                 break;
         }
 

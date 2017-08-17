@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import org.springframework.batch.core.BatchStatus;
 
 import java.util.Date;
@@ -28,7 +29,7 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
 
     private Date dailyDate;
 
-    private String processType;
+    private MeterProcessType processType;
 
     public Long getParentId() {
         return parentId;
@@ -110,11 +111,11 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
         this.dailyDate = dailyDate;
     }
 
-    public String getProcessType() {
+    public MeterProcessType getProcessType() {
         return processType;
     }
 
-    public void setProcessType(String processType) {
+    public void setProcessType(MeterProcessType processType) {
         this.processType = processType;
     }
 }

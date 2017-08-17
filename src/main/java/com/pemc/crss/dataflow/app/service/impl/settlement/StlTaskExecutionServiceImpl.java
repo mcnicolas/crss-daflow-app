@@ -549,7 +549,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     /* launchJob methods start */
     void validateJobName(final String jobName) {
-        Preconditions.checkNotNull(jobName);
+        Preconditions.checkNotNull(jobName, "Job Name must not be null");
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(jobName) == 0,
                 "There is an existing ".concat(jobName).concat(" job running"));
     }

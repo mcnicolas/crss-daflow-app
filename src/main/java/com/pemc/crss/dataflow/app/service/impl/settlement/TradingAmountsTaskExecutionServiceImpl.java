@@ -141,15 +141,27 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         switch (taskRunDto.getJobName()) {
             case GEN_EBRSV_INPUT_WS:
+                validateJobName(CALC_STL);
+                validateJobName(CALC_GMR);
+                validateJobName(TAG_TA);
                 launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_STL:
+                validateJobName(GEN_EBRSV_INPUT_WS);
+                validateJobName(CALC_GMR);
+                validateJobName(TAG_TA);
                 launchCalculateJob(taskRunDto);
                 break;
             case CALC_GMR:
+                validateJobName(GEN_EBRSV_INPUT_WS);
+                validateJobName(CALC_STL);
+                validateJobName(TAG_TA);
                 launchCalculateGmrJob(taskRunDto);
                 break;
             case TAG_TA:
+                validateJobName(GEN_EBRSV_INPUT_WS);
+                validateJobName(CALC_STL);
+                validateJobName(CALC_GMR);
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_TA:

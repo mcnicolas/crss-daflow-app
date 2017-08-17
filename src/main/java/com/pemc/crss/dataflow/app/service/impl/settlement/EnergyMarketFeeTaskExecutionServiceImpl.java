@@ -109,9 +109,11 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
         switch (taskRunDto.getJobName()) {
             case GEN_EMF_INPUT_WS:
+                validateJobName(CALC_EMF);
                 launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_EMF:
+                validateJobName(GEN_EMF_INPUT_WS);
                 launchCalculateJob(taskRunDto);
                 break;
             default:

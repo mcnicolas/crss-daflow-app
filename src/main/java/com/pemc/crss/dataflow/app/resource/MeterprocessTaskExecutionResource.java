@@ -1,12 +1,14 @@
 package com.pemc.crss.dataflow.app.resource;
 
-import com.pemc.crss.dataflow.app.dto.TaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.service.impl.MeterprocessTaskExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
+import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URISyntaxException;
 import java.security.Principal;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 @RestController
 @RequestMapping("/task-executions/meterprocess")
 public class MeterprocessTaskExecutionResource {
@@ -29,6 +33,9 @@ public class MeterprocessTaskExecutionResource {
     @Autowired
     @Qualifier("meterprocessTaskExecutionService")
     private TaskExecutionService taskExecutionService;
+
+    @Autowired
+    private ExecutionParamRepository executionParamRepository;
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
@@ -72,5 +79,49 @@ public class MeterprocessTaskExecutionResource {
     public ResponseEntity<String> getBatchJobSkipLogs(@RequestParam int stepId) {
         LOG.debug("Finding failed exit message for step id {}.", stepId);
         return new ResponseEntity<>(taskExecutionService.getFailedExitMsg(stepId), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/count-final-run-all-mtn", method = RequestMethod.GET)
+    public ResponseEntity<Integer> countFinalRunAllMtn(@RequestParam(required = false) String processType,
+                                                       @RequestParam(required = false) String date,
+                                                       @RequestParam(required = false) String startDate,
+                                                       @RequestParam(required = false) String endDate) {
+        LOG.debug("Counting final stl ready with processtype={}, date={}, startDate={}, endDate={}.", processType, date, startDate, endDate);
+        return new ResponseEntity<>(countAllMtnFinalStlReadyRun(processType, date, startDate, endDate), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/get-aggr-mtn-final-stl-ready", method = RequestMethod.GET)
+    public ResponseEntity<String> getAggregatedSelectedMtnFinalStlReady(@RequestParam(required = false) String processType,
+                                                                        @RequestParam(required = false) String date,
+                                                                        @RequestParam(required = false) String startDate,
+                                                                        @RequestParam(required = false) String endDate) {
+        LOG.debug("Counting final stl ready with processtype={}, date={}, startDate={}, endDate={}.", processType, date, startDate, endDate);
+        return new ResponseEntity<>(getAggregatedSelectedMtnFinalStlReadyRun(processType, date, startDate, endDate), HttpStatus.OK);
+    }
+
+    private String getAggregatedSelectedMtnFinalStlReadyRun(String processType, String date, String startDate, String endDate) {
+        if (StringUtils.isNotEmpty(processType)) {
+            if ("DAILY".equalsIgnoreCase(processType)) {
+                return executionParamRepository.getAggregatedSelectedMtnsDailyWithinRange(date);
+            } else {
+                return executionParamRepository.getAggregatedSelectedMtnsMonthlyWithinRange(startDate, endDate, processType);
+            }
+        } else {
+            return EMPTY;
+        }
+    }
+
+    private Integer countAllMtnFinalStlReadyRun(String processType, String date, String startDate, String endDate) {
+        Integer result;
+        if (StringUtils.isNotEmpty(processType)) {
+            if ("DAILY".equalsIgnoreCase(processType) && StringUtils.isNotEmpty(date)) {
+                result = executionParamRepository.countDailyRunAllMtn(date, "stlReady");
+            } else {
+                result = StringUtils.isNotEmpty(startDate) && StringUtils.isNotEmpty(endDate) ? executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, processType, "stlReady") : 0;
+            }
+        } else {
+            result = 0;
+        }
+        return result;
     }
 }

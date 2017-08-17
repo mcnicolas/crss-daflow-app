@@ -87,8 +87,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             LOG.error("Exception: " + e);
         }
 
-        List<TaskExecutionDto> taskExecutionDtos = getTaskExecutionDtos(count, pageable, 3);
+        List<TaskExecutionDto> taskExecutionDtos = getTaskExecutionDtos(count, pageable, 100);
 
+        // TODO ensure pagination
         taskExecutionDtos.forEach(taskExecutionDto -> {
             String processType = taskExecutionDto.getParams().getOrDefault(PROCESS_TYPE, null) != null ? (String)(((JobParameter)taskExecutionDto.getParams().getOrDefault(PROCESS_TYPE, null)).getValue()) : null;
             Date date = taskExecutionDto.getParams().getOrDefault(DATE, null) != null ? (Date)(((JobParameter) taskExecutionDto.getParams().getOrDefault(DATE, null)).getValue()) : null;
@@ -268,11 +269,28 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(STL_NOT_READY_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
+                Long parentJobRunId = jobParameters.getLong(RUN_ID);
+                // compare two string fields and check if the current running is already included in the existing, if true, prevent from running, else, run
+                String existingFinalRunAggregatedMtnWithinRange = EMPTY;
+                String currentRunningMtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parentJobRunId, MTNS);
+                List<String> mtnAlreadyFinalized = new ArrayList<>();
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                    checkFinalizeDailyState(taskRunDto.getTradingDate());
+                    // prevent running if selected mtn is already run within date range or the like
+                    existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(taskRunDto.getMeterProcessType(), taskRunDto.getTradingDate(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_DAILY)));
                 } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkFinalizeProcessTypeState(taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    // prevent running if selected mtn is already run within date range or the like
+                    existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(taskRunDto.getMeterProcessType(), taskRunDto.getTradingDate(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_PRELIM)));
                 } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
+                    checkFinalizeProcessTypeState(taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    // prevent running if selected mtn is already run within date range or the like
+                    existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(taskRunDto.getMeterProcessType(), taskRunDto.getTradingDate(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                     checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_FINAL)));
@@ -505,5 +523,29 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             localDateTime.withDayOfMonth(25);
         }
         return localDateTime.withTime(0,0,0,0).toDate();
+    }
+
+    private void checkSelectedMtnsFinalizeStlReady(String existingFinalRunAggregatedMtn, String currentRunningMtns, List<String> mtnAlreadyFinalized) {
+        String errorMessage = "Cannot run Finalize Settlement Ready if MTNs are already finalized. %s";
+        for (String existingMtn : existingFinalRunAggregatedMtn.split(",")) {
+            for (String currentMtn : currentRunningMtns.split(",")) {
+                if (existingMtn.equalsIgnoreCase(currentMtn)) {
+                    mtnAlreadyFinalized.add(currentMtn);
+                }
+            }
+        }
+        Preconditions.checkState(mtnAlreadyFinalized.size() == 0, String.format(errorMessage, mtnAlreadyFinalized.stream().collect(Collectors.joining(","))));
+    }
+
+    private String getAggregatedSelectedMtnFinalStlReadyRunWithinRange(String processType, String date, String startDate, String endDate) {
+        if (StringUtils.isNotEmpty(processType)) {
+            if (PROCESS_TYPE_DAILY.equals(processType)) {
+                return executionParamRepository.getAggregatedSelectedMtnsDailyWithinRange(date);
+            } else {
+                return executionParamRepository.getAggregatedSelectedMtnsMonthlyWithinRange(startDate, endDate, processType);
+            }
+        } else {
+            return EMPTY;
+        }
     }
 }

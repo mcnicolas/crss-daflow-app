@@ -14,7 +14,10 @@ import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
+import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
+import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
+import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -58,6 +61,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
+
+    @Autowired
+    private SettlementJobLockRepository settlementJobLockRepository;
 
     // Abstract Methods
 
@@ -489,6 +495,31 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         dto.setRunningSteps(runningTasks);
         dto.setLatestJobExecStartDate(jobExecution.getStartTime());
         dto.setLatestJobExecEndDate(jobExecution.getEndTime());
+    }
+
+    void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto, final StlCalculationType stlCalculationType) {
+
+        List<SettlementJobLock> stlJobLocks = settlementJobLockRepository.findByStartDateAndEndDateAndStlCalculationType(
+                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
+                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()),
+                stlCalculationType);
+
+        for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
+
+            stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
+                    && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
+                    .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(true));
+
+            // additional lock checking for adjusted type if it's not yet locked
+            if (ADJUSTED.equals(MeterProcessType.valueOf(taskExecutionDto.getProcessType())) && !stlJobGroupDto.isLocked()) {
+                stlJobGroupDto.setLocked(true);
+
+                // release lock if FINAL is already locked
+                stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getProcessType() == FINAL).findFirst().ifPresent(finalStlLock ->
+                        stlJobGroupDto.setLocked(false));
+            }
+        }
+
     }
 
     String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {

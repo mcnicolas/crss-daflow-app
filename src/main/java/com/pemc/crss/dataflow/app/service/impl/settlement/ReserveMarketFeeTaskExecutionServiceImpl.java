@@ -8,11 +8,9 @@ import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
-import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
-import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
+import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.JobInstance;
@@ -43,9 +41,6 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
     @Autowired
     private StlReadyJobQueryService stlReadyJobQueryService;
-
-    @Autowired
-    private SettlementJobLockRepository settlementJobLockRepository;
 
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
@@ -89,38 +84,13 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
             if (Arrays.asList(FINAL, ADJUSTED).contains(MeterProcessType.valueOf(taskExecutionDto.getProcessType()))) {
-                determineIfJobsAreLocked(taskExecutionDto);
+                determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.RESERVE_MARKET_FEE);
             }
 
             taskExecutionDtos.add(taskExecutionDto);
         }
 
         return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), stlReadyJobs.getTotalElements());
-    }
-
-    private void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto) {
-
-        List<SettlementJobLock> stlJobLocks = settlementJobLockRepository.findByStartDateAndEndDate(
-                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
-                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()));
-
-        for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
-
-            stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
-                    && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
-                    .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLockedRmf()));
-
-            // additional lock checking for adjusted type
-            if (ADJUSTED.equals(MeterProcessType.valueOf(taskExecutionDto.getProcessType()))) {
-                stlJobLocks.stream().filter(s -> s.getProcessType() == FINAL).findFirst().ifPresent(stlLock -> {
-                    // if FINAL run is not yet tagged, ADJUSTED cannot be run yet.
-                    if (!stlLock.isLockedRmf()) {
-                        stlJobGroupDto.setLocked(true);
-                    }
-                });
-            }
-        }
-
     }
 
     @Override

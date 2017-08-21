@@ -7,12 +7,10 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -50,12 +48,8 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
         List<SettlementTaskExecutionDto> taskExecutionDtos = new ArrayList<>();
 
         for (DistinctStlReadyJob stlReadyJob : distinctStlReadyJobs) {
-            String parentId = stlReadyJob.getJobName().split("-")[1];
 
-            if (StringUtils.isEmpty(parentId)) {
-                log.warn("Parent id not appended for stlReadyJob with name {}. Skipping...", stlReadyJob.getJobName());
-                continue;
-            }
+            String parentId = stlReadyJob.getParentId();
 
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
             String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();

@@ -17,7 +17,6 @@ import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
@@ -71,12 +70,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         for (DistinctStlReadyJob stlReadyJob : distinctStlReadyJobs) {
 
-            String parentId = stlReadyJob.getJobName().split("-")[1];
-
-            if (StringUtils.isEmpty(parentId)) {
-                log.warn("Parent id not appended for stlReadyJob with name {}. Skipping...", stlReadyJob.getJobName());
-                continue;
-            }
+            String parentId = stlReadyJob.getParentId();
 
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
             String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();

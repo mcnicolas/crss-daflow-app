@@ -4,7 +4,6 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
-import com.pemc.crss.dataflow.app.service.impl.MeterprocessTaskExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
@@ -46,7 +45,13 @@ public class MeterprocessTaskExecutionResource {
     @RequestMapping(value = "/find-by-billing-period", method = RequestMethod.GET)
     public ResponseEntity<Page<GroupTaskExecutionDto>> findAllJobInstancesGroupByBillingPeriod(Pageable pageable) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
-        return new ResponseEntity<>(taskExecutionService.findJobInstancesGroupByBillingPeriod(pageable), HttpStatus.OK);
+        return new ResponseEntity<>(taskExecutionService.findDistinctBillingPeriodAndProcessType(pageable), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/find-jobs-by-billing-period", method = RequestMethod.GET)
+    public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstancesGroupByBillingPeriod(Pageable pageable, long billingPeriod, String processType) {
+        LOG.debug("Finding job instances request. pageable={}", pageable);
+        return new ResponseEntity<>(taskExecutionService.findJobInstancesByBillingPeriodAndProcessType(pageable, billingPeriod, processType), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)

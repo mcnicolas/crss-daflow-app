@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import org.apache.commons.lang3.StringUtils;
@@ -104,7 +105,12 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     }
 
     @Override
-    public Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable) {
+    public Page<GroupTaskExecutionDto> findDistinctBillingPeriodAndProcessType(Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, long billingPeriod, String processType) {
         return null;
     }
 

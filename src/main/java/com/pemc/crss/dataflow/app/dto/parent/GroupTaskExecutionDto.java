@@ -8,6 +8,7 @@ import java.util.List;
 
 public class GroupTaskExecutionDto {
 
+    private Long billingPeriod;
     private Date date;
     private Date startDate;
     private Date endDate;
@@ -30,6 +31,14 @@ public class GroupTaskExecutionDto {
         this.startDate = startDate;
         this.endDate = endDate;
         this.processType = processType;
+    }
+
+    public Long getBillingPeriod() {
+        return billingPeriod;
+    }
+
+    public void setBillingPeriod(Long billingPeriod) {
+        this.billingPeriod = billingPeriod;
     }
 
     public Date getDate() {
@@ -87,7 +96,7 @@ public class GroupTaskExecutionDto {
 
         GroupTaskExecutionDto that = (GroupTaskExecutionDto) o;
 
-        if (processType == null) {
+        if (processType == null || "".equals(processType)) {
             if (date == null) return false;
             if (that.date == null) return false;
             if (date.compareTo(that.date) != 0) return false;

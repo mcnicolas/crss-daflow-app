@@ -90,7 +90,12 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     }
 
     @Override
-    public Page<GroupTaskExecutionDto> findJobInstancesGroupByBillingPeriod(Pageable pageable) {
+    public Page<GroupTaskExecutionDto> findDistinctBillingPeriodAndProcessType(Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, long billingPeriod, String processType) {
         return null;
     }
 

@@ -7,6 +7,7 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
@@ -59,12 +60,14 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
             taskExecutionDto.setParentStlJobGroupDto(initialJobGroupDto);
 
+            MeterProcessType processType = taskExecutionDto.getProcessType();
+
             Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
             stlJobGroupDtoMap.put(stlReadyGroupId, initialJobGroupDto);
 
             /* GENERATE INPUT WORKSPACE START */
-            List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                    GEN_RMF_INPUT_WS, parentId);
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    GEN_RMF_INPUT_WS, processType, parentId);
 
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 

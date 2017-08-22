@@ -7,6 +7,7 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
@@ -62,14 +63,17 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
             Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
             stlJobGroupDtoMap.put(stlReadyGroupId, initialJobGroupDto);
 
+            MeterProcessType processType = taskExecutionDto.getProcessType();
+
             /* GENERATE INPUT WORKSPACE START */
-            List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                    GEN_EMF_INPUT_WS, parentId);
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    GEN_EMF_INPUT_WS, processType, parentId);
 
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* SETTLEMENT CALCULATION START */
-            List<JobInstance> calculationJobInstances = findJobInstancesByJobNameAndParentId(CALC_EMF, parentId);
+            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    CALC_EMF, processType, parentId);
 
             initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 

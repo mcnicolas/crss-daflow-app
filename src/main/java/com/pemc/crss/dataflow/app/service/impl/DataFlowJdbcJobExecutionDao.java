@@ -21,6 +21,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.util.Assert;
 
 import java.sql.ResultSet;
@@ -37,11 +39,18 @@ import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_CO
 
 @Slf4j
 public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
+
+    private static final String WILD_CARD = "%";
+
     private static final String FIND_CUSTOM_JOB_INSTANCE = "SELECT A.JOB_INSTANCE_ID, A.JOB_NAME from %PREFIX%JOB_INSTANCE A join %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID join %PREFIX%JOB_EXECUTION_PARAMS C on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID where JOB_NAME like ? and B.STATUS like ? and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') and (F.STRING_VAL like ? and F.KEY_NAME = 'username') order by JOB_INSTANCE_ID desc";
     private static final String COUNT_JOBS_WITH_NAME = "SELECT COUNT(*) from %PREFIX%JOB_INSTANCE A join %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID join %PREFIX%JOB_EXECUTION_PARAMS C on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID where JOB_NAME like ? and B.STATUS like ? and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') and (F.STRING_VAL like ? and F.KEY_NAME = 'username')";
     private static final String FIND_CUSTOM_JOB_EXECUTION = "SELECT A.JOB_EXECUTION_ID, A.START_TIME, A.END_TIME, A.STATUS, A.EXIT_CODE, A.EXIT_MESSAGE, A.CREATE_TIME, A.LAST_UPDATED, A.VERSION, A.JOB_CONFIGURATION_LOCATION from %PREFIX%JOB_EXECUTION A join %PREFIX%JOB_EXECUTION_PARAMS B on A.JOB_EXECUTION_ID = B.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS C on A.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on A.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on A.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID where A.JOB_INSTANCE_ID = ? and A.STATUS like ? and TO_CHAR(A.START_TIME, 'yyyy-mm-dd') like ? and (B.STRING_VAL like ? and B.KEY_NAME = 'mode') and (TO_CHAR(C.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and C.KEY_NAME = 'startDate') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'endDate') and (E.STRING_VAL like ? and E.KEY_NAME = 'username') order by JOB_EXECUTION_ID desc";
 
     public DataFlowJdbcJobExecutionDao() {
+    }
+
+    private NamedParameterJdbcTemplate getNamedParameterJdbcTemplate() {
+        return new NamedParameterJdbcTemplate(getJdbcTemplate());
     }
 
     public List<JobExecution> findJobExecutions(JobInstance job, String status, String mode,
@@ -74,6 +83,26 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
 
         return this.getJdbcTemplate().query(this.getQuery(FIND_CUSTOM_JOB_INSTANCE), new Object[]{jobName, status, runStartDate,
                 mode, tradingStartDate, tradingEndDate, username}, getJobInstanceExtractor(start, count));
+    }
+
+    public List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentId(final String jobNamePrefix,
+                                                    final List<String> processTypes, final String parentId) {
+
+        MapSqlParameterSource querySqlSource = new MapSqlParameterSource()
+                .addValue("jobPrefix", jobNamePrefix + WILD_CARD)
+                .addValue("processTypes", processTypes)
+                .addValue("parentId", Long.valueOf(parentId));
+
+        String searchSql = "SELECT JI.JOB_INSTANCE_ID, JI.JOB_NAME from BATCH_JOB_INSTANCE JI "
+            + " JOIN BATCH_JOB_EXECUTION JE on JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
+            + " JOIN BATCH_JOB_EXECUTION_PARAMS PTYPE on JE.JOB_EXECUTION_ID = PTYPE.JOB_EXECUTION_ID "
+            + " JOIN BATCH_JOB_EXECUTION_PARAMS PID on JE.JOB_EXECUTION_ID = PID.JOB_EXECUTION_ID "
+            + " WHERE JI.JOB_NAME like :jobPrefix "
+            + " AND (PID.LONG_VAL = :parentId and PID.KEY_NAME = 'parentJob') "
+            + " AND (PTYPE.STRING_VAL in (:processTypes) and PTYPE.KEY_NAME = 'processType') "
+            + " ORDER BY JI.JOB_INSTANCE_ID DESC";
+
+        return getNamedParameterJdbcTemplate().query(searchSql, querySqlSource, new JobInstanceRowMapper());
     }
 
     public int getJobInstanceCount(String jobName, String status, String mode, String runStartDate,

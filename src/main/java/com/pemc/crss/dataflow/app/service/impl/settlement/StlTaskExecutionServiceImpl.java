@@ -31,6 +31,7 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -170,9 +171,18 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return taskExecutionDto;
     }
 
-    List<JobInstance> findJobInstancesByJobNameAndParentId(final String jobName, final String parentId) {
-        String calcQueryString = jobName.concat("*-").concat(parentId).concat("-*");
-        return jobExplorer.findJobInstancesByJobName(calcQueryString, 0, Integer.MAX_VALUE);
+    List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentId(final String jobNamePrefix,
+                                                                   final MeterProcessType processType,
+                                                                   final String parentId) {
+        List<String> processTypes = new ArrayList<>();
+        processTypes.add(processType.name());
+
+        // also add ADJUSTED processType for child job instances with same parentId as FINAL job instance
+        if (processType == FINAL) {
+            processTypes.add(ADJUSTED.name());
+        }
+
+        return dataFlowJdbcJobExecutionDao.findJobInstancesByNameAndProcessTypeAndParentId(jobNamePrefix, processTypes, parentId);
     }
 
     JobExecution getJobExecutionFromJobInstance(final JobInstance jobInstance) {

@@ -83,29 +83,35 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
             stlJobGroupDtoMap.put(stlReadyGroupId, initialJobGroupDto);
 
+            MeterProcessType processType = taskExecutionDto.getProcessType();
+
             /* GENERATE INPUT WORKSPACE START */
-            List<JobInstance> generateInputWsJobInstances = findJobInstancesByJobNameAndParentId(
-                    SettlementJobName.GEN_EBRSV_INPUT_WS, parentId);
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    GEN_EBRSV_INPUT_WS, processType, parentId);
 
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* SETTLEMENT CALCULATION START */
-            List<JobInstance> calculationJobInstances = findJobInstancesByJobNameAndParentId(CALC_STL, parentId);
+            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    CALC_STL, processType, parentId);
 
             initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* CALCULATE GMR START */
-            List<JobInstance> calculateGmrJobInstances = findJobInstancesByJobNameAndParentId(CALC_GMR, parentId);
+            List<JobInstance> calculateGmrJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    CALC_GMR, processType, parentId);
 
             initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
-            List<JobInstance> taggingJobInstances = findJobInstancesByJobNameAndParentId(TAG_TA, parentId);
+            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    TAG_TA, processType, parentId);
 
             initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES START */
-            List<JobInstance> genFileJobInstances = findJobInstancesByJobNameAndParentId(FILE_TA, parentId);
+            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    FILE_TA, processType, parentId);
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 

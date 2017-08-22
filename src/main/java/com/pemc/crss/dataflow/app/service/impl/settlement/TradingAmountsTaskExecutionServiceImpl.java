@@ -253,8 +253,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
-        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
-        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
         arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
 

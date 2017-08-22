@@ -172,8 +172,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentId(final String jobNamePrefix,
-                                                                   final MeterProcessType processType,
-                                                                   final String parentId) {
+                                                                      final MeterProcessType processType,
+                                                                      final String parentId) {
         List<String> processTypes = new ArrayList<>();
         processTypes.add(processType.name());
 
@@ -564,12 +564,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 "There is an existing ".concat(jobName).concat(" job running"));
     }
 
-    List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final String groupId) {
+    List<String> initializeJobArguments(final TaskRunDto taskRunDto, final Long runId, final String groupId,
+                                        final String processType) {
         List<String> arguments = Lists.newArrayList();
         arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), "long"));
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+        arguments.add(concatKeyValue(PROCESS_TYPE, processType));
 
         return arguments;
     }
@@ -579,8 +581,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
-        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
-        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
         List<String> properties = Lists.newArrayList();
 
@@ -642,8 +643,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
-        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
-        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
         List<String> properties = Lists.newArrayList();
 
@@ -687,8 +687,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
-        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
-        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
         arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
 
@@ -722,8 +721,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
-        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId);
-        arguments.add(concatKeyValue(PROCESS_TYPE, type));
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
         arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
 

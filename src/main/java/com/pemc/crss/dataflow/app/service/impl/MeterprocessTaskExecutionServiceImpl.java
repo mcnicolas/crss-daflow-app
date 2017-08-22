@@ -197,7 +197,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
 
             // for list by billing period
-            if (taskRunDto.getBillingPeriod() != null) {
+            if (taskRunDto.getFormattedBillingPeriod() != null) {
                 arguments.add(concatKeyValue("bp", String.valueOf(taskRunDto.getFormattedBillingPeriod()), PARAMS_TYPE_LONG));
             }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
@@ -291,7 +291,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
-                if (taskRunDto.getBillingPeriod() != null) {
+                if (taskRunDto.getFormattedBillingPeriod() != null) {
                     arguments.add(concatKeyValue("bp", String.valueOf(taskRunDto.getFormattedBillingPeriod()), PARAMS_TYPE_LONG));
                 }
                 jobName = "crss-meterprocess-task-stlready";

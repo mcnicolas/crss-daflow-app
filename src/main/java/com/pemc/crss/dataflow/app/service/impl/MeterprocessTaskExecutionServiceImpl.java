@@ -371,7 +371,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private void checkSelectedMtnsFinalizeStlReady(String existingFinalRunAggregatedMtn, String currentRunningMtns, List<String> mtnAlreadyFinalized) {
         String errorMessage = "Cannot run Finalize Settlement Ready if MTNs are already finalized. %s";
-        if (StringUtils.isNotEmpty(existingFinalRunAggregatedMtn)) {
+        if (StringUtils.isNotEmpty(existingFinalRunAggregatedMtn) && StringUtils.isNotEmpty(currentRunningMtns)) {
             for (String existingMtn : existingFinalRunAggregatedMtn.split(",")) {
                 for (String currentMtn : currentRunningMtns.split(",")) {
                     if (existingMtn.equalsIgnoreCase(currentMtn)) {

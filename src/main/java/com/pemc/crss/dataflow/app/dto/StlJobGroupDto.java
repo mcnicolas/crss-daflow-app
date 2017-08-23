@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
@@ -296,6 +297,16 @@ public class StlJobGroupDto {
     public boolean isForGmrRecalculation() {
         return (maxPartialCalcRunDate != null && gmrCalcRunDate != null) &&
                 maxPartialCalcRunDate.compareTo(gmrCalcRunDate) > 0;
+    }
+
+    public boolean isGenInputWsIsLatestJob() {
+        return !getSortedJobCalculationDtos().isEmpty() &&
+                Objects.equals(getSortedJobCalculationDtos().get(0).getJobStage(), "PARTIAL-GENERATE-INPUT-WORKSPACE");
+    }
+
+    public boolean isCalculateGmrIsLatestJob() {
+        return !getSortedJobCalculationDtos().isEmpty() &&
+                Objects.equals(getSortedJobCalculationDtos().get(0).getJobStage(), "CALCULATION-GMR");
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

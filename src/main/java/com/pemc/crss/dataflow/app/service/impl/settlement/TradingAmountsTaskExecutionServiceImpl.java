@@ -178,7 +178,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
 
-    // Calculate GMR is exclusive for TTA
+    // Calculate GMR is exclusive for Trading Amounts
     private void initializeCalculateGmr(final List<JobInstance> calculateGmrJobInstances,
                                         final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
                                         final SettlementTaskExecutionDto taskExecutionDto,

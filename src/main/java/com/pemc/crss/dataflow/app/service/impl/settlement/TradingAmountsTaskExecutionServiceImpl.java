@@ -149,7 +149,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 validateJobName(CALC_STL);
                 validateJobName(CALC_GMR);
                 validateJobName(TAG_TA);
-                launchGenerateInputWorkspaceJob(taskRunDto);
+                launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.TRADING_AMOUNTS);
                 break;
             case CALC_STL:
                 validateJobName(GEN_EBRSV_INPUT_WS);

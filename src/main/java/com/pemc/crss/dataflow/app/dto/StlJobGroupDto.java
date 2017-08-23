@@ -44,6 +44,7 @@ public class StlJobGroupDto {
 
     // determines if job with group id and parent id is locked (applied only to FINAL / ADJUSTED)
     private boolean locked = false;
+    private boolean canRunAdjustment = false;
 
     private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();
 
@@ -279,6 +280,14 @@ public class StlJobGroupDto {
 
     public void setLocked(boolean locked) {
         this.locked = locked;
+    }
+
+    public boolean isCanRunAdjustment() {
+        return canRunAdjustment;
+    }
+
+    public void setCanRunAdjustment(boolean canRunAdjustment) {
+        this.canRunAdjustment = canRunAdjustment;
     }
 
     // helper methods / properties

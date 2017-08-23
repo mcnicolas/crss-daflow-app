@@ -4,7 +4,7 @@ databaseChangeLog {
       column(name: 'id', type: 'BIGINT') {
         constraints(nullable: false)
       }
-      column(name: 'created_datetime', type: 'TIMESTAMP(6) WITHOUT TIME ZONE')
+      column(name: 'created_datetime', type: 'TIMESTAMP WITHOUT TIME ZONE')
       column(name: 'parent_job_id', type: 'BIGINT') {
         constraints(nullable: false)
       }
@@ -23,6 +23,10 @@ databaseChangeLog {
       column(name: 'stl_calculation_type', type: 'VARCHAR(255)') {
         constraints(nullable: false)
       }
+      column(name: 'locked', type: 'BOOLEAN') {
+        constraints(nullable: false)
+      }
+      column(name: 'lock_date', type: 'TIMESTAMP WITHOUT TIME ZONE')
     }
   }
 

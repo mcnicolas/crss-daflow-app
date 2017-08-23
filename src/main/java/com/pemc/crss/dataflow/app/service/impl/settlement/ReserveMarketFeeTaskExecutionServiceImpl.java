@@ -108,7 +108,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
         switch (taskRunDto.getJobName()) {
             case GEN_RMF_INPUT_WS:
-                launchGenerateInputWorkspaceJob(taskRunDto);
+                launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.RESERVE_MARKET_FEE);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());

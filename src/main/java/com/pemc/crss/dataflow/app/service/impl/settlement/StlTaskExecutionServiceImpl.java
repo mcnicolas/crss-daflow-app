@@ -18,6 +18,7 @@ import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
+import com.querydsl.core.BooleanBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -32,16 +33,21 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
+import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settlementJobLock;
 
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
@@ -106,10 +112,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     /* findJobInstances methods start */
 
-    private String parseGroupId(final DistinctStlReadyJob stlReadyJob, final String parentId) {
-        String billingPeriod = stlReadyJob.getBillingPeriod();
-
-        if (stlReadyJob.getProcessType().equals(ADJUSTED)) {
+    private String parseGroupId(final String billingPeriod, final MeterProcessType processType, final String parentId) {
+        if (processType.equals(ADJUSTED)) {
             return billingPeriod.concat(parentId);
         } else {
             return billingPeriod;
@@ -152,7 +156,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         SettlementTaskExecutionDto taskExecutionDto = new SettlementTaskExecutionDto();
         taskExecutionDto.setParentId(Long.parseLong(parentId));
-        taskExecutionDto.setStlReadyGroupId(parseGroupId(stlReadyJob, parentId));
+        taskExecutionDto.setStlReadyGroupId(parseGroupId(stlReadyJob.getBillingPeriod(), stlReadyJob.getProcessType(), parentId));
         taskExecutionDto.setRunDateTime(DateUtil.convertToDate(stlReadyJob.getMaxJobExecStartTime()));
 
         // all queried stlReadyJob instance are filtered for 'COMPLETED' job runs
@@ -509,24 +513,33 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto, final StlCalculationType stlCalculationType) {
 
-        List<SettlementJobLock> stlJobLocks = settlementJobLockRepository.findByStartDateAndEndDateAndStlCalculationType(
+        List<SettlementJobLock> stlJobLocks = settlementJobLockRepository.findByStartDateAndEndDateAndStlCalculationTypeAndProcessTypeIn(
                 DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
                 DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()),
-                stlCalculationType);
+                stlCalculationType, Arrays.asList(FINAL, ADJUSTED));
 
         for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
 
             stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
                     && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
-                    .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(true));
+                    .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLocked()));
 
             // additional lock checking for adjusted type if it's not yet locked
             if (ADJUSTED.equals(taskExecutionDto.getProcessType()) && !stlJobGroupDto.isLocked()) {
                 stlJobGroupDto.setLocked(true);
 
                 // release lock if FINAL is already locked
-                stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getProcessType() == FINAL).findFirst().ifPresent(finalStlLock ->
-                        stlJobGroupDto.setLocked(false));
+                stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getProcessType() == FINAL && stlJobLock.isLocked())
+                        .findFirst().ifPresent(finalStlLock -> stlJobGroupDto.setLocked(false));
+            }
+
+            // Job can run adjustment when all jobs are locked
+            if (stlJobLocks.stream().allMatch(SettlementJobLock::isLocked)) {
+                // get latest Settlement Job Lock check if groupId matches
+                stlJobLocks.stream().sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
+                    .findFirst().ifPresent(stlJobLock -> stlJobGroupDto
+                        .setCanRunAdjustment(Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId()))
+                    );
             }
         }
 
@@ -576,7 +589,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return arguments;
     }
 
-    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto, final StlCalculationType calculationType) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
@@ -590,7 +603,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         LocalDateTime billPeriodEndDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseEndDate(),
                 DateUtil.DEFAULT_DATE_FORMAT);
 
-        switch (MeterProcessType.valueOf(type)) {
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        switch (processType) {
             case DAILY:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getDailyGenInputWorkspaceProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
@@ -632,10 +647,35 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
 
+        // Create SettlementJobLock. Do not include daily since it does not have finalize job
+        if (processType != DAILY) {
+            BooleanBuilder predicate = new BooleanBuilder();
+            predicate.and(settlementJobLock.groupId.eq(groupId)
+                     .and(settlementJobLock.processType.eq(processType))
+                     .and(settlementJobLock.stlCalculationType.eq(calculationType)));
+
+            if (!settlementJobLockRepository.exists(predicate)) {
+                log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
+                        groupId, calculationType, processType);
+                SettlementJobLock jobLock = new SettlementJobLock();
+                jobLock.setCreatedDatetime(LocalDateTime.now());
+                jobLock.setStartDate(DateUtil.parseLocalDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd").atStartOfDay());
+                jobLock.setEndDate(DateUtil.parseLocalDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd").atStartOfDay());
+                jobLock.setGroupId(groupId);
+                jobLock.setParentJobId(Long.valueOf(taskRunDto.getParentJob()));
+                jobLock.setStlCalculationType(calculationType);
+                jobLock.setProcessType(processType);
+                jobLock.setLocked(false);
+
+                settlementJobLockRepository.save(jobLock);
+            }
+
+        }
+
         log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
-        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+//        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+//        lockJob(taskRunDto);
     }
 
     void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {

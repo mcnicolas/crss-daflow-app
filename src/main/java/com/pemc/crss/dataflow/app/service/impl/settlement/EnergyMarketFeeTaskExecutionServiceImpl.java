@@ -21,14 +21,17 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.PRELIM;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_MARKET_FEE;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
@@ -85,6 +88,17 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
             if (Arrays.asList(FINAL, ADJUSTED).contains(taskExecutionDto.getProcessType())) {
                 determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.ENERGY_MARKET_FEE);
+            }
+
+            if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
+
+                taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+
+                    SortedSet<LocalDate> remainingDatesForCalculation = getRemainingDatesForCalculation(stlJobGroupDto.getJobCalculationDtos(),
+                            taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate());
+
+                    stlJobGroupDto.setRemainingDatesCalc(remainingDatesForCalculation);
+                });
             }
 
             taskExecutionDtos.add(taskExecutionDto);

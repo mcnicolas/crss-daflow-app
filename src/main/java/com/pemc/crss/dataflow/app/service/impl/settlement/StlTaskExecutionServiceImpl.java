@@ -31,13 +31,11 @@ import org.springframework.data.domain.Pageable;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settlementJobLock;
@@ -207,12 +206,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                      final SettlementTaskExecutionDto taskExecutionDto,
                                      final String stlReadyGroupId) {
 
-        Map<String, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
-
         for (JobInstance genWsStlJobInstance : generateInputWsJobInstances) {
 
             JobExecution genWsJobExec = getJobExecutionFromJobInstance(genWsStlJobInstance);
-            boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
 
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
@@ -223,12 +219,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             Date genInputWsStartDate = genInputWsJobParameters.getDate(START_DATE);
             Date genInputWsEndDate = genInputWsJobParameters.getDate(END_DATE);
 
-            if (!isDaily && !remainingDatesMap.containsKey(groupId)) {
-                remainingDatesMap.put(groupId, createRange(billPeriodStartDate, billPeriodEndDate));
-            }
-
             final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-            stlJobGroupDto.setRemainingDatesMapGenIw(remainingDatesMap);
 
             if (currentBatchStatus.isRunning()) {
                 // for validation of gmr calculation in case stl amt is recalculated
@@ -258,17 +249,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
                     genWsJobExec.getEndTime(), genInputWsStartDate, genInputWsEndDate,
-                    jobGenInputWsStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
+                    jobGenInputWsStatus, STAGE_PARTIAL_GENERATE_INPUT_WS, currentBatchStatus);
 
             // for skiplogs use
             partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
-
-            if (!isDaily && BatchStatus.COMPLETED == currentBatchStatus
-                    && stlJobGroupDto.getRemainingDatesMapGenIw().containsKey(groupId)) {
-                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapGenIw().get(groupId), genInputWsStartDate, genInputWsEndDate);
-            }
 
             stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
             stlJobGroupDto.setGroupId(groupId);
@@ -304,12 +290,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                   final SettlementTaskExecutionDto taskExecutionDto,
                                   final String stlReadyGroupId) {
 
-        Map<String, SortedSet<LocalDate>> remainingDatesMap = new HashMap<>();
-
         for (JobInstance stlCalcJobInstance : stlCalculationJobInstances) {
 
             JobExecution stlCalcJobExec = getJobExecutionFromJobInstance(stlCalcJobInstance);
-            boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
 
             Date billPeriodStartDate = taskExecutionDto.getBillPeriodStartDate();
             Date billPeriodEndDate = taskExecutionDto.getBillPeriodEndDate();
@@ -320,12 +303,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             Date calcStartDate = calcJobParameters.getDate(START_DATE);
             Date calcEndDate = calcJobParameters.getDate(END_DATE);
 
-            if (!isDaily && !remainingDatesMap.containsKey(groupId)) {
-                remainingDatesMap.put(groupId, createRange(billPeriodStartDate, billPeriodEndDate));
-            }
-
             final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
-            stlJobGroupDto.setRemainingDatesMapCalc(remainingDatesMap);
 
             if (currentBatchStatus.isRunning()) {
                 // for validation of gmr calculation in case stl amt is recalculated
@@ -343,16 +321,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(stlCalcJobExec.getStartTime(),
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
-                    jobCalcStatus, STAGE_PARTIAL_CALC);
+                    jobCalcStatus, STAGE_PARTIAL_CALC, currentBatchStatus);
 
             partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getCalculateStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
-
-            if (!isDaily && BatchStatus.COMPLETED == currentBatchStatus
-                    && stlJobGroupDto.getRemainingDatesMapCalc().containsKey(groupId)) {
-                removeDateRangeFrom(stlJobGroupDto.getRemainingDatesMapCalc().get(groupId), calcStartDate, calcEndDate);
-            }
 
             stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
             stlJobGroupDto.setGroupId(groupId);
@@ -409,7 +382,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobCalculationDto finalizeJobDto = new JobCalculationDto(tagJobExecution.getStartTime(),
                     tagJobExecution.getEndTime(), tagStartDate, tagEndDate,
-                    convertStatus(currentStatus, STAGE_TAGGING), STAGE_TAGGING);
+                    convertStatus(currentStatus, STAGE_TAGGING), STAGE_TAGGING, currentStatus);
 
             stlJobGroupDto.getJobCalculationDtos().add(finalizeJobDto);
 
@@ -473,14 +446,42 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
+    SortedSet<LocalDate> getRemainingDatesForCalculation(final List<JobCalculationDto> jobDtos,
+                                               final Date billPeriodStart,
+                                               final Date billPeriodEnd) {
 
-    private SortedSet<LocalDate> createRange(Date start, Date end) {
+        SortedSet<LocalDate> remainingCalcDates = createRange(billPeriodStart, billPeriodEnd);
+
+        List<JobCalculationDto> filteredJobDtosAsc = jobDtos.stream().filter(jobDto ->
+                Arrays.asList(STAGE_PARTIAL_CALC, STAGE_PARTIAL_GENERATE_INPUT_WS).contains(jobDto.getJobStage())
+                && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
+                .sorted(Comparator.comparing(JobCalculationDto::getRunDate)).collect(Collectors.toList());
+
+        for (JobCalculationDto jobDto : filteredJobDtosAsc) {
+            switch (jobDto.getJobStage()) {
+                case STAGE_PARTIAL_GENERATE_INPUT_WS:
+                    addDateRangeTo(remainingCalcDates, jobDto.getStartDate(), jobDto.getEndDate());
+                    break;
+                case STAGE_PARTIAL_CALC:
+                    removeDateRangeFrom(remainingCalcDates, jobDto.getStartDate(), jobDto.getEndDate());
+                    break;
+                default:
+                    // do nothing
+            }
+        }
+
+        return remainingCalcDates;
+    }
+
+    private SortedSet<LocalDate> createRange(final Date start, final Date end) {
         if (start == null || end == null) {
             return new TreeSet<>();
         }
+
         SortedSet<LocalDate> localDates = new TreeSet<>();
-        LocalDate currentDate = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        LocalDate currentDate = DateUtil.convertToLocalDate(start);
+        LocalDate endDate = DateUtil.convertToLocalDate(end);
 
         while (!currentDate.isAfter(endDate)) {
             localDates.add(currentDate);
@@ -557,15 +558,27 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 : null;
     }
 
-    private void removeDateRangeFrom(SortedSet<LocalDate> remainingDates, Date calcStartDate, Date calcEndDate) {
-        LocalDate startDate = calcStartDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate endDate = calcEndDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    private void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
+                                     final Date calcEndDate) {
+        SortedSet<LocalDate> datesToRemove = createRange(calcStartDate, calcEndDate);
 
-        LocalDate ctrDate = startDate;
-        while (ctrDate.isBefore(endDate) || ctrDate.isEqual(endDate)) {
-            remainingDates.remove(ctrDate);
-            ctrDate = ctrDate.plusDays(1);
-        }
+        datesToRemove.forEach(date -> {
+            if (remainingDates.contains(date)) {
+                remainingDates.remove(date);
+            }
+        });
+    }
+
+    private void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
+                                final Date calcEndDate) {
+
+       SortedSet<LocalDate> datesToAdd = createRange(calcStartDate, calcEndDate);
+
+       datesToAdd.forEach(date -> {
+           if (!remainingDates.contains(date)) {
+               remainingDates.add(date);
+           }
+       });
     }
 
     /* findJobInstances methods end */

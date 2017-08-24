@@ -13,7 +13,6 @@ import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
-import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
@@ -121,6 +122,16 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.TRADING_AMOUNTS);
             }
 
+            if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
+
+                taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+
+                    SortedSet<LocalDate> remainingDatesForCalculation = getRemainingDatesForCalculation(stlJobGroupDto.getJobCalculationDtos(),
+                            taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate());
+
+                    stlJobGroupDto.setRemainingDatesCalc(remainingDatesForCalculation);
+                });
+            }
             taskExecutionDtos.add(taskExecutionDto);
         }
 
@@ -230,6 +241,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     private Map<String, List<JobCalculationDto>> getCalcGmrJobCalculationMap(List<JobInstance> calcGmrStlJobInstances) {
         Map<String, List<JobCalculationDto>> jobCalculationDtoMap = new HashMap<>();
+
         // add distinct jobNames for multiple same parentId-groupId job instances
         calcGmrStlJobInstances.stream().map(JobInstance::getJobName).distinct().forEach(calcJobInstanceName ->
                 jobCalculationDtoMap.put(calcJobInstanceName, new ArrayList<>()));
@@ -238,8 +250,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             JobParameters calcGmrJobParameters = jobExecution.getJobParameters();
             Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
             Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
-            JobCalculationDto gmrCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),  calcGmrStartDate,
-                    calcGmrEndDate, convertStatus(jobExecution.getStatus(), STAGE_GMR_CALC), STAGE_GMR_CALC);
+            JobCalculationDto gmrCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
+                    calcGmrStartDate, calcGmrEndDate, convertStatus(jobExecution.getStatus(), STAGE_GMR_CALC),
+                    STAGE_GMR_CALC, jobExecution.getStatus());
             gmrCalcDto.setTaskSummaryList(showSummary(jobExecution, STL_GMR_CALC_STEP_WITH_SKIP_LOGS));
             jobCalculationDtoMap.get(calcGmrInstance.getJobName()).add(gmrCalcDto);
         }));

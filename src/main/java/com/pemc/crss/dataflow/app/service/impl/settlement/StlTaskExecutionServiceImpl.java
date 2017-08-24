@@ -238,13 +238,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             if (jobCalculationDtoList.isEmpty()) {
                 stlJobGroupDto.setRunStartDateTime(genWsJobExec.getStartTime());
                 stlJobGroupDto.setRunEndDateTime(genWsJobExec.getEndTime());
-
-                // get first stl-calc item's status
-                stlJobGroupDto.setStatus(jobGenInputWsStatus);
-            } else {
-                String latestStatus = getLatestJobCalcStatusByStage(stlJobGroupDto, STAGE_PARTIAL_GENERATE_INPUT_WS);
-                // get latest status first
-                stlJobGroupDto.setStatus(latestStatus);
             }
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
@@ -330,9 +323,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             stlJobGroupDto.setJobCalculationDtos(jobCalculationDtoList);
             stlJobGroupDto.setGroupId(groupId);
 
-            // set latest status regardless if gen input ws / calculate
-            stlJobGroupDto.setStatus(getLatestJobCalcStatus(stlJobGroupDto));
-
             Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
             if (latestJobExecStartDate == null || !latestJobExecStartDate.after(stlCalcJobExec.getStartTime())) {
                 updateProgress(stlCalcJobExec, stlJobGroupDto);
@@ -376,7 +366,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
             BatchStatus currentStatus = tagJobExecution.getStatus();
-            stlJobGroupDto.setStatus(convertStatus(currentStatus, STAGE_TAGGING));
             stlJobGroupDto.setTaggingStatus(currentStatus);
             stlJobGroupDto.setGroupId(groupId);
 
@@ -473,6 +462,56 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return remainingCalcDates;
     }
 
+    SortedSet<LocalDate> getRemainingDatesForGenInputWs(final List<JobCalculationDto> jobDtos,
+                                                        final Date billPeriodStart,
+                                                        final Date billPeriodEnd) {
+
+        SortedSet<LocalDate> remainingGenInputWsDates = createRange(billPeriodStart, billPeriodEnd);
+
+        List<JobCalculationDto> filteredGenInputWsDtosAsc = jobDtos.stream()
+                .filter(jobDto ->
+                        Objects.equals(STAGE_PARTIAL_GENERATE_INPUT_WS, jobDto.getJobStage())
+                                && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
+                .sorted(Comparator.comparing(JobCalculationDto::getRunDate))
+                .collect(Collectors.toList());
+
+        for (JobCalculationDto jobDto : filteredGenInputWsDtosAsc) {
+            removeDateRangeFrom(remainingGenInputWsDates, jobDto.getStartDate(), jobDto.getEndDate());
+        }
+
+        return remainingGenInputWsDates;
+    }
+
+    void determineStlJobGroupDtoStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily) {
+        stlJobGroupDto.getSortedJobCalculationDtos().stream().findFirst().ifPresent(jobDto -> {
+
+            if (jobDto.getJobExecStatus().isRunning() || isDaily) {
+                stlJobGroupDto.setStatus(jobDto.getStatus());
+            } else {
+                // special rules for generate input ws and calculations
+                switch (jobDto.getJobStage()) {
+                    case STAGE_PARTIAL_GENERATE_INPUT_WS:
+                        if (stlJobGroupDto.getRemainingDatesGenInputWs().isEmpty()) {
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STATUS_FULL_GENERATE_INPUT_WS));
+                        } else {
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STAGE_PARTIAL_GENERATE_INPUT_WS));
+                        }
+                        break;
+                    case STAGE_PARTIAL_CALC:
+                        if (stlJobGroupDto.getRemainingDatesCalc().isEmpty()) {
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STATUS_FULL_STL_CALC));
+                        } else {
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STAGE_PARTIAL_CALC));
+                        }
+                        break;
+                    default:
+                        stlJobGroupDto.setStatus(jobDto.getStatus());
+                }
+            }
+
+        });
+    }
+
     private SortedSet<LocalDate> createRange(final Date start, final Date end) {
         if (start == null || end == null) {
             return new TreeSet<>();
@@ -544,18 +583,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
         }
 
-    }
-
-    String getLatestJobCalcStatusByStage(StlJobGroupDto stlJobGroupDto, String stage) {
-        return stlJobGroupDto.getSortedJobCalculationDtos().stream()
-                .filter(stlJob -> stlJob.getJobStage().equals(stage))
-                .map(JobCalculationDto::getStatus).findFirst().get();
-    }
-
-    String getLatestJobCalcStatus(StlJobGroupDto stlJobGroupDto) {
-        return !stlJobGroupDto.getSortedJobCalculationDtos().isEmpty()
-                ? stlJobGroupDto.getSortedJobCalculationDtos().get(0).getStatus()
-                : null;
     }
 
     private void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,

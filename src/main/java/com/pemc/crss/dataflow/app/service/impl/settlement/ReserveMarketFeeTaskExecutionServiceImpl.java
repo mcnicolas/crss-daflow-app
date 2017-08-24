@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl.settlement;
 
+import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
 import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
@@ -21,17 +22,14 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.PRELIM;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
@@ -86,16 +84,17 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
                 determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.RESERVE_MARKET_FEE);
             }
 
-            if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
+            taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+                List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();
 
-                taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+                stlJobGroupDto.setRemainingDatesCalc(getRemainingDatesForCalculation(jobDtos,
+                        taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate()));
 
-                    SortedSet<LocalDate> remainingDatesForCalculation = getRemainingDatesForCalculation(stlJobGroupDto.getJobCalculationDtos(),
-                            taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate());
+                stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos,
+                        taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate()));
 
-                    stlJobGroupDto.setRemainingDatesCalc(remainingDatesForCalculation);
-                });
-            }
+                determineStlJobGroupDtoStatus(stlJobGroupDto, false);
+            });
 
             taskExecutionDtos.add(taskExecutionDto);
         }

@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
@@ -122,16 +120,18 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.TRADING_AMOUNTS);
             }
 
-            if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
+            taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+                List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();
 
-                taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+                stlJobGroupDto.setRemainingDatesCalc(getRemainingDatesForCalculation(jobDtos,
+                        taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate()));
 
-                    SortedSet<LocalDate> remainingDatesForCalculation = getRemainingDatesForCalculation(stlJobGroupDto.getJobCalculationDtos(),
-                            taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate());
+                stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos,
+                        taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate()));
 
-                    stlJobGroupDto.setRemainingDatesCalc(remainingDatesForCalculation);
-                });
-            }
+                determineStlJobGroupDtoStatus(stlJobGroupDto, taskExecutionDto.getProcessType().equals(DAILY));
+            });
+
             taskExecutionDtos.add(taskExecutionDto);
         }
 
@@ -215,9 +215,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             Optional.ofNullable(gmrJobCalculationDtoMap.get(calcGmrStlJobName)).ifPresent(
                     jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
             );
-
-            // set latest status regardless if latest job was gen input ws / calculate / calculate gmr
-            stlJobGroupDto.setStatus(getLatestJobCalcStatus(stlJobGroupDto));
 
             stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
             stlJobGroupDto.setGroupId(groupId);

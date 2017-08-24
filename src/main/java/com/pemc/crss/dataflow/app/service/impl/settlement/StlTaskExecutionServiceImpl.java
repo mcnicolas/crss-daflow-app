@@ -674,8 +674,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
-//        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-//        lockJob(taskRunDto);
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+        lockJob(taskRunDto);
     }
 
     void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {

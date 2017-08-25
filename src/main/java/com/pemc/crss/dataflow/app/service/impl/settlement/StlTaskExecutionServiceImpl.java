@@ -15,6 +15,7 @@ import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
+import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -508,6 +510,59 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
 
         });
+    }
+
+    SortedSet<LocalDate> getOutdatedTradingDates(final List<JobCalculationDto> jobDtos,
+                                                 final List<ViewSettlementJob> stlReadyJobs,
+                                                 final Date billPeriodStart,
+                                                 final Date billPeriodEnd) {
+
+        Map<LocalDate, LocalDateTime> stlReadyDateMap = new HashMap<>();
+
+        createRange(billPeriodStart, billPeriodEnd).forEach(tradingDate -> stlReadyDateMap.put(tradingDate, LocalDateTime.MIN));
+
+        // create map of updated trading dates from stlReady per day
+        stlReadyJobs.forEach(stlReadyJob -> {
+            Date stlReadyStartDate = DateUtil.convertToDate(stlReadyJob.getStartDate());
+            Date stlReadyEndDate = DateUtil.convertToDate(stlReadyJob.getEndDate());
+
+            SortedSet<LocalDate> stlReadyDates = createRange(stlReadyStartDate, stlReadyEndDate);
+
+            stlReadyDates.forEach(stlReadyDate -> {
+                if (stlReadyDateMap.containsKey(stlReadyDate) && stlReadyJob.getJobExecStartTime()
+                        .isAfter(stlReadyDateMap.get(stlReadyDate))) {
+
+                    // update tradingDateMap with the latest stlReadyRun per day
+                    stlReadyDateMap.put(stlReadyDate, stlReadyJob.getJobExecStartTime());
+                }
+            });
+        });
+
+        List<JobCalculationDto> filteredGenInputWsDtosAsc = jobDtos.stream()
+                .filter(jobDto ->
+                        Objects.equals(GENERATE_IWS, jobDto.getJobStage())
+                                && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
+                .sorted(Comparator.comparing(JobCalculationDto::getRunDate))
+                .collect(Collectors.toList());
+
+        Map<LocalDate, LocalDateTime> genInputWsDateMap = new HashMap<>();
+
+        // create map of updated trading dates from gen input workspace per day
+        filteredGenInputWsDtosAsc.forEach(genInputWsDto -> createRange(genInputWsDto.getStartDate(), genInputWsDto.getEndDate())
+                .forEach(genInputWsDate -> genInputWsDateMap.put(genInputWsDate,
+                        DateUtil.convertToLocalDateTime(genInputWsDto.getRunDate()))));
+
+        SortedSet<LocalDate> outdatedTradingDates = new TreeSet<>();
+
+        genInputWsDateMap.forEach((genInputWsDate, genInputWsExecDateTime) -> {
+
+            // determine outdated dates
+            if (stlReadyDateMap.get(genInputWsDate).isAfter(genInputWsExecDateTime)) {
+                outdatedTradingDates.add(genInputWsDate);
+            }
+        });
+
+        return outdatedTradingDates;
     }
 
     private SortedSet<LocalDate> createRange(final Date start, final Date end) {

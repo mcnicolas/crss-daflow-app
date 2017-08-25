@@ -55,6 +55,8 @@ public class StlJobGroupDto {
 
     private SortedSet<LocalDate> remainingDatesGenInputWs = new TreeSet<>();
 
+    private SortedSet<LocalDate> outdatedTradingDates = new TreeSet<>();
+
     private boolean runningStlCalculation;
 
     private boolean runningGenInputWorkspace;

@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
+import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.repository.ViewSettlementJobRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,6 +102,12 @@ public class StlReadyJobQueryServiceImpl implements StlReadyJobQueryService {
         } else {
             return viewSettlementJobRepository.findDistinctStlReadyJobs(processTypes, billingPeriod, pageable);
         }
+    }
+
+    @Override
+    public List<ViewSettlementJob> getStlReadyJobsByParentIdAndProcessType(final MeterProcessType processType,
+                                                                           final String parentId) {
+        return viewSettlementJobRepository.getStlReadyJobsByParentIdAndProcessType(processType, parentId);
     }
 
     private StlQueryProcessType resolveProcessType(final Map<String, String> mapParams) {

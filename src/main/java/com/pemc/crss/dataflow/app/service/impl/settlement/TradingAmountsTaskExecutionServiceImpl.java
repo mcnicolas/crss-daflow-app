@@ -14,6 +14,7 @@ import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
+import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
@@ -85,7 +86,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             Map<String, StlJobGroupDto> stlJobGroupDtoMap = new HashMap<>();
             stlJobGroupDtoMap.put(stlReadyGroupId, initialJobGroupDto);
 
-            MeterProcessType processType = taskExecutionDto.getProcessType();
+            final MeterProcessType processType = taskExecutionDto.getProcessType();
 
             /* GENERATE INPUT WORKSPACE START */
             List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
@@ -124,15 +125,27 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             }
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
+
+                boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
+
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();
+                Date billPeriodStart = taskExecutionDto.getBillPeriodStartDate();
+                Date billPeriodEnd = taskExecutionDto.getBillPeriodEndDate();
 
-                stlJobGroupDto.setRemainingDatesCalc(getRemainingDatesForCalculation(jobDtos,
-                        taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate()));
+                stlJobGroupDto.setRemainingDatesCalc(getRemainingDatesForCalculation(jobDtos,billPeriodStart, billPeriodEnd));
 
-                stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos,
-                        taskExecutionDto.getBillPeriodStartDate(), taskExecutionDto.getBillPeriodEndDate()));
+                stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos, billPeriodStart, billPeriodEnd));
 
-                determineStlJobGroupDtoStatus(stlJobGroupDto, taskExecutionDto.getProcessType().equals(DAILY));
+                determineStlJobGroupDtoStatus(stlJobGroupDto, isDaily);
+
+                if (!isDaily && stlJobGroupDto.isHeader()) {
+
+                    List<ViewSettlementJob> viewSettlementJobs = stlReadyJobQueryService
+                            .getStlReadyJobsByParentIdAndProcessType(processType, parentIdStr);
+
+                    stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
+                            viewSettlementJobs, billPeriodStart, billPeriodEnd));
+                }
             });
 
             taskExecutionDtos.add(taskExecutionDto);

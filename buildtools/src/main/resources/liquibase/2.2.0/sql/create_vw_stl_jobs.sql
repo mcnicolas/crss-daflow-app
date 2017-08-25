@@ -17,7 +17,12 @@ CREATE VIEW vw_stl_jobs AS
       COALESCE((select jep.string_val from batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'processType' limit 1), 'DAILY') AS process_type,
       (select jep.date_val from batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name in ('startDate', 'date') limit 1) AS start_date,
       (select jep.date_val from batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'endDate' limit 1) AS end_date,
-      (select jep.long_val :: VARCHAR from batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'bp' limit 1) AS billing_period
+      (select
+         CASE
+         WHEN jep.string_val = ''
+         THEN null
+         ELSE jep.string_val
+         END from batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'bp' limit 1) AS billing_period
     FROM batch_job_instance ji
     INNER JOIN batch_job_execution je ON ji.JOB_INSTANCE_ID = je.JOB_INSTANCE_ID
     WHERE ji.job_name ILIKE '%stlReady%' ) inner_q;

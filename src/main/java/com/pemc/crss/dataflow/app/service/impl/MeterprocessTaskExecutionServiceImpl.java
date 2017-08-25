@@ -83,17 +83,18 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         DateTimeFormatter dtf = DateTimeFormat.forPattern("yyMMdd");
         List<DistinctWesmBillingPeriod> distinctBillingPeriodAndProcessType = executionParamRepository.getDistinctBillingPeriodAndProcessType(pageable.getOffset(), pageable.getPageSize(), RUN_WESM_JOB_NAME);
         for (DistinctWesmBillingPeriod o : distinctBillingPeriodAndProcessType) {
-            String bp = String.valueOf(o.getBillingPeriod());
             GroupTaskExecutionDto groupTaskExecutionDto = new GroupTaskExecutionDto();
             groupTaskExecutionDto.setProcessType(o.getProcessType());
             groupTaskExecutionDto.setBillingPeriod(o.getBillingPeriod());
-            if (bp.length() > 6) {
-                DateTime startDate = dtf.parseDateTime(bp.substring(0, 6));
-                DateTime endDate = dtf.parseDateTime(bp.substring(6));
+            if (o.getBillingPeriod().length() > 6) {
+                // monthly
+                DateTime startDate = dtf.parseDateTime(o.getBillingPeriod().substring(0, 6));
+                DateTime endDate = dtf.parseDateTime(o.getBillingPeriod().substring(6));
                 groupTaskExecutionDto.setStartDate(startDate.toDate());
                 groupTaskExecutionDto.setEndDate(endDate.toDate());
             } else {
-                DateTime date = dtf.parseDateTime(bp);
+                // daily
+                DateTime date = dtf.parseDateTime(o.getBillingPeriod());
                 groupTaskExecutionDto.setDate(date.toDate());
             }
             groupTaskExecutionDtos.add(groupTaskExecutionDto);
@@ -196,13 +197,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 batchJobAddtlParamsRepository.save(paramsSelectedMtns);
             }
 
-            // for list by billing period
-            if (taskRunDto.getFormattedBillingPeriod() != null) {
-                arguments.add(concatKeyValue("bp", String.valueOf(taskRunDto.getFormattedBillingPeriod()), PARAMS_TYPE_LONG));
-            }
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
+            // for list by billing period
+            arguments.add(concatKeyValue("bp", taskRunDto.getFormattedBillingPeriod()));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
@@ -291,9 +290,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
-                if (taskRunDto.getFormattedBillingPeriod() != null) {
-                    arguments.add(concatKeyValue("bp", String.valueOf(taskRunDto.getFormattedBillingPeriod()), PARAMS_TYPE_LONG));
-                }
+                arguments.add(concatKeyValue("bp", taskRunDto.getFormattedBillingPeriod()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {

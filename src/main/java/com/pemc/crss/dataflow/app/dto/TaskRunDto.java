@@ -34,7 +34,7 @@ public class TaskRunDto {
     private String billingPeriodName;
 
     // yyMMdd (daily) or yyMMddyyMMdd (monthly)
-    private Long formattedBillingPeriod;
+    private String formattedBillingPeriod;
 
     //MTR, possible values: ALL or specific msp
     private String msp;
@@ -213,11 +213,11 @@ public class TaskRunDto {
         this.billingPeriodName = billingPeriodName;
     }
 
-    public Long getFormattedBillingPeriod() {
+    public String getFormattedBillingPeriod() {
         return formattedBillingPeriod;
     }
 
-    public void setFormattedBillingPeriod(Long formattedBillingPeriod) {
+    public void setFormattedBillingPeriod(String formattedBillingPeriod) {
         this.formattedBillingPeriod = formattedBillingPeriod;
     }
 

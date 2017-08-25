@@ -8,7 +8,7 @@ import java.util.List;
 
 public class GroupTaskExecutionDto {
 
-    private Long billingPeriod;
+    private String billingPeriod;
     private Date date;
     private Date startDate;
     private Date endDate;
@@ -33,11 +33,11 @@ public class GroupTaskExecutionDto {
         this.processType = processType;
     }
 
-    public Long getBillingPeriod() {
+    public String getBillingPeriod() {
         return billingPeriod;
     }
 
-    public void setBillingPeriod(Long billingPeriod) {
+    public void setBillingPeriod(String billingPeriod) {
         this.billingPeriod = billingPeriod;
     }
 
@@ -87,38 +87,5 @@ public class GroupTaskExecutionDto {
 
     public void setTaskExecutionDtoList(List<TaskExecutionDto> taskExecutionDtoList) {
         this.taskExecutionDtoList = taskExecutionDtoList;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        GroupTaskExecutionDto that = (GroupTaskExecutionDto) o;
-
-        if (processType == null || "".equals(processType)) {
-            if (date == null) return false;
-            if (that.date == null) return false;
-            if (date.compareTo(that.date) != 0) return false;
-        } else {
-            if (startDate == null) return false;
-            if (endDate == null) return false;
-            if (that.startDate == null) return false;
-            if (that.endDate == null) return false;
-            if (startDate.compareTo(that.startDate) != 0) return false;
-            if (endDate.compareTo(that.endDate) != 0) return false;
-        }
-        if (!processType.equals(that.processType)) return false;
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = 0;
-        result = 31 * result + (date != null ? date.hashCode() : 0);
-        result = 31 * result + (startDate != null ? startDate.hashCode() : 0);
-        result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
-        result = 31 * result + (processType != null ? processType.hashCode() : 0);
-        return result;
     }
 }

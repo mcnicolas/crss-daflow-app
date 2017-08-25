@@ -103,7 +103,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     @Override
-    public Page<TaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, long billingPeriod, String processType) {
+    public Page<TaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType) {
         int count = executionParamRepository.countJobInstanceByBillingPeriodAndProcessType(RUN_WESM_JOB_NAME, billingPeriod, processType);
         return new PageImpl<>(getTaskExecutionDtosUnderBillingPeriod(count, pageable, billingPeriod, processType));
     }
@@ -354,7 +354,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return taskExecutionDtos;
     }
 
-    private List<TaskExecutionDto> getTaskExecutionDtosUnderBillingPeriod(int count, Pageable pageable, long billingPeriod, String processType) {
+    private List<TaskExecutionDto> getTaskExecutionDtosUnderBillingPeriod(int count, Pageable pageable, String billingPeriod, String processType) {
         List<TaskExecutionDto> taskExecutionDtos = Lists.newArrayList();
 
         if (count > 0) {

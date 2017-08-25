@@ -110,7 +110,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     }
 
     @Override
-    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, long billingPeriod, String processType) {
+    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType) {
         return null;
     }
 

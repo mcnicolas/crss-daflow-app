@@ -26,7 +26,7 @@ public interface TaskExecutionService {
 
     Page<GroupTaskExecutionDto> findDistinctBillingPeriodAndProcessType(Pageable pageable);
 
-    Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, long billingPeriod, String processType);
+    Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType);
 
     void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
 

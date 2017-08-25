@@ -45,6 +45,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static com.pemc.crss.dataflow.app.support.StlJobStage.*;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settlementJobLock;
 
@@ -52,15 +53,11 @@ import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settl
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
     static final String SPRING_BATCH_MODULE_STL_CALC = "crss-settlement-task-calculation";
-    static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
-    static final String STAGE_PARTIAL_GENERATE_INPUT_WS = "PARTIAL-GENERATE-INPUT-WORKSPACE";
-    static final String STATUS_FULL_GENERATE_INPUT_WS = "FULL-GENERATE-INPUT-WORKSPACE";
+    private static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
-    static final String STAGE_PARTIAL_CALC = "PARTIAL-CALCULATION";
-    static final String STATUS_FULL_STL_CALC = "FULL-SETTLEMENT-CALCULATION";
-
-    private static final String STAGE_TAGGING = "TAGGING";
+    private static final String PARTIAL = "PARTIAL-";
+    private static final String FULL = "FULL-";
 
     // from batch_job_execution_context
     private static final String INVOICE_GENERATION_FILENAME_KEY = "INVOICE_GENERATION_FILENAME";
@@ -231,8 +228,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     && genInputWsStartDate.compareTo(billPeriodStartDate) == 0 && genInputWsEndDate.compareTo(billPeriodEndDate) == 0;
 
             final String jobGenInputWsStatus = fullGenInputWs
-                    ? convertStatus(currentBatchStatus, STATUS_FULL_GENERATE_INPUT_WS)
-                    : convertStatus(currentBatchStatus, STAGE_PARTIAL_GENERATE_INPUT_WS);
+                    ? convertStatus(currentBatchStatus, FULL + GENERATE_IWS.getLabel())
+                    : convertStatus(currentBatchStatus, PARTIAL + GENERATE_IWS.getLabel());
 
             List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
 
@@ -243,7 +240,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
                     genWsJobExec.getEndTime(), genInputWsStartDate, genInputWsEndDate,
-                    jobGenInputWsStatus, STAGE_PARTIAL_GENERATE_INPUT_WS, currentBatchStatus);
+                    jobGenInputWsStatus, GENERATE_IWS, currentBatchStatus);
 
             // for skiplogs use
             partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));
@@ -259,7 +256,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
 
             Date maxPartialGenInputWsDate = stlJobGroupDto.getJobCalculationDtos().stream()
-                    .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_GENERATE_INPUT_WS))
+                    .filter(jobCalc -> jobCalc.getJobStage().equals(GENERATE_IWS))
                     .map(JobCalculationDto::getRunDate)
                     .max(Date::compareTo).get();
 
@@ -308,14 +305,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     && calcStartDate.compareTo(billPeriodStartDate) == 0 && calcEndDate.compareTo(billPeriodEndDate) == 0;
 
             final String jobCalcStatus = fullCalculation
-                    ? convertStatus(currentBatchStatus, STATUS_FULL_STL_CALC)
-                    : convertStatus(currentBatchStatus, STAGE_PARTIAL_CALC);
+                    ? convertStatus(currentBatchStatus, FULL + CALCULATE_STL.getLabel())
+                    : convertStatus(currentBatchStatus, PARTIAL + CALCULATE_STL.getLabel());
 
             List<JobCalculationDto> jobCalculationDtoList = stlJobGroupDto.getJobCalculationDtos();
 
             JobCalculationDto partialCalcDto = new JobCalculationDto(stlCalcJobExec.getStartTime(),
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
-                    jobCalcStatus, STAGE_PARTIAL_CALC, currentBatchStatus);
+                    jobCalcStatus, CALCULATE_STL, currentBatchStatus);
 
             partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getCalculateStepsForSkipLogs()));
 
@@ -330,7 +327,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             }
 
             Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()
-                    .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_CALC))
+                    .filter(jobCalc -> jobCalc.getJobStage().equals(CALCULATE_STL))
                     .map(JobCalculationDto::getRunDate)
                     .max(Date::compareTo).get();
 
@@ -372,7 +369,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobCalculationDto finalizeJobDto = new JobCalculationDto(tagJobExecution.getStartTime(),
                     tagJobExecution.getEndTime(), tagStartDate, tagEndDate,
-                    convertStatus(currentStatus, STAGE_TAGGING), STAGE_TAGGING, currentStatus);
+                    convertStatus(currentStatus, FINALIZE.getLabel()), FINALIZE, currentStatus);
 
             stlJobGroupDto.getJobCalculationDtos().add(finalizeJobDto);
 
@@ -443,16 +440,16 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         SortedSet<LocalDate> remainingCalcDates = createRange(billPeriodStart, billPeriodEnd);
 
         List<JobCalculationDto> filteredJobDtosAsc = jobDtos.stream().filter(jobDto ->
-                Arrays.asList(STAGE_PARTIAL_CALC, STAGE_PARTIAL_GENERATE_INPUT_WS).contains(jobDto.getJobStage())
+                Arrays.asList(CALCULATE_STL, GENERATE_IWS).contains(jobDto.getJobStage())
                 && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
                 .sorted(Comparator.comparing(JobCalculationDto::getRunDate)).collect(Collectors.toList());
 
         for (JobCalculationDto jobDto : filteredJobDtosAsc) {
             switch (jobDto.getJobStage()) {
-                case STAGE_PARTIAL_GENERATE_INPUT_WS:
+                case GENERATE_IWS:
                     addDateRangeTo(remainingCalcDates, jobDto.getStartDate(), jobDto.getEndDate());
                     break;
-                case STAGE_PARTIAL_CALC:
+                case CALCULATE_STL:
                     removeDateRangeFrom(remainingCalcDates, jobDto.getStartDate(), jobDto.getEndDate());
                     break;
                 default:
@@ -471,7 +468,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         List<JobCalculationDto> filteredGenInputWsDtosAsc = jobDtos.stream()
                 .filter(jobDto ->
-                        Objects.equals(STAGE_PARTIAL_GENERATE_INPUT_WS, jobDto.getJobStage())
+                        Objects.equals(GENERATE_IWS, jobDto.getJobStage())
                                 && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
                 .sorted(Comparator.comparing(JobCalculationDto::getRunDate))
                 .collect(Collectors.toList());
@@ -491,18 +488,18 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             } else {
                 // special rules for generate input ws and calculations
                 switch (jobDto.getJobStage()) {
-                    case STAGE_PARTIAL_GENERATE_INPUT_WS:
+                    case GENERATE_IWS:
                         if (stlJobGroupDto.getRemainingDatesGenInputWs().isEmpty()) {
-                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STATUS_FULL_GENERATE_INPUT_WS));
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), FULL + GENERATE_IWS.getLabel()));
                         } else {
-                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STAGE_PARTIAL_GENERATE_INPUT_WS));
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + GENERATE_IWS.getLabel()));
                         }
                         break;
-                    case STAGE_PARTIAL_CALC:
+                    case CALCULATE_STL:
                         if (stlJobGroupDto.getRemainingDatesCalc().isEmpty()) {
-                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STATUS_FULL_STL_CALC));
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), FULL + CALCULATE_STL.getLabel()));
                         } else {
-                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), STAGE_PARTIAL_CALC));
+                            stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + CALCULATE_STL.getLabel()));
                         }
                         break;
                     default:

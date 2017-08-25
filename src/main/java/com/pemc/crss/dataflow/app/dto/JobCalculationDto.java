@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.dto;
 
+import com.pemc.crss.dataflow.app.support.StlJobStage;
 import lombok.Data;
 import org.springframework.batch.core.BatchStatus;
 
@@ -16,7 +17,7 @@ public class JobCalculationDto {
     }
 
     public JobCalculationDto(Date runDate, Date runEndDate, Date startDate, Date endDate, String status,
-                             String jobStage, BatchStatus jobExecStatus) {
+                             StlJobStage jobStage, BatchStatus jobExecStatus) {
         this.runDate = runDate;
         this.runEndDate = runEndDate;
         this.startDate = startDate;
@@ -31,7 +32,7 @@ public class JobCalculationDto {
     private Date startDate;
     private Date endDate;
     private String status;
-    private String jobStage;
+    private StlJobStage jobStage;
     private BatchStatus jobExecStatus;
 
     private List<TaskSummaryDto> taskSummaryList = new ArrayList<>();

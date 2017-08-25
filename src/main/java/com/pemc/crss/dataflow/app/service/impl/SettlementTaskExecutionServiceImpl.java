@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.support.StlJobStage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URISyntaxException;
@@ -217,7 +218,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
                                     JobCalculationDto partialCalcDto = new JobCalculationDto(calcJobExecution.getStartTime(),
                                             calcJobExecution.getEndTime(), calcStartDate, calcEndDate,
-                                            jobCalcStatus, STAGE_PARTIAL_CALC, currentStatus);
+                                            jobCalcStatus, StlJobStage.CALCULATE_STL, currentStatus);
                                     partialCalcDto.setTaskSummaryList(showSummary(calcJobExecution, STL_CALC_STEP_WITH_SKIP_LOGS));
                                     jobCalculationDtoList.add(partialCalcDto);
 
@@ -230,7 +231,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
                                     }
 
                                     Date maxPartialCalcDate = stlJobGroupDto.getJobCalculationDtos().stream()
-                                            .filter(jobCalc -> jobCalc.getJobStage().equals(STAGE_PARTIAL_CALC))
+                                            .filter(jobCalc -> jobCalc.getJobStage().equals(StlJobStage.CALCULATE_STL))
                                             .map(JobCalculationDto::getRunDate)
                                             .max(Date::compareTo).get();
 
@@ -342,7 +343,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
 
                                 JobCalculationDto finalizeJobDto = new JobCalculationDto(tagJobExecution.getStartTime(),
                                         tagJobExecution.getEndTime(), tagStartDate, tagEndDate,
-                                        convertStatus(currentStatus, STAGE_TAGGING), STAGE_TAGGING, currentStatus);
+                                        convertStatus(currentStatus, STAGE_TAGGING), StlJobStage.FINALIZE, currentStatus);
 
                                 stlJobGroupDto.getJobCalculationDtos().add(finalizeJobDto);
 
@@ -430,7 +431,7 @@ public class SettlementTaskExecutionServiceImpl extends AbstractTaskExecutionSer
             Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
             Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
             JobCalculationDto gmrCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),  calcGmrStartDate,
-                    calcGmrEndDate, convertStatus(jobExecution.getStatus(), STAGE_GMR_CALC), STAGE_GMR_CALC, jobExecution.getStatus());
+                    calcGmrEndDate, convertStatus(jobExecution.getStatus(), STAGE_GMR_CALC), StlJobStage.CALCULATE_GMR, jobExecution.getStatus());
             gmrCalcDto.setTaskSummaryList(showSummary(jobExecution, STL_GMR_CALC_STEP_WITH_SKIP_LOGS));
             jobCalculationDtoMap.get(calcGmrInstance.getJobName()).add(gmrCalcDto);
         }));

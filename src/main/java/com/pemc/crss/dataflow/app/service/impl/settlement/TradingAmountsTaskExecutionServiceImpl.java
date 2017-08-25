@@ -10,6 +10,7 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
@@ -30,6 +31,7 @@ import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +55,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG
 @Transactional
 public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
-    private static final String STAGE_GMR_CALC = "CALCULATION-GMR";
-    private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Arrays.asList(SettlementStepUtil.CALC_GMR_VAT);
+    private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Collections.singletonList(SettlementStepUtil.CALC_GMR_VAT);
 
     @Autowired
     private StlReadyJobQueryService stlReadyJobQueryService;
@@ -250,8 +251,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
             Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
             JobCalculationDto gmrCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
-                    calcGmrStartDate, calcGmrEndDate, convertStatus(jobExecution.getStatus(), STAGE_GMR_CALC),
-                    STAGE_GMR_CALC, jobExecution.getStatus());
+                    calcGmrStartDate, calcGmrEndDate, convertStatus(jobExecution.getStatus(), StlJobStage.CALCULATE_GMR.getLabel()),
+                    StlJobStage.CALCULATE_GMR, jobExecution.getStatus());
             gmrCalcDto.setTaskSummaryList(showSummary(jobExecution, STL_GMR_CALC_STEP_WITH_SKIP_LOGS));
             jobCalculationDtoMap.get(calcGmrInstance.getJobName()).add(gmrCalcDto);
         }));

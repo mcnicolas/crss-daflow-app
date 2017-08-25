@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.dto;
 
+import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import lombok.Data;
 import org.springframework.batch.core.BatchStatus;
@@ -86,7 +87,7 @@ public class StlJobGroupDto {
 
     public boolean isCalculateGmrIsLatestJob() {
         return !getSortedJobCalculationDtos().isEmpty() &&
-                Objects.equals(getSortedJobCalculationDtos().get(0).getJobStage(), "CALCULATION-GMR");
+                Objects.equals(getSortedJobCalculationDtos().get(0).getJobStage(), StlJobStage.CALCULATE_GMR);
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

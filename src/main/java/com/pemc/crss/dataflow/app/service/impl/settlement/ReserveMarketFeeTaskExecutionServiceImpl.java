@@ -22,17 +22,14 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_RMF;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_RMF_INPUT_WS;
 
 @Slf4j
 @Service("reserveMarketFeeTaskExecutionService")
@@ -75,6 +72,10 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* SETTLEMENT CALCULATION START */
+            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    CALC_RMF, processType, parentId);
+
+            initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
 
@@ -125,6 +126,10 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             case GEN_RMF_INPUT_WS:
                 launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.RESERVE_MARKET_FEE);
                 break;
+            case CALC_RMF:
+                validateJobName(GEN_RMF_INPUT_WS);
+                launchCalculateJob(taskRunDto);
+                break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }
@@ -169,22 +174,22 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
     @Override
     String getPrelimCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_RMF_MONTHLY_PRELIM;
     }
 
     @Override
     String getFinalCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_RMF_MONTHLY_FINAL;
     }
 
     @Override
     String getAdjustedMtrAdjCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_RMF_MONTHLY_ADJUSTED;
     }
 
     @Override
     String getAdjustedMtrFinCalculateProfile() {
-        return null;
+        return SettlementJobProfile.CALC_RMF_MONTHLY_ADJUSTED;
     }
 
     // TODO: add steps with skip logs

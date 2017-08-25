@@ -176,7 +176,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentId(final String jobNamePrefix,
                                                                       final MeterProcessType processType,
-                                                                      final String parentId) {
+                                                                      final Long parentId) {
         List<String> processTypes = new ArrayList<>();
         processTypes.add(processType.name());
 
@@ -185,7 +185,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             processTypes.add(ADJUSTED.name());
         }
 
-        return dataFlowJdbcJobExecutionDao.findJobInstancesByNameAndProcessTypeAndParentId(jobNamePrefix, processTypes, parentId);
+        return dataFlowJdbcJobExecutionDao.findJobInstancesByNameAndProcessTypeAndParentId(jobNamePrefix, processTypes,
+                String.valueOf(parentId));
     }
 
     JobExecution getJobExecutionFromJobInstance(final JobInstance jobInstance) {

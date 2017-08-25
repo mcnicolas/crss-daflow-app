@@ -69,9 +69,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         for (DistinctStlReadyJob stlReadyJob : distinctStlReadyJobs) {
 
-            String parentId = stlReadyJob.getParentId();
+            String parentIdStr = stlReadyJob.getParentId();
 
-            SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentId);
+            final Long parentId = Long.valueOf(parentIdStr);
+
+            SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentIdStr);
             String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();
 
             StlJobGroupDto initialJobGroupDto = new StlJobGroupDto();

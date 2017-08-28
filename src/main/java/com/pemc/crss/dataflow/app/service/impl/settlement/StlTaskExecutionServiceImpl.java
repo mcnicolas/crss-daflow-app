@@ -557,7 +557,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         genInputWsDateMap.forEach((genInputWsDate, genInputWsExecDateTime) -> {
 
             // determine outdated dates
-            if (stlReadyDateMap.get(genInputWsDate).isAfter(genInputWsExecDateTime)) {
+            if (stlReadyDateMap.containsKey(genInputWsDate)
+                    && stlReadyDateMap.get(genInputWsDate).isAfter(genInputWsExecDateTime)) {
                 outdatedTradingDates.add(genInputWsDate);
             }
         });

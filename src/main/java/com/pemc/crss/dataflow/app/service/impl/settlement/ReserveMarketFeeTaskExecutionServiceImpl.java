@@ -30,7 +30,9 @@ import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_RMF;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_RMF;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_RMF_INPUT_WS;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_RMF;
 
 @Slf4j
 @Service("reserveMarketFeeTaskExecutionService")
@@ -79,8 +81,16 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
+            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    TAG_RMF, processType, parentId);
+
+            initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES START */
+            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    FILE_RMF, processType, parentId);
+
+            initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
@@ -134,11 +144,22 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
         switch (taskRunDto.getJobName()) {
             case GEN_RMF_INPUT_WS:
+                validateJobName(CALC_RMF);
+                validateJobName(TAG_RMF);
                 launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.RESERVE_MARKET_FEE);
                 break;
             case CALC_RMF:
                 validateJobName(GEN_RMF_INPUT_WS);
+                validateJobName(TAG_RMF);
                 launchCalculateJob(taskRunDto);
+                break;
+            case TAG_RMF:
+                validateJobName(GEN_RMF_INPUT_WS);
+                validateJobName(CALC_RMF);
+                launchFinalizeJob(taskRunDto);
+                break;
+            case FILE_RMF:
+                launchGenerateFileJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -210,31 +231,31 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
     @Override
     String getPrelimTaggingProfile() {
-        return null;
+        return SettlementJobProfile.TAG_MONTHLY_PRELIM_RMF;
     }
 
     @Override
     String getFinalTaggingProfile() {
-        return null;
+        return SettlementJobProfile.TAG_MONTHLY_FINAL_RMF;
     }
 
     @Override
     String getAdjustedTaggingProfile() {
-        return null;
+        return SettlementJobProfile.TAG_MONTHLY_ADJ_RMF;
     }
 
     @Override
     String getPrelimGenFileProfile() {
-        return null;
+        return SettlementJobProfile.GEN_FILE_PRELIM_RMF;
     }
 
     @Override
     String getFinalGenFileProfile() {
-        return null;
+        return SettlementJobProfile.GEN_FILE_FINAL_RMF;
     }
 
     @Override
     String getAdjustedGenFileProfile() {
-        return null;
+        return SettlementJobProfile.GEN_FILE_ADJ_RMF;
     }
 }

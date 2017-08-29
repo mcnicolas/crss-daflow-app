@@ -66,8 +66,7 @@ public class ReserveMarketFeeTaskExecutionResource {
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running finalize job for rmf. taskRunDto={}", taskRunDto);
 
-//        TODO: determine job name once available
-//        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setJobName(SettlementJobName.TAG_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 
@@ -78,8 +77,7 @@ public class ReserveMarketFeeTaskExecutionResource {
     public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running generate file job for rmf. taskRunDto={}", taskRunDto);
 
-//        TODO: determine job name once available
-//        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setJobName(SettlementJobName.FILE_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

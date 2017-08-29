@@ -66,8 +66,7 @@ public class EnergyMarketFeeTaskExecutionResource {
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running finalize job for emf. taskRunDto={}", taskRunDto);
 
-//        TODO: determine job name once available
-//        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setJobName(SettlementJobName.TAG_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 
@@ -78,8 +77,7 @@ public class EnergyMarketFeeTaskExecutionResource {
     public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running generate file job for emf. taskRunDto={}", taskRunDto);
 
-//        TODO: determine job name once available
-//        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setJobName(SettlementJobName.FILE_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

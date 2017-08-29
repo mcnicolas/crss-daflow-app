@@ -83,8 +83,16 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
             initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
+            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    TAG_EMF, processType, parentId);
+
+            initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES START */
+            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    FILE_EMF, processType, parentId);
+
+            initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
@@ -139,11 +147,21 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
         switch (taskRunDto.getJobName()) {
             case GEN_EMF_INPUT_WS:
                 validateJobName(CALC_EMF);
+                validateJobName(TAG_EMF);
                 launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.ENERGY_MARKET_FEE);
                 break;
             case CALC_EMF:
                 validateJobName(GEN_EMF_INPUT_WS);
+                validateJobName(TAG_EMF);
                 launchCalculateJob(taskRunDto);
+                break;
+            case TAG_EMF:
+                validateJobName(GEN_EMF_INPUT_WS);
+                validateJobName(CALC_EMF);
+                launchFinalizeJob(taskRunDto);
+                break;
+            case FILE_EMF:
+                launchGenerateFileJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());

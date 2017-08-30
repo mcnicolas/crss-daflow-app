@@ -234,31 +234,31 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
     @Override
     String getPrelimTaggingProfile() {
-        return null;
+        return SettlementJobProfile.TAG_MONTHLY_PRELIM_EMF;
     }
 
     @Override
     String getFinalTaggingProfile() {
-        return null;
+        return SettlementJobProfile.TAG_MONTHLY_FINAL_EMF;
     }
 
     @Override
     String getAdjustedTaggingProfile() {
-        return null;
+        return SettlementJobProfile.TAG_MONTHLY_ADJ_EMF;
     }
 
     @Override
     String getPrelimGenFileProfile() {
-        return null;
+        return SettlementJobProfile.GEN_FILE_PRELIM_EMF;
     }
 
     @Override
     String getFinalGenFileProfile() {
-        return null;
+        return SettlementJobProfile.GEN_FILE_FINAL_EMF;
     }
 
     @Override
     String getAdjustedGenFileProfile() {
-        return null;
+        return SettlementJobProfile.GEN_FILE_ADJ_EMF;
     }
 }

@@ -714,7 +714,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
 
-                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId, billPeriodStartDate, billPeriodEndDate) < 1) {
+                // only save in batch job adj run repo if trading amounts for tracking groupdId for delta calcs
+                if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId,
+                        billPeriodStartDate, billPeriodEndDate) < 1 && calculationType == StlCalculationType.TRADING_AMOUNTS) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
                             groupId, billPeriodStartDate, billPeriodEndDate);
                     saveAdjRun(FINAL, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
@@ -723,8 +725,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             case ADJUSTED:
                 boolean finalBased = MeterProcessType.valueOf(taskRunDto.getBaseType()).equals(FINAL);
 
+                // only save in batch job adj run repo if trading amounts for tracking groupdId for delta calcs
                 if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId,
-                        billPeriodStartDate, billPeriodEndDate) < 1) {
+                        billPeriodStartDate, billPeriodEndDate) < 1 && calculationType == StlCalculationType.TRADING_AMOUNTS) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
                             groupId, billPeriodStartDate, billPeriodEndDate);
                     saveAdjRun(ADJUSTED, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);

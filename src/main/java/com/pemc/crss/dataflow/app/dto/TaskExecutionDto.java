@@ -15,7 +15,7 @@ public class TaskExecutionDto extends BaseTaskExecutionDto {
     private BatchStatus mqReportStatusAfterFinalized;
     private BatchStatus calculationStatus;
     private BatchStatus taggingStatus;
-
+    private BatchStatus stlProcessFinalizedStatus;
 
     public BatchStatus getWesmStatus() {
         return wesmStatus;
@@ -79,5 +79,13 @@ public class TaskExecutionDto extends BaseTaskExecutionDto {
 
     public void setTaggingStatus(BatchStatus taggingStatus) {
         this.taggingStatus = taggingStatus;
+    }
+
+    public BatchStatus getStlProcessFinalizedStatus() {
+        return stlProcessFinalizedStatus;
+    }
+
+    public void setStlProcessFinalizedStatus(BatchStatus stlProcessFinalizedStatus) {
+        this.stlProcessFinalizedStatus = stlProcessFinalizedStatus;
     }
 }

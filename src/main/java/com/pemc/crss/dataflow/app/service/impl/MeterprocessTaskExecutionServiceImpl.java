@@ -9,9 +9,11 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctWesmBillingPeriod;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,6 +64,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     @Autowired
     private BatchJobAddtlParamsService batchJobAddtlParamsService;
 
+    @Autowired
+    private SettlementJobLockRepository settlementJobLockRepository;
 
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -136,6 +141,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 checkFinalizeDailyState(taskRunDto.getTradingDate());
+                checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
@@ -148,6 +154,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
                     checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 }
+
+                checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
+
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
@@ -392,6 +401,20 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
+    private void checkFinalizedStlState(String startDate, String endDate, String processType) {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime sDate = startDate != null ? LocalDateTime.parse(startDate, formatter) : null;
+        LocalDateTime eDate = endDate != null ? LocalDateTime.parse(endDate, formatter) : null;
+
+        if (!MeterProcessType.ADJUSTED.name().equalsIgnoreCase(processType)) {
+            String errorMessage = "You already have a settlement process finalized on the same billing date ( %s ) with meter process type: %s";
+            Preconditions.checkState(!settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, processType), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""), processType));
+        } else {
+            String errorMessage = "Cannot run WESM on billing date ( %s ) with ADJUSTED meter process type. Must have a Settlement Process of FINAL meter type finalized on the same billing period";
+            Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, MeterProcessType.FINAL.name()), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
+        }
+    }
+
     private TaskExecutionDto getTaskExecutionDto(JobInstance jobInstance) {
         if (getJobExecutions(jobInstance).iterator().hasNext()) {
             JobExecution jobExecution = getJobExecutions(jobInstance).iterator().next();
@@ -414,6 +437,21 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             taskExecutionDto.setParams(jobParameters);
             taskExecutionDto.setWesmStatus(jobExecution.getStatus());
             taskExecutionDto.setWesmUser(wesmUser);
+
+            JobParameters jParams = jobExecution.getJobParameters();
+            String processType = jParams.getString(PROCESS_TYPE);
+            boolean isDaily = processType == null;
+            LocalDateTime sDate;
+            LocalDateTime eDate = null;
+            if (isDaily) {
+                processType = PROCESS_TYPE_DAILY;
+                sDate = DateUtil.convertToLocalDateTime(jParams.getDate(DATE));
+            } else {
+                sDate = DateUtil.convertToLocalDateTime(jParams.getDate(START_DATE));
+                eDate = DateUtil.convertToLocalDateTime(jParams.getDate(END_DATE));
+            }
+
+            taskExecutionDto.setStlProcessFinalizedStatus(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, processType) ? BatchStatus.COMPLETED : null);
 
             if (taskExecutionDto.getWesmStatus().isRunning()) {
                 calculateProgress(jobExecution, taskExecutionDto);

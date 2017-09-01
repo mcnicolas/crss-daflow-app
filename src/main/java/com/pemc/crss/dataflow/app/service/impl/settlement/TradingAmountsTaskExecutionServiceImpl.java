@@ -120,7 +120,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            if (Arrays.asList(FINAL, ADJUSTED).contains(taskExecutionDto.getProcessType())) {
+            if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
                 determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.TRADING_AMOUNTS);
             }
 

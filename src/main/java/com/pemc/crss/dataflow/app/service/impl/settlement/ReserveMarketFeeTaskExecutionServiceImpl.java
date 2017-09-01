@@ -25,8 +25,6 @@ import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.util.*;
 
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_RMF;
@@ -94,9 +92,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            if (Arrays.asList(FINAL, ADJUSTED).contains(taskExecutionDto.getProcessType())) {
-                determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.RESERVE_MARKET_FEE);
-            }
+            determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.RESERVE_MARKET_FEE);
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();

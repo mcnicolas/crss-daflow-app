@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_MARKET_FEE;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
@@ -96,9 +94,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            if (Arrays.asList(FINAL, ADJUSTED).contains(taskExecutionDto.getProcessType())) {
-                determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.ENERGY_MARKET_FEE);
-            }
+            determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.ENERGY_MARKET_FEE);
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();

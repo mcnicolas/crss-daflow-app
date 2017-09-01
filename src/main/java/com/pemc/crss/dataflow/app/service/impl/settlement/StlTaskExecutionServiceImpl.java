@@ -607,33 +607,44 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto, final StlCalculationType stlCalculationType) {
 
-        List<SettlementJobLock> stlJobLocks = settlementJobLockRepository.findByStartDateAndEndDateAndStlCalculationTypeAndProcessTypeIn(
-                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
-                DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()),
-                stlCalculationType, Arrays.asList(FINAL, ADJUSTED));
+        LocalDateTime billPeriodStart = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate());
+        LocalDateTime billPeriodEnd =   DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate());
 
-        for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
+        if (taskExecutionDto.getProcessType() == PRELIM) {
+            boolean prelimIsLocked = settlementJobLockRepository.billingPeriodIsFinalized(billPeriodStart, billPeriodEnd,
+                    PRELIM.name(), stlCalculationType.name());
 
-            stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
-                    && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
-                    .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLocked()));
+            taskExecutionDto.getParentStlJobGroupDto().setLocked(prelimIsLocked);
 
-            // additional lock checking for adjusted type if it's not yet locked
-            if (ADJUSTED.equals(taskExecutionDto.getProcessType()) && !stlJobGroupDto.isLocked()) {
-                stlJobGroupDto.setLocked(true);
+        } else {
 
-                // release lock if FINAL is already locked
-                stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getProcessType() == FINAL && stlJobLock.isLocked())
-                        .findFirst().ifPresent(finalStlLock -> stlJobGroupDto.setLocked(false));
-            }
+            List<SettlementJobLock> stlJobLocks = settlementJobLockRepository
+                    .findByStartDateAndEndDateAndStlCalculationTypeAndProcessTypeIn(billPeriodStart, billPeriodEnd,
+                            stlCalculationType, Arrays.asList(FINAL, ADJUSTED));
 
-            // Job can run adjustment when all jobs are locked
-            if (stlJobLocks.stream().allMatch(SettlementJobLock::isLocked)) {
-                // get latest Settlement Job Lock check if groupId matches
-                stlJobLocks.stream().sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
-                    .findFirst().ifPresent(stlJobLock -> stlJobGroupDto
-                        .setCanRunAdjustment(Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId()))
+            for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
+
+                stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
+                        && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
+                        .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLocked()));
+
+                // additional lock checking for adjusted type if it's not yet locked
+                if (ADJUSTED.equals(taskExecutionDto.getProcessType()) && !stlJobGroupDto.isLocked()) {
+                    stlJobGroupDto.setLocked(true);
+
+                    // release lock if FINAL is already locked
+                    stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getProcessType() == FINAL && stlJobLock.isLocked())
+                            .findFirst().ifPresent(finalStlLock -> stlJobGroupDto.setLocked(false));
+                }
+
+                // Job can run adjustment when all jobs are locked
+                if (stlJobLocks.stream().allMatch(SettlementJobLock::isLocked)) {
+                    // get latest Settlement Job Lock check if groupId matches
+                    stlJobLocks.stream().sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
+                            .findFirst().ifPresent(stlJobLock -> stlJobGroupDto
+                            .setCanRunAdjustment(Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId()))
                     );
+                }
             }
         }
 

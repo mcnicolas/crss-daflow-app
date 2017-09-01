@@ -19,6 +19,7 @@ import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
+import com.pemc.crss.shared.core.dataflow.repository.ViewSettlementJobRepository;
 import com.querydsl.core.BooleanBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
@@ -69,6 +70,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     @Autowired
     private SettlementJobLockRepository settlementJobLockRepository;
+
+    @Autowired
+    private ViewSettlementJobRepository viewSettlementJobRepository;
 
     // Abstract Methods
 
@@ -153,6 +157,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         String billingPeriod = stlReadyJob.getBillingPeriod();
 
         SettlementTaskExecutionDto taskExecutionDto = new SettlementTaskExecutionDto();
+        taskExecutionDto.setBillPeriodStr(stlReadyJob.getBillingPeriod());
         taskExecutionDto.setParentId(Long.parseLong(parentId));
         taskExecutionDto.setStlReadyGroupId(parseGroupId(stlReadyJob.getBillingPeriod(), stlReadyJob.getProcessType(), parentId));
         taskExecutionDto.setRunDateTime(DateUtil.convertToDate(stlReadyJob.getMaxJobExecStartTime()));
@@ -622,6 +627,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     .findByStartDateAndEndDateAndStlCalculationTypeAndProcessTypeIn(billPeriodStart, billPeriodEnd,
                             stlCalculationType, Arrays.asList(FINAL, ADJUSTED));
 
+            ViewSettlementJob latestStlJobFromMetering = viewSettlementJobRepository
+                    .findFirstByProcessTypeInAndAndBillingPeriodAndStatusOrderByJobExecStartTimeDesc(Arrays.asList(ADJUSTED, FINAL),
+                            taskExecutionDto.getBillPeriodStr(), BatchStatus.COMPLETED);
+
             for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
 
                 stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
@@ -637,13 +646,25 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             .findFirst().ifPresent(finalStlLock -> stlJobGroupDto.setLocked(false));
                 }
 
-                // Job can run adjustment when all jobs are locked
+                // Set canRunAdjustment
                 if (stlJobLocks.stream().allMatch(SettlementJobLock::isLocked)) {
                     // get latest Settlement Job Lock check if groupId matches
                     stlJobLocks.stream().sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
                             .findFirst().ifPresent(stlJobLock -> stlJobGroupDto
                             .setCanRunAdjustment(Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId()))
                     );
+
+                    // additional checking from metering triggered adjustments
+                    if (latestStlJobFromMetering != null) {
+
+                        String latestStlJobGroupId = parseGroupId(latestStlJobFromMetering.getBillingPeriod(),
+                                latestStlJobFromMetering.getProcessType(), latestStlJobFromMetering.getParentId());
+
+                        if (!Objects.equals(latestStlJobGroupId, taskExecutionDto.getParentStlJobGroupDto().getGroupId())) {
+                            stlJobGroupDto.setCanRunAdjustment(false);
+                        }
+                    }
+
                 }
             }
         }

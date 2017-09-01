@@ -916,6 +916,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getAdjustedGenFileProfile())));
+                saveAMSadditionalParams(runId, taskRunDto, stlCalculationType);
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);

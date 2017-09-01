@@ -13,10 +13,12 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ViewSettlementJobRepository;
@@ -31,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -50,6 +53,7 @@ import java.util.stream.Collectors;
 
 import static com.pemc.crss.dataflow.app.support.StlJobStage.*;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
+import static com.pemc.crss.shared.commons.util.TaskUtil.*;
 import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settlementJobLock;
 
 @Slf4j
@@ -67,6 +71,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
+
+    @Autowired
+    private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Autowired
     private SettlementJobLockRepository settlementJobLockRepository;
@@ -885,7 +892,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJob(taskRunDto);
     }
 
-    void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchGenerateFileJob(final TaskRunDto taskRunDto, final StlCalculationType stlCalculationType) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
@@ -904,6 +911,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getFinalGenFileProfile())));
+                saveAMSadditionalParams(runId, taskRunDto, stlCalculationType);
                 break;
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
@@ -929,6 +937,44 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         batchJobAdjRun.setBillingPeriodEnd(end);
         batchJobAdjRun.setOutputReady(false);
         batchJobAdjRunRepository.save(batchJobAdjRun);
+    }
+
+    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto, final StlCalculationType stlCalculationType) {
+        log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        try {
+            BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsInvoiceDate.setRunId(runId);
+            batchJobAddtlParamsInvoiceDate.setType("DATE");
+            batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
+            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
+            batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsDueDate.setRunId(runId);
+            batchJobAddtlParamsDueDate.setType("DATE");
+            batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
+            batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
+            batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
+
+            if (stlCalculationType == StlCalculationType.TRADING_AMOUNTS) {
+                BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+                batchJobAddtlParamsRemarksInv.setRunId(runId);
+                batchJobAddtlParamsRemarksInv.setType("STRING");
+                batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+                batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
+                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+            } else if (stlCalculationType == StlCalculationType.ENERGY_MARKET_FEE) {
+                BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
+                batchJobAddtlParamsRemarksMf.setRunId(runId);
+                batchJobAddtlParamsRemarksMf.setType("STRING");
+                batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
+                batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
+                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+            }
+
+        } catch (ParseException e) {
+            log.error("Error parsing additional batch job params for AMS: {}", e);
+        }
     }
 
     /* launchJob methods end */

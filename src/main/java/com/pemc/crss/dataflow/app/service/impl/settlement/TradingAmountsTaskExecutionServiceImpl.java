@@ -197,7 +197,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_TA:
-                launchGenerateFileJob(taskRunDto);
+                launchGenerateFileJob(taskRunDto, StlCalculationType.TRADING_AMOUNTS);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());

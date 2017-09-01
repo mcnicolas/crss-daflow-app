@@ -157,7 +157,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_EMF:
-                launchGenerateFileJob(taskRunDto);
+                launchGenerateFileJob(taskRunDto, StlCalculationType.ENERGY_MARKET_FEE);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());

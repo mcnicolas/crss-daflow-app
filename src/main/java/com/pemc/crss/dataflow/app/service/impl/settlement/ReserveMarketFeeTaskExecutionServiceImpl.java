@@ -155,7 +155,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_RMF:
-                launchGenerateFileJob(taskRunDto);
+                launchGenerateFileJob(taskRunDto, StlCalculationType.RESERVE_MARKET_FEE);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());

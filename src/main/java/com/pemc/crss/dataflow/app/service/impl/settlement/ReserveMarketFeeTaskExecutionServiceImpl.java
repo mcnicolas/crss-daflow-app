@@ -10,7 +10,6 @@ import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
-import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
@@ -105,14 +104,6 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
                 determineStlJobGroupDtoStatus(stlJobGroupDto, false);
 
-                if (stlJobGroupDto.isHeader()) {
-
-                    List<ViewSettlementJob> viewSettlementJobs = stlReadyJobQueryService
-                            .getStlReadyJobsByParentIdAndProcessType(processType, parentIdStr);
-
-                    stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
-                            viewSettlementJobs, billPeriodStart, billPeriodEnd));
-                }
             });
 
             taskExecutionDtos.add(taskExecutionDto);

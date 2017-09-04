@@ -83,6 +83,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     // Abstract Methods
 
+    abstract StlCalculationType getStlCalculationType();
+
     abstract String getDailyGenInputWorkspaceProfile();
 
     abstract String getPrelimGenInputWorkspaceProfile();
@@ -617,14 +619,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         dto.setLatestJobExecEndDate(jobExecution.getEndTime());
     }
 
-    void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto, final StlCalculationType stlCalculationType) {
+    void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto) {
 
         LocalDateTime billPeriodStart = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate());
         LocalDateTime billPeriodEnd =   DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate());
 
         if (taskExecutionDto.getProcessType() == PRELIM) {
             boolean prelimIsLocked = settlementJobLockRepository.billingPeriodIsFinalized(billPeriodStart, billPeriodEnd,
-                    PRELIM.name(), stlCalculationType.name());
+                    PRELIM.name(), getStlCalculationType().name());
 
             taskExecutionDto.getParentStlJobGroupDto().setLocked(prelimIsLocked);
 
@@ -632,7 +634,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             List<SettlementJobLock> stlJobLocks = settlementJobLockRepository
                     .findByStartDateAndEndDateAndStlCalculationTypeAndProcessTypeIn(billPeriodStart, billPeriodEnd,
-                            stlCalculationType, Arrays.asList(FINAL, ADJUSTED));
+                            getStlCalculationType(), Arrays.asList(FINAL, ADJUSTED));
 
             ViewSettlementJob latestStlJobFromMetering = viewSettlementJobRepository
                     .findFirstByProcessTypeInAndAndBillingPeriodAndStatusOrderByJobExecStartTimeDesc(Arrays.asList(ADJUSTED, FINAL),
@@ -722,7 +724,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return arguments;
     }
 
-    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto, final StlCalculationType calculationType) throws URISyntaxException {
+    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
@@ -755,7 +757,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                 // only save in batch job adj run repo if trading amounts for tracking groupdId for delta calcs
                 if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId,
-                        billPeriodStartDate, billPeriodEndDate) < 1 && calculationType == StlCalculationType.TRADING_AMOUNTS) {
+                        billPeriodStartDate, billPeriodEndDate) < 1 && getStlCalculationType() == StlCalculationType.TRADING_AMOUNTS) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
                             groupId, billPeriodStartDate, billPeriodEndDate);
                     saveAdjRun(FINAL, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
@@ -766,7 +768,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
                 // only save in batch job adj run repo if trading amounts for tracking groupdId for delta calcs
                 if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(groupId,
-                        billPeriodStartDate, billPeriodEndDate) < 1 && calculationType == StlCalculationType.TRADING_AMOUNTS) {
+                        billPeriodStartDate, billPeriodEndDate) < 1 && getStlCalculationType() == StlCalculationType.TRADING_AMOUNTS) {
                     log.info("Saving to batchjobadjrun with groupId=[{}] and billingPeriodStart=[{}] and billingPeriodEnd=[{}]",
                             groupId, billPeriodStartDate, billPeriodEndDate);
                     saveAdjRun(ADJUSTED, taskRunDto.getParentJob(), groupId, billPeriodStartDate, billPeriodEndDate);
@@ -788,18 +790,18 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             BooleanBuilder predicate = new BooleanBuilder();
             predicate.and(settlementJobLock.groupId.eq(groupId)
                      .and(settlementJobLock.processType.eq(processType))
-                     .and(settlementJobLock.stlCalculationType.eq(calculationType)));
+                     .and(settlementJobLock.stlCalculationType.eq(getStlCalculationType())));
 
             if (!settlementJobLockRepository.exists(predicate)) {
                 log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
-                        groupId, calculationType, processType);
+                        groupId, getStlCalculationType(), processType);
                 SettlementJobLock jobLock = new SettlementJobLock();
                 jobLock.setCreatedDatetime(LocalDateTime.now());
                 jobLock.setStartDate(DateUtil.parseLocalDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd").atStartOfDay());
                 jobLock.setEndDate(DateUtil.parseLocalDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd").atStartOfDay());
                 jobLock.setGroupId(groupId);
                 jobLock.setParentJobId(Long.valueOf(taskRunDto.getParentJob()));
-                jobLock.setStlCalculationType(calculationType);
+                jobLock.setStlCalculationType(getStlCalculationType());
                 jobLock.setProcessType(processType);
                 jobLock.setLocked(false);
 
@@ -892,7 +894,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJob(taskRunDto);
     }
 
-    void launchGenerateFileJob(final TaskRunDto taskRunDto, final StlCalculationType stlCalculationType) throws URISyntaxException {
+    void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
@@ -911,12 +913,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getFinalGenFileProfile())));
-                saveAMSadditionalParams(runId, taskRunDto, stlCalculationType);
+                saveAMSadditionalParams(runId, taskRunDto);
                 break;
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getAdjustedGenFileProfile())));
-                saveAMSadditionalParams(runId, taskRunDto, stlCalculationType);
+                saveAMSadditionalParams(runId, taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
@@ -940,7 +942,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         batchJobAdjRunRepository.save(batchJobAdjRun);
     }
 
-    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto, final StlCalculationType stlCalculationType) {
+    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
         log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
@@ -957,21 +959,26 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
             batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
 
-            if (stlCalculationType == StlCalculationType.TRADING_AMOUNTS) {
-                BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
-                batchJobAddtlParamsRemarksInv.setRunId(runId);
-                batchJobAddtlParamsRemarksInv.setType("STRING");
-                batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
-                batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
-                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
-            } else if (stlCalculationType == StlCalculationType.ENERGY_MARKET_FEE ||
-                    stlCalculationType == StlCalculationType.RESERVE_MARKET_FEE) {
-                BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
-                batchJobAddtlParamsRemarksMf.setRunId(runId);
-                batchJobAddtlParamsRemarksMf.setType("STRING");
-                batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
-                batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
-                batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+            switch (getStlCalculationType()) {
+                case TRADING_AMOUNTS:
+                    BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+                    batchJobAddtlParamsRemarksInv.setRunId(runId);
+                    batchJobAddtlParamsRemarksInv.setType("STRING");
+                    batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+                    batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
+                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+                    break;
+                case ENERGY_MARKET_FEE:
+                case RESERVE_MARKET_FEE:
+                    BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
+                    batchJobAddtlParamsRemarksMf.setRunId(runId);
+                    batchJobAddtlParamsRemarksMf.setType("STRING");
+                    batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
+                    batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
+                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+                    break;
+                default:
+                    // do nothing
             }
 
         } catch (ParseException e) {

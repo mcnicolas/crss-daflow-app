@@ -91,7 +91,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.RESERVE_MARKET_FEE);
+            determineIfJobsAreLocked(taskExecutionDto);
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();
@@ -133,7 +133,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             case GEN_RMF_INPUT_WS:
                 validateJobName(CALC_RMF);
                 validateJobName(TAG_RMF);
-                launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.RESERVE_MARKET_FEE);
+                launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_RMF:
                 validateJobName(GEN_RMF_INPUT_WS);
@@ -146,11 +146,16 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_RMF:
-                launchGenerateFileJob(taskRunDto, StlCalculationType.RESERVE_MARKET_FEE);
+                launchGenerateFileJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }
+    }
+
+    @Override
+    StlCalculationType getStlCalculationType() {
+        return StlCalculationType.RESERVE_MARKET_FEE;
     }
 
     // No Daily calculation needed for Market Fee

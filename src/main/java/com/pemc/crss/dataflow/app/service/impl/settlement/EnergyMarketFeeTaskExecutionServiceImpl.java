@@ -94,7 +94,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.ENERGY_MARKET_FEE);
+            determineIfJobsAreLocked(taskExecutionDto);
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();
@@ -144,7 +144,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
             case GEN_EMF_INPUT_WS:
                 validateJobName(CALC_EMF);
                 validateJobName(TAG_EMF);
-                launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.ENERGY_MARKET_FEE);
+                launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_EMF:
                 validateJobName(GEN_EMF_INPUT_WS);
@@ -157,11 +157,16 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_EMF:
-                launchGenerateFileJob(taskRunDto, StlCalculationType.ENERGY_MARKET_FEE);
+                launchGenerateFileJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }
+    }
+
+    @Override
+    StlCalculationType getStlCalculationType() {
+        return StlCalculationType.ENERGY_MARKET_FEE;
     }
 
     // No Daily calculation needed for Market Fee

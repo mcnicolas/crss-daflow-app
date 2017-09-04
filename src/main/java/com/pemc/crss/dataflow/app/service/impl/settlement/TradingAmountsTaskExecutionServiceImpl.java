@@ -121,7 +121,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
             if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
-                determineIfJobsAreLocked(taskExecutionDto, StlCalculationType.TRADING_AMOUNTS);
+                determineIfJobsAreLocked(taskExecutionDto);
             }
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
@@ -176,7 +176,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 validateJobName(CALC_STL);
                 validateJobName(CALC_GMR);
                 validateJobName(TAG_TA);
-                launchGenerateInputWorkspaceJob(taskRunDto, StlCalculationType.TRADING_AMOUNTS);
+                launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_STL:
                 validateJobName(GEN_EBRSV_INPUT_WS);
@@ -197,7 +197,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_TA:
-                launchGenerateFileJob(taskRunDto, StlCalculationType.TRADING_AMOUNTS);
+                launchGenerateFileJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -308,6 +308,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJob(taskRunDto);
     }
 
+
+    @Override
+    StlCalculationType getStlCalculationType() {
+        return StlCalculationType.TRADING_AMOUNTS;
+    }
 
     @Override
     String getDailyGenInputWorkspaceProfile() {

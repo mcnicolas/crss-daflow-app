@@ -31,8 +31,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -402,16 +404,13 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     private void checkFinalizedStlState(String startDate, String endDate, String processType) {
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime sDate = startDate != null ? LocalDateTime.parse(startDate, formatter) : null;
-        LocalDateTime eDate = endDate != null ? LocalDateTime.parse(endDate, formatter) : null;
 
         if (!MeterProcessType.ADJUSTED.name().equalsIgnoreCase(processType)) {
             String errorMessage = "You already have a settlement process finalized on the same billing date ( %s ) with meter process type: %s";
-            Preconditions.checkState(!settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, processType), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""), processType));
+            Preconditions.checkState(!settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate == null ? "" : endDate, processType), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""), processType));
         } else {
             String errorMessage = "Cannot run WESM on billing date ( %s ) with ADJUSTED meter process type. Must have a Settlement Process of FINAL meter type finalized on the same billing period";
-            Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, MeterProcessType.FINAL.name()), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
+            Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate == null ? "" : endDate, MeterProcessType.FINAL.name()), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
         }
     }
 
@@ -441,14 +440,14 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             JobParameters jParams = jobExecution.getJobParameters();
             String processType = jParams.getString(PROCESS_TYPE);
             boolean isDaily = processType == null;
-            LocalDateTime sDate;
-            LocalDateTime eDate = null;
+            String sDate;
+            String eDate = null;
             if (isDaily) {
                 processType = PROCESS_TYPE_DAILY;
-                sDate = DateUtil.convertToLocalDateTime(jParams.getDate(DATE));
+                sDate = DateUtil.convertToString(jParams.getDate(DATE), DateUtil.DEFAULT_DATETIME_FORMAT);
             } else {
-                sDate = DateUtil.convertToLocalDateTime(jParams.getDate(START_DATE));
-                eDate = DateUtil.convertToLocalDateTime(jParams.getDate(END_DATE));
+                sDate = DateUtil.convertToString(jParams.getDate(START_DATE), DateUtil.DEFAULT_DATETIME_FORMAT);
+                eDate = DateUtil.convertToString(jParams.getDate(END_DATE), DateUtil.DEFAULT_DATETIME_FORMAT);
             }
 
             taskExecutionDto.setStlProcessFinalizedStatus(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, processType) ? BatchStatus.COMPLETED : null);

@@ -964,7 +964,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
                 batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
                 batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
-            } else if (stlCalculationType == StlCalculationType.ENERGY_MARKET_FEE) {
+            } else if (stlCalculationType == StlCalculationType.ENERGY_MARKET_FEE ||
+                    stlCalculationType == StlCalculationType.RESERVE_MARKET_FEE) {
                 BatchJobAddtlParams batchJobAddtlParamsRemarksMf = new BatchJobAddtlParams();
                 batchJobAddtlParamsRemarksMf.setRunId(runId);
                 batchJobAddtlParamsRemarksMf.setType("STRING");

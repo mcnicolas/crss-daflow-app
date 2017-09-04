@@ -407,10 +407,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         if (!MeterProcessType.ADJUSTED.name().equalsIgnoreCase(processType)) {
             String errorMessage = "You already have a settlement process finalized on the same billing date ( %s ) with meter process type: %s";
-            Preconditions.checkState(!settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate == null ? "" : endDate, processType), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""), processType));
+            Preconditions.checkState(!settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate, processType), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""), processType));
         } else {
             String errorMessage = "Cannot run WESM on billing date ( %s ) with ADJUSTED meter process type. Must have a Settlement Process of FINAL meter type finalized on the same billing period";
-            Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate == null ? "" : endDate, MeterProcessType.FINAL.name()), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
+            Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate, MeterProcessType.FINAL.name()), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
         }
     }
 

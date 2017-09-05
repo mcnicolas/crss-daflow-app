@@ -450,7 +450,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 eDate = DateUtil.convertToString(jParams.getDate(END_DATE), DateUtil.DEFAULT_DATETIME_FORMAT);
             }
 
-            //taskExecutionDto.setStlProcessFinalizedStatus(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, processType) ? BatchStatus.COMPLETED : null);
+            LOG.info("sDate: " + sDate + " | eDate: " + eDate);
+            taskExecutionDto.setStlProcessFinalizedStatus(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(sDate, eDate, processType) ? BatchStatus.COMPLETED : null);
 
             if (taskExecutionDto.getWesmStatus().isRunning()) {
                 calculateProgress(jobExecution, taskExecutionDto);

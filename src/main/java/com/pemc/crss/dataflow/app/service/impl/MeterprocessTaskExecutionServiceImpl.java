@@ -143,7 +143,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 checkFinalizeDailyState(taskRunDto.getTradingDate());
-                //checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
+                checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
@@ -157,7 +157,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 }
 
-                //checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
+                checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));

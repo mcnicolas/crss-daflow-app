@@ -160,7 +160,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                     stlJobGroupDto.getSortedJobCalculationDtos().stream()
                         .filter(jobDto -> Objects.equals(GENERATE_IWS, jobDto.getJobStage())
                                 && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
-                        .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
                         .findFirst()
                         .ifPresent(genIwsDto -> {
                                 if (latestStlReadyJobExecStartTime != null && latestStlReadyJobExecStartTime.isAfter(

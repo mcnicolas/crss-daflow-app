@@ -79,7 +79,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private SettlementJobLockRepository settlementJobLockRepository;
 
     @Autowired
-    private ViewSettlementJobRepository viewSettlementJobRepository;
+    ViewSettlementJobRepository viewSettlementJobRepository;
 
     // Abstract Methods
 

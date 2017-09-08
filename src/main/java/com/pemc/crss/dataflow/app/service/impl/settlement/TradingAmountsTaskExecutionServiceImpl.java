@@ -13,6 +13,7 @@ import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
@@ -30,16 +31,20 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.pemc.crss.dataflow.app.support.StlJobStage.GENERATE_IWS;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.DISAGGREGATE_BCQ;
@@ -145,6 +150,26 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
                     stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
                             viewSettlementJobs, billPeriodStart, billPeriodEnd));
+                }
+
+                if (isDaily) {
+
+                    LocalDateTime latestStlReadyJobExecStartTime = viewSettlementJobRepository
+                            .getLatestJobExecStartTimeByProcessTypeAndParentId(processType.name(), parentIdStr);
+
+                    stlJobGroupDto.getSortedJobCalculationDtos().stream()
+                        .filter(jobDto -> Objects.equals(GENERATE_IWS, jobDto.getJobStage())
+                                && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
+                        .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
+                        .findFirst()
+                        .ifPresent(genIwsDto -> {
+                                if (latestStlReadyJobExecStartTime != null && latestStlReadyJobExecStartTime.isAfter(
+                                        DateUtil.convertToLocalDateTime(genIwsDto.getRunDate()))) {
+                                    stlJobGroupDto.getOutdatedTradingDates()
+                                            .add(DateUtil.convertToLocalDate(taskExecutionDto.getDailyDate()));
+                                }
+                            }
+                        );
                 }
             });
 

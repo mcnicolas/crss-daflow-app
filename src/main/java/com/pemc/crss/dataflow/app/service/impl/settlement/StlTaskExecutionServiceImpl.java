@@ -61,13 +61,13 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     static final String SPRING_BATCH_MODULE_STL_CALC = "crss-settlement-task-calculation";
 
-    private static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
+    static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
     private static final String PARTIAL = "PARTIAL-";
     private static final String FULL = "FULL-";
 
     // from batch_job_execution_context
-    private static final String INVOICE_GENERATION_FILENAME_KEY = "INVOICE_GENERATION_FILENAME";
+    static final String INVOICE_GENERATION_FILENAME_KEY = "INVOICE_GENERATION_FILENAME";
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
@@ -942,7 +942,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         batchJobAdjRunRepository.save(batchJobAdjRun);
     }
 
-    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+    void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
         log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();

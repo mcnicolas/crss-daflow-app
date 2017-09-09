@@ -52,6 +52,7 @@ import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_GMR;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_RSV_TA;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_TA;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_TA;
@@ -117,11 +118,18 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
-            /* GEN FILES START */
+            /* GEN FILES ENERGY TA START */
             List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
                     FILE_TA, processType, parentId);
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+
+            /* GEN FILES RESERVE TA START */
+            List<JobInstance> genFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
+                    FILE_RSV_TA, processType, parentId);
+
+            initializeFileGenReserveTa(genFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
@@ -221,7 +229,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_TA:
+                validateJobName(FILE_RSV_TA);
                 launchGenerateFileJob(taskRunDto);
+                break;
+            case FILE_RSV_TA:
+                validateJobName(FILE_TA);
+                launchGenerateFileReserveTaJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -274,6 +287,49 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             calcGmrNames.add(calcGmrStlJobName);
         }
 
+    }
+
+    void initializeFileGenReserveTa(final List<JobInstance> fileGenJobInstances,
+                           final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                           final SettlementTaskExecutionDto taskExecutionDto,
+                           final String stlReadyGroupId) {
+
+        Set<String> generationNames = Sets.newHashSet();
+
+        for (JobInstance genFileJobInstance : fileGenJobInstances) {
+
+            String generationStlJobName = genFileJobInstance.getJobName();
+            if (generationNames.contains(generationStlJobName)) {
+                continue;
+            }
+
+            JobExecution generationJobExecution = getJobExecutionFromJobInstance(genFileJobInstance);
+            JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+            String groupId = generationJobParameters.getString(GROUP_ID);
+
+            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            BatchStatus currentStatus = generationJobExecution.getStatus();
+            stlJobGroupDto.setInvoiceGenerationRsvTaStatus(currentStatus);
+            stlJobGroupDto.setGroupId(groupId);
+            stlJobGroupDto.setRunEndDateTimeFileRsvTa(generationJobExecution.getEndTime());
+
+            if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+                updateProgress(generationJobExecution, stlJobGroupDto);
+            }
+
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            Optional.ofNullable(generationJobExecution.getExecutionContext()
+                    .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
+                    stlJobGroupDto.setInvoiceGenFolderRsvTa((String) val));
+
+            if (stlReadyGroupId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+            generationNames.add(generationStlJobName);
+        }
     }
 
     private Map<String, List<JobCalculationDto>> getCalcGmrJobCalculationMap(List<JobInstance> calcGmrStlJobInstances) {
@@ -329,6 +385,42 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+        lockJob(taskRunDto);
+    }
+
+    private void launchGenerateFileReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        final Long runId = System.currentTimeMillis();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (MeterProcessType.valueOf(type)) {
+            case PRELIM:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.GEN_FILE_PRELIM_RSV)));
+                break;
+            case FINAL:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.GEN_FILE_FINAL_RSV)));
+                saveAMSadditionalParams(runId, taskRunDto);
+                break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.GEN_FILE_ADJ_RSV)));
+                saveAMSadditionalParams(runId, taskRunDto);
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running generate reserve file job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJob(taskRunDto);
     }
 

@@ -83,11 +83,22 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @PostMapping("/generate-file")
-    public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running generate file job for tta. taskRunDto={}", taskRunDto);
+    @PostMapping("/generate-file-energy")
+    public ResponseEntity runGenerateFileJobEnergy(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running generate file job for energy ta. taskRunDto={}", taskRunDto);
 
         taskRunDto.setJobName(SettlementJobName.FILE_TA);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/generate-file-reserve")
+    public ResponseEntity runGenerateFileJobReserve(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running generate file job for reserve ta. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setJobName(SettlementJobName.FILE_RSV_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

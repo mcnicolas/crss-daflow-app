@@ -22,6 +22,7 @@ public class StlJobGroupDto {
     private BatchStatus gmrVatMFeeCalculationStatus;
     private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
+    private BatchStatus invoiceGenerationRsvTaStatus;
     private String status;
 
     @Deprecated
@@ -33,6 +34,7 @@ public class StlJobGroupDto {
     private String groupId;
     private Date runStartDateTime;
     private Date runEndDateTime;
+    private Date runEndDateTimeFileRsvTa;
     private Long runId;
 
     // progress bar and status
@@ -42,6 +44,7 @@ public class StlJobGroupDto {
 
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
+    private String invoiceGenFolderRsvTa;
 
     private String billingPeriodStr;
 
@@ -79,6 +82,11 @@ public class StlJobGroupDto {
     public String getRunEndDateTimeStr() {
         return runEndDateTime != null
                 ? DateUtil.convertToString(runEndDateTime, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
+    public String getRunEndDateTimeFileRsvTaStr() {
+        return runEndDateTimeFileRsvTa != null
+                ? DateUtil.convertToString(runEndDateTimeFileRsvTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
     // consider gmr/vat recalculation if max partial calculation runDate > gmr calculation runDate

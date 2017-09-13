@@ -24,8 +24,8 @@ import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_RESERVE_MARKET_FEE;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_RMF;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_RMF;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_RMF_INPUT_WS;
@@ -186,8 +186,8 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     }
 
     @Override
-    List<String> getInputWorkSpaceStepsForSkipLogs() {
-        return Arrays.asList(RETRIEVE_DATA_STEP, GEN_RESERVE_IW_STEP);
+    Map<String, String> getInputWorkSpaceStepsForSkipLogs() {
+        return Collections.singletonMap(GEN_RESERVE_IW_STEP, "Retrieve Data Step");
     }
 
     @Override
@@ -215,10 +215,9 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
         return SettlementJobProfile.CALC_RMF_MONTHLY_ADJUSTED;
     }
 
-    // TODO: add steps with skip logs
     @Override
-    List<String> getCalculateStepsForSkipLogs() {
-        return new ArrayList<>();
+    Map<String, String> getCalculateStepsForSkipLogs() {
+        return Collections.singletonMap(CALC_RESERVE_MARKET_FEE, "Calculate Reserve Market Fee");
     }
 
     @Override

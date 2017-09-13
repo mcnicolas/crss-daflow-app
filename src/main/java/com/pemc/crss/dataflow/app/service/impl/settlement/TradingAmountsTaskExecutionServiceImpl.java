@@ -35,9 +35,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +62,8 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG
 @Transactional
 public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
-    private static final List<String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS = Collections.singletonList(SettlementStepUtil.CALC_GMR_VAT);
+    private static final Map<String, String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS =
+            Collections.singletonMap(SettlementStepUtil.CALC_GMR_VAT, "Calculate GMR / VAT");
 
     @Autowired
     private StlReadyJobQueryService stlReadyJobQueryService;
@@ -346,7 +347,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             JobCalculationDto gmrCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
                     calcGmrStartDate, calcGmrEndDate, convertStatus(jobExecution.getStatus(), StlJobStage.CALCULATE_GMR.getLabel()),
                     StlJobStage.CALCULATE_GMR, jobExecution.getStatus());
-            gmrCalcDto.setTaskSummaryList(showSummary(jobExecution, STL_GMR_CALC_STEP_WITH_SKIP_LOGS));
+            gmrCalcDto.setTaskSummaryList(showSummaryWithLabel(jobExecution, STL_GMR_CALC_STEP_WITH_SKIP_LOGS));
             jobCalculationDtoMap.get(calcGmrInstance.getJobName()).add(gmrCalcDto);
         }));
 
@@ -456,8 +457,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     @Override
-    List<String> getInputWorkSpaceStepsForSkipLogs() {
-        return Arrays.asList(RETRIEVE_DATA_STEP, RETRIEVE_BCQ_STEP);
+    Map<String, String> getInputWorkSpaceStepsForSkipLogs() {
+        Map<String, String> iwsSteps = new LinkedHashMap<>();
+        iwsSteps.put(RETRIEVE_DATA_STEP, "Retrieve Data Step");
+        iwsSteps.put(RETRIEVE_BCQ_STEP, "Retrieve Bcq Step");
+
+        return iwsSteps;
     }
 
     @Override
@@ -486,8 +491,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     @Override
-    List<String> getCalculateStepsForSkipLogs() {
-        return Arrays.asList(DISAGGREGATE_BCQ, CALC_SCALING_FACTOR);
+    Map<String, String> getCalculateStepsForSkipLogs() {
+        Map<String, String> calcSteps = new LinkedHashMap<>();
+        calcSteps.put(DISAGGREGATE_BCQ, "Disaggregate BCQ");
+        calcSteps.put(CALC_SCALING_FACTOR, "Calculate Scaling Factor");
+
+        return calcSteps;
     }
 
     @Override

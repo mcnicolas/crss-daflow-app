@@ -95,7 +95,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     abstract String getAdjustedMtrFinGenInputWorkSpaceProfile();
 
-    abstract List<String> getInputWorkSpaceStepsForSkipLogs();
+    abstract Map<String, String> getInputWorkSpaceStepsForSkipLogs();
 
     abstract String getDailyCalculateProfile();
 
@@ -107,7 +107,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     abstract String getAdjustedMtrFinCalculateProfile();
 
-    abstract List<String> getCalculateStepsForSkipLogs();
+    abstract Map<String, String> getCalculateStepsForSkipLogs();
 
     abstract String getPrelimTaggingProfile();
 
@@ -259,7 +259,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     jobGenInputWsStatus, GENERATE_IWS, currentBatchStatus);
 
             // for skiplogs use
-            partialCalcDto.setTaskSummaryList(showSummary(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));
+            partialCalcDto.setTaskSummaryList(showSummaryWithLabel(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
 
@@ -330,7 +330,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
                     jobCalcStatus, CALCULATE_STL, currentBatchStatus);
 
-            partialCalcDto.setTaskSummaryList(showSummary(stlCalcJobExec, getCalculateStepsForSkipLogs()));
+            partialCalcDto.setTaskSummaryList(showSummaryWithLabel(stlCalcJobExec, getCalculateStepsForSkipLogs()));
 
             jobCalculationDtoList.add(partialCalcDto);
 

@@ -45,6 +45,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -243,6 +244,24 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                 .map(stepExecution -> {
                     TaskSummaryDto taskSummaryDto = new TaskSummaryDto();
                     taskSummaryDto.setStepName(stepExecution.getStepName());
+                    taskSummaryDto.setReadCount(stepExecution.getReadCount());
+                    taskSummaryDto.setWriteCount(stepExecution.getWriteCount());
+                    taskSummaryDto.setSkipCount(stepExecution.getSkipCount());
+                    taskSummaryDto.setStepId(stepExecution.getId());
+                    taskSummaryDto.setJobExecutionId(stepExecution.getJobExecutionId());
+
+                    return taskSummaryDto;
+                })
+                .sorted(comparing(TaskSummaryDto::getStepId))
+                .collect(toList());
+    }
+
+    protected List<TaskSummaryDto> showSummaryWithLabel(JobExecution jobExecution, Map<String, String> stepWithLabelMap) {
+        return jobExecution.getStepExecutions().parallelStream()
+                .filter(stepExecution -> stepWithLabelMap.containsKey(stepExecution.getStepName()))
+                .map(stepExecution -> {
+                    TaskSummaryDto taskSummaryDto = new TaskSummaryDto();
+                    taskSummaryDto.setStepName(stepWithLabelMap.get(stepExecution.getStepName()));
                     taskSummaryDto.setReadCount(stepExecution.getReadCount());
                     taskSummaryDto.setWriteCount(stepExecution.getWriteCount());
                     taskSummaryDto.setSkipCount(stepExecution.getSkipCount());

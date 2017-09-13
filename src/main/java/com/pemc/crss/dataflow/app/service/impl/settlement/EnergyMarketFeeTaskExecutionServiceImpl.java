@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -197,8 +197,8 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     }
 
     @Override
-    List<String> getInputWorkSpaceStepsForSkipLogs() {
-        return Arrays.asList(RETRIEVE_DATA_STEP);
+    Map<String, String> getInputWorkSpaceStepsForSkipLogs() {
+        return Collections.singletonMap(RETRIEVE_DATA_STEP, "Retrieve Data Step");
     }
 
     // no DAILY calculation for EMF
@@ -229,8 +229,8 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     }
 
     @Override
-    List<String> getCalculateStepsForSkipLogs() {
-        return Arrays.asList(CALC_MARKET_FEE);
+    Map<String, String> getCalculateStepsForSkipLogs() {
+        return Collections.singletonMap(CALC_MARKET_FEE, "Calculate Energy Market Fee");
     }
 
     @Override

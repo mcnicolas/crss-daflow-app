@@ -25,4 +25,4 @@ CREATE VIEW vw_stl_jobs AS
          END from batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'bp' limit 1) AS billing_period
     FROM batch_job_instance ji
     INNER JOIN batch_job_execution je ON ji.JOB_INSTANCE_ID = je.JOB_INSTANCE_ID
-    WHERE ji.job_name ILIKE '%stlReady%' ) inner_q;
+    WHERE ji.job_name LIKE 'stlReady%' ) inner_q;

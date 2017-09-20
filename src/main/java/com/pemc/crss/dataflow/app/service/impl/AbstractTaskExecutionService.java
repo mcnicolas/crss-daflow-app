@@ -243,6 +243,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                     : filterList.contains(stepExecution.getStepName()))
                 .map(stepExecution -> {
                     TaskSummaryDto taskSummaryDto = new TaskSummaryDto();
+                    taskSummaryDto.setStepCode(stepExecution.getStepName());
                     taskSummaryDto.setStepName(stepExecution.getStepName());
                     taskSummaryDto.setReadCount(stepExecution.getReadCount());
                     taskSummaryDto.setWriteCount(stepExecution.getWriteCount());
@@ -261,6 +262,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                 .filter(stepExecution -> stepWithLabelMap.containsKey(stepExecution.getStepName()))
                 .map(stepExecution -> {
                     TaskSummaryDto taskSummaryDto = new TaskSummaryDto();
+                    taskSummaryDto.setStepCode(stepExecution.getStepName());
                     taskSummaryDto.setStepName(stepWithLabelMap.get(stepExecution.getStepName()));
                     taskSummaryDto.setReadCount(stepExecution.getReadCount());
                     taskSummaryDto.setWriteCount(stepExecution.getWriteCount());

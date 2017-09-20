@@ -4,13 +4,22 @@ package com.pemc.crss.dataflow.app.dto;
  * Created on 1/30/17.
  */
 public class TaskSummaryDto {
+    private String stepCode;
     private String stepName;
     private Long stepId;
     private Long jobId;
     private Long jobExecutionId;
-    private int  readCount;
+    private int readCount;
     private int writeCount;
     private int skipCount;
+
+    public String getStepCode() {
+        return stepCode;
+    }
+
+    public void setStepCode(String stepCode) {
+        this.stepCode = stepCode;
+    }
 
     public String getStepName() {
         return stepName;

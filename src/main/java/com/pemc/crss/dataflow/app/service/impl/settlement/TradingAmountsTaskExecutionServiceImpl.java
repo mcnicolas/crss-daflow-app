@@ -46,10 +46,7 @@ import java.util.Set;
 
 import static com.pemc.crss.dataflow.app.support.StlJobStage.GENERATE_IWS;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.DISAGGREGATE_BCQ;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_BCQ_STEP;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.*;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_GMR;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_RSV_TA;
@@ -461,6 +458,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         Map<String, String> iwsSteps = new LinkedHashMap<>();
         iwsSteps.put(RETRIEVE_DATA_STEP, "Retrieve Data Step");
         iwsSteps.put(RETRIEVE_BCQ_STEP, "Retrieve Bcq Step");
+        iwsSteps.put(GEN_RESERVE_IW_STEP, "Generate Reserve Workspace step");
+
 
         return iwsSteps;
     }

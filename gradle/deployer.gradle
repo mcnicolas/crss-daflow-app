@@ -59,8 +59,8 @@ task setupDeployer() {
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
         json.id = "${project.environmentSet}" + json.id;
         json.container.docker.portMappings[0].labels.VIP_0 = "${json.id}:8082"
-        json.cpus = ${project.marathonCpus}
-        json.mem = ${project.marathonMem}
+        json.cpus = "${project.marathonCpus}".toDouble()
+        json.mem = "${project.marathonMem}".toDouble()
 
         appId = "${json.id}"
 

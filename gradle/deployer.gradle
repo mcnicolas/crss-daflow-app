@@ -27,6 +27,8 @@ ext {
     appProfile = project.hasProperty('appProfile') ? project.getProperty('appProfile') : 'dev'
     marathonUrl = project.hasProperty('marathonUrl') ? project.getProperty('marathonUrl') : ''
     environmentSet = project.hasProperty('environmentSet') ? project.getProperty('environmentSet') : ''
+    marathonCpus = project.hasProperty('marathonCpus') ? project.getProperty('marathonCpus') : 0.5
+    marathonMem = project.hasProperty('marathonMem') ? project.getProperty('marathonMem') : 1024
 
 }
 
@@ -57,6 +59,8 @@ task setupDeployer() {
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
         json.id = "${project.environmentSet}" + json.id;
         json.container.docker.portMappings[0].labels.VIP_0 = "${json.id}:8082"
+        json.cpus = ${project.marathonCpus}
+        json.mem = ${project.marathonMem}
 
         appId = "${json.id}"
 

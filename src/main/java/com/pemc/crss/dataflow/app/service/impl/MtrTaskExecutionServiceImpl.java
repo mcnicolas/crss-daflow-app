@@ -69,7 +69,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
                             Map<String, Object> jobParameters = jobExecution.getJobParameters().getParameters()
                                     .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                            Long runId = (Long) jobParameters.get(RUN_ID);
+                            Long runId = (Long) ((JobParameter) jobParameters.get(RUN_ID)).getValue();
                             BatchJobAddtlParams params = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, SEINS);
                             String seins = params != null ? params.getStringVal() : StringUtils.EMPTY;
                             jobParameters.put("seins", seins);

@@ -271,7 +271,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             stlJobGroupDto.setGroupId(groupId);
             stlJobGroupDto.setGmrCalcRunDate(calcGmrJobExecution.getStartTime());
 
-            if (!stlJobGroupDto.getLatestJobExecStartDate().after(calcGmrJobExecution.getStartTime())) {
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(calcGmrJobExecution.getStartTime())) {
                 updateProgress(calcGmrJobExecution, stlJobGroupDto);
             }
 

@@ -389,7 +389,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             stlJobGroupDto.getJobCalculationDtos().add(finalizeJobDto);
 
-            if (!stlJobGroupDto.getLatestJobExecStartDate().after(tagJobExecution.getStartTime())) {
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(tagJobExecution.getStartTime())) {
                 updateProgress(tagJobExecution, stlJobGroupDto);
             }
 
@@ -430,7 +431,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
             stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
 
-            if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(generationJobExecution.getStartTime())) {
                 updateProgress(generationJobExecution, stlJobGroupDto);
             }
 

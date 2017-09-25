@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.pemc.crss.shared.commons.util.TaskUtil.RUN_ID;
 import static java.util.stream.Collectors.toList;
 
 @Service("mtrTaskExecutionService")
@@ -68,7 +69,10 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
                             Map<String, Object> jobParameters = jobExecution.getJobParameters().getParameters()
                                     .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                            jobParameters.put("seins", jobExecution.getExecutionContext().getString("seins", StringUtils.EMPTY));
+                            Long runId = (Long) ((JobParameter) jobParameters.get(RUN_ID)).getValue();
+                            BatchJobAddtlParams params = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, SEINS);
+                            String seins = params != null ? params.getStringVal() : StringUtils.EMPTY;
+                            jobParameters.put("seins", seins);
                             String user = jobParameters.getOrDefault(USERNAME, "").toString();
 
                             MtrTaskExecutionDto mtrTaskExecutionDto = new MtrTaskExecutionDto();

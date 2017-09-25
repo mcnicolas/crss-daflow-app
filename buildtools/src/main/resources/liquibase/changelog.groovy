@@ -4,4 +4,5 @@ databaseChangeLog {
     // add succeeding changelog updates here
     include(file: '2.2.0/schema/changelog-1501669448827.groovy', relativeToChangelogFile: 'true')
     include(file: '2.2.0/schema/changelog-1505357200478.groovy', relativeToChangelogFile: 'true')
+    include(file: '2.2.0/schema/changelog-1505357200479.groovy', relativeToChangelogFile: 'true')
 }

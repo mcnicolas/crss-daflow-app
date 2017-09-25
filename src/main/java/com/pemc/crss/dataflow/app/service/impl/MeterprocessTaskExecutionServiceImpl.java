@@ -198,8 +198,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
             }
 
+            LOG.debug("Selected MTNs = {}", taskRunDto.getMtns());
             // temporarily save in additional params to lessen task id length in chronos
             if (StringUtils.isNotEmpty(taskRunDto.getMtns())) {
+                LOG.debug("Adding Selected MTNs = {}", taskRunDto.getMtns());
                 BatchJobAddtlParams paramsSelectedMtns = new BatchJobAddtlParams();
                 paramsSelectedMtns.setRunId(runId);
                 paramsSelectedMtns.setType(PARAMS_TYPE_STRING);

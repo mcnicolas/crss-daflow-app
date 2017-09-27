@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.support;
 
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 
+@Deprecated
 public class FinalizeJobQuery {
 
     public static final String FINALIZE_JOB_NAME_ADJ = SettlementJobName.TAG_TA + "A%";

@@ -3,6 +3,8 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
+import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
+import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
@@ -83,6 +85,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     @Autowired
     private BatchJobAddtlParamsService batchJobAddtlParamsService;
+
+    @Autowired
+    private SettlementJobLockRepository settlementJobLockRepository;
 
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
@@ -244,8 +249,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                         + " [%s to %s] with %s pricing condition has already been finalized.", startDate, endDate,
                 addtlCompensationDto.getPricingCondition()));
 
-        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
-        boolean hasFinal = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0;
+        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
+        boolean hasFinal = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.FINAL);
+
         Preconditions.checkState((hasAdjusted || hasFinal),
                 "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
 
@@ -275,7 +281,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
         saveAddltCompCalcAdditionalParams(runId, addtlCompensationDto);
 
-        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
+        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);;
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
 
@@ -290,7 +296,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         String endDate = addtlCompensationFinalizeDto.getEndDate();
         String pricingCondition = addtlCompensationFinalizeDto.getPricingCondition();
 
-        boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
+        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
 
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
@@ -495,6 +501,14 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         addtlCompParams.setStatus("STARTED");
 
         addtlCompParamsRepository.save(addtlCompParams);
+    }
+
+    private boolean billingPeriodIsFinalized(String startDate, String endDate, MeterProcessType processType) {
+        LocalDateTime startDateTime = DateUtil.parseLocalDate(startDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
+        LocalDateTime endDateTime = DateUtil.parseLocalDate(endDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
+
+        return settlementJobLockRepository.billingPeriodIsFinalized(startDateTime, endDateTime, processType.name(),
+                StlCalculationType.TRADING_AMOUNTS.name());
     }
 
     private void lockJob(String jobName) {

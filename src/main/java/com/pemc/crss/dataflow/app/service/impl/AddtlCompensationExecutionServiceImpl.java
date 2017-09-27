@@ -53,18 +53,13 @@ import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.*;
+import static com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName.*;
+import static com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile.*;
 
 @Slf4j
 @Service("addtlCompensationExecutionService")
 @Transactional
 public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecutionService {
-
-    private static final String ADDTL_COMP_JOB_NAME = "calcAc";
-    private static final String ADDTL_COMP_GMR_BASE_JOB_NAME = "calcAcGmrVat";
-    private static final String ADDTL_COMP_GMR_AC_JOB_NAME = "calcAcGmrVatAc";
-    private static final String ADDTL_COMP_GMR_ADJ_JOB_NAME = "calcAcGmrVatA";
-    private static final String ADDTL_COMP_GMR_FINAL_JOB_NAME = "calcAcGmrVatF";
-    private static final String GENERATE_ADDTL_COMP_JOB_NAME = "genFileAc";
 
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation-addtlcomp";
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";
@@ -145,7 +140,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     distinctAddtlCompDto.setGroupId(groupId);
 
                                     // do not include finalize ac jobs
-                                    if (!jobInstance.getJobName().startsWith(ADDTL_COMP_GMR_BASE_JOB_NAME)) {
+                                    if (!jobInstance.getJobName().startsWith(AC_CALC_GMR_BASE_NAME)) {
                                         addtlCompensationExecDetailsDtos.add(addtlCompensationExecDetailsDto);
                                     }
                                 }
@@ -155,7 +150,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                             && distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)) {
                         // get generated AC files folder name
                         Optional<JobInstance> genFileJobInstanceOpt = jobExplorer.findJobInstancesByJobName(
-                                GENERATE_ADDTL_COMP_JOB_NAME + "-" + distinctAddtlCompDto.getGroupId(),
+                                AC_GEN_FILE + "-" + distinctAddtlCompDto.getGroupId(),
                                 0, Integer.MAX_VALUE).stream().findFirst();
 
                         genFileJobInstanceOpt.ifPresent(jobInstance -> getJobExecutions(jobInstance)
@@ -220,7 +215,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 launchAddtlCompensation(addtlCompensationRunDto, groupId);
             }
 
-            lockJob(ADDTL_COMP_JOB_NAME);
+            lockJob(AC_CALC);
         }
     }
 
@@ -234,8 +229,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     private void validateAddtlCompDtos(List<AddtlCompensationRunDto> addtlCompensationRunDtos) {
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_JOB_NAME) == 0,
-                "There is an existing ".concat(ADDTL_COMP_JOB_NAME).concat(" job running"));
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_CALC) == 0,
+                "There is an existing ".concat(AC_CALC).concat(" job running"));
 
         // get first instance for billing period dates
         AddtlCompensationRunDto addtlCompensationDto = addtlCompensationRunDtos.get(0);
@@ -250,7 +245,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 addtlCompensationDto.getPricingCondition()));
 
         boolean hasAdjusted = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.ADJUSTED, startDate, endDate) > 0;
-        Preconditions.checkState(hasAdjusted || dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0,
+        boolean hasFinal = dataFlowJdbcJobExecutionDao.countFinalizeJobInstances(MeterProcessType.FINAL, startDate, endDate) > 0;
+        Preconditions.checkState((hasAdjusted || hasFinal),
                 "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
 
         checkTimeValidity(endDate);
@@ -283,13 +279,13 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
 
-        log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_JOB_NAME, properties, arguments);
+        log.debug("Running job name={}, properties={}, arguments={}", AC_CALC, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
     public void finalizeAC(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, Principal principal) throws URISyntaxException {
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(ADDTL_COMP_GMR_BASE_JOB_NAME) == 0,
-                "There is an existing ".concat(ADDTL_COMP_GMR_BASE_JOB_NAME).concat(" job running"));
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_CALC_GMR_BASE_NAME) == 0,
+                "There is an existing ".concat(AC_CALC_GMR_BASE_NAME).concat(" job running"));
         String startDate = addtlCompensationFinalizeDto.getStartDate();
         String endDate = addtlCompensationFinalizeDto.getEndDate();
         String pricingCondition = addtlCompensationFinalizeDto.getPricingCondition();
@@ -312,7 +308,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
-        lockJob(ADDTL_COMP_GMR_BASE_JOB_NAME);
+        lockJob(AC_CALC_GMR_BASE_NAME);
     }
 
     private void saveAdjRun(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, String jobName, boolean hasAdjusted) {
@@ -359,29 +355,29 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         if (hasAdjusted) {
             result = batchJobAdjRunRepository.isLatestFinalizedBillingPeriodAc(start, end);
             if (result != null && result.equals("Y")) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompGmrVatAcCalculation")));
-                return ADDTL_COMP_GMR_AC_JOB_NAME;
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_CALC_GMR_AC_PROFILE)));
+                return AC_CALC_GMR_AC;
             } else {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyAdjustedAddtlCompGmrVatCalculation")));
-                return ADDTL_COMP_GMR_ADJ_JOB_NAME;
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_CALC_GMR_ADJ_PROFILE)));
+                return AC_CALC_GMR_ADJ;
             }
         } else {
             result = batchJobAdjRunRepository.findLatestFinalizedAcByBillingPeriod(start, end);
             if (result == null) {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyFinalAddtlCompGmrVatCalculation")));
-                return ADDTL_COMP_GMR_FINAL_JOB_NAME;
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_CALC_GMR_FINAL_PROFILE)));
+                return AC_CALC_GMR_FINAL;
             } else {
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompGmrVatAcCalculation")));
-                return ADDTL_COMP_GMR_AC_JOB_NAME;
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_CALC_GMR_AC_PROFILE)));
+                return AC_CALC_GMR_AC;
             }
         }
     }
 
     private MeterProcessType determineProcessType(String jobName) {
         switch (jobName){
-            case ADDTL_COMP_GMR_FINAL_JOB_NAME:
+            case AC_CALC_GMR_FINAL:
                 return MeterProcessType.FINAL;
-            case ADDTL_COMP_GMR_ADJ_JOB_NAME:
+            case AC_CALC_GMR_ADJ:
                 return MeterProcessType.ADJUSTED;
             default:
                 return null;
@@ -389,8 +385,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     public void generateFilesAc(AddtlCompensationGenFilesDto genFilesDto, Principal principal) throws URISyntaxException {
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(GENERATE_ADDTL_COMP_JOB_NAME) == 0,
-                "There is an existing ".concat(GENERATE_ADDTL_COMP_JOB_NAME).concat(" job running"));
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_GEN_FILE) == 0,
+                "There is an existing ".concat(AC_GEN_FILE).concat(" job running"));
         String startDate = genFilesDto.getStartDate();
         String endDate = genFilesDto.getEndDate();
         String pricingCondition = genFilesDto.getPricingCondition();
@@ -407,12 +403,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
         arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
 
-        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("addtlCompFileGeneration")));
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_GEN_FILE_PROFILE)));
 
         saveAMSadditionalParams(runId, genFilesDto);
 
         launchJob(ADDTL_COMP_FILE_GEN_TASK_NAME, properties, arguments);
-        lockJob(GENERATE_ADDTL_COMP_JOB_NAME);
+        lockJob(AC_GEN_FILE);
     }
 
     private void saveAMSadditionalParams(final Long runId, final AddtlCompensationGenFilesDto genFilesDto) {
@@ -542,7 +538,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     private JobExecution getLatestFinalizeAcJob(String groupId) {
-        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(ADDTL_COMP_GMR_BASE_JOB_NAME.concat("*-").concat(groupId), 0, 1);
+        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(AC_CALC_GMR_BASE_NAME.concat("*-").concat(groupId), 0, 1);
         if (!taggingJobInstances.isEmpty()) {
             List<JobExecution> finalizeJobExecs = getJobExecutions(taggingJobInstances.get(0));
             if (!finalizeJobExecs.isEmpty()) {

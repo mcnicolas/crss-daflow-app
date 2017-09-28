@@ -15,7 +15,7 @@ databaseChangeLog {
       column(name: 'job_name', type: 'VARCHAR(255)') {
         constraints(nullable: false)
       }
-      column(name: 'module', type: 'INT') {
+      column(name: 'module', type: 'VARCHAR(255)') {
         constraints(nullable: false)
       }
       column(name: 'queue_date', type: 'TIMESTAMP WITHOUT TIME ZONE') {

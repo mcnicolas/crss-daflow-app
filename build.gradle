@@ -101,7 +101,8 @@ dependencies {
     compile 'org.springframework.security.oauth:spring-security-oauth2'
     compile 'org.springframework.cloud:spring-cloud-security'
 
-    compile'org.springframework.boot:spring-boot-starter-data-redis:1.4.1.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-data-redis:1.4.1.RELEASE'
+    compile 'org.quartz-scheduler:quartz:2.2.3'
 
     // Spring Batch Compatibility Issue
     compile 'org.codehaus.jettison:jettison:1.1'

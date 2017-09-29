@@ -15,4 +15,4 @@ spring:
   cloud:
     config:
       uri: http://localhost:8888
-      label: 2.2.x
+      label: master

@@ -24,7 +24,9 @@ databaseChangeLog {
       column(name: 'run_id', type: 'BIGINT') {
         constraints(nullable: false)
       }
-      column(name: 'source', type: 'VARCHAR(255)')
+      column(name: 'job_process', type: 'VARCHAR(255)') {
+        constraints(nullable: false)
+      }
       column(name: 'status', type: 'VARCHAR(255)') {
         constraints(nullable: false)
       }

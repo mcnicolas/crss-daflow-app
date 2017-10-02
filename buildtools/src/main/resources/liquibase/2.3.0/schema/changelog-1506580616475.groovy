@@ -8,7 +8,7 @@ databaseChangeLog {
       column(name: 'id', type: 'BIGINT') {
         constraints(nullable: false)
       }
-      column(name: 'details', type: 'VARCHAR(2000)')
+      column(name: 'details', type: 'VARCHAR(20000)')
       column(name: 'job_exec_end', type: 'TIMESTAMP WITHOUT TIME ZONE')
       column(name: 'job_exec_start', type: 'TIMESTAMP WITHOUT TIME ZONE')
       column(name: 'job_execution_id', type: 'BIGINT')

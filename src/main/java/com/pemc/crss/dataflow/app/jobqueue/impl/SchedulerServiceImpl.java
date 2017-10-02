@@ -1,8 +1,11 @@
 package com.pemc.crss.dataflow.app.jobqueue.impl;
 
+import com.pemc.crss.dataflow.app.dto.JobExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.jobqueue.SchedulerService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
@@ -14,7 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 
+import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.COMPLETED;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.FAILED_EXECUTION;
+import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.FAILED_RUN;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.ON_QUEUE;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTED;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTING;
@@ -25,6 +30,9 @@ public class SchedulerServiceImpl implements SchedulerService {
 
     @Autowired
     private BatchJobQueueRepository queueRepository;
+
+    @Autowired
+    private DataFlowJdbcJobExecutionDao dataFlowJdbcJobExecutionDao;
 
     @Autowired
     @Qualifier("tradingAmountsTaskExecutionService")
@@ -53,21 +61,21 @@ public class SchedulerServiceImpl implements SchedulerService {
 
         if (nextJob != null) {
             switch (nextJob.getStatus()) {
-                case STARTED:
-                     log.info("Checking Job if Finished: RunId: {}. Process: {}. JobName: {}",
-                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                     checkIfJobIsFinished(nextJob);
-                     break;
-                case STARTING:
-                    log.info("Checking Job if Started: RunId: {}. Process: {}. JobName: {}",
-                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                     checkIfJobStarted(nextJob);
-                     break;
                 case ON_QUEUE:
                     log.info("Running next Job in Queue. RunId: {}. Process: {}, JobName: {}",
                             nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
                     runNextQueuedJob(nextJob);
                     break;
+                case STARTING:
+                    log.info("Checking Job if Started: RunId: {}. Process: {}. JobName: {}",
+                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                    checkIfJobStarted(nextJob);
+                    break;
+                case STARTED:
+                     log.info("Checking Job if Finished: RunId: {}. Process: {}. JobName: {}",
+                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                     checkIfJobIsFinished(nextJob);
+                     break;
                 default:
                     // do nothing
             }
@@ -76,14 +84,6 @@ public class SchedulerServiceImpl implements SchedulerService {
         } else {
             log.info("No Jobs to run at the moment.");
         }
-    }
-
-    private void checkIfJobIsFinished(final BatchJobQueue job) {
-        // TODO
-    }
-
-    private void checkIfJobStarted(final BatchJobQueue job) {
-        // TODO
     }
 
     private void runNextQueuedJob(final BatchJobQueue job) {
@@ -132,5 +132,40 @@ public class SchedulerServiceImpl implements SchedulerService {
             job.setDetails(ExceptionUtils.getStackTrace(e));
         }
     }
+
+    private void checkIfJobStarted(final BatchJobQueue job) {
+        JobExecutionDto jobExecution = dataFlowJdbcJobExecutionDao.findJobExecutionByRunId(job.getRunId());
+
+        if (jobExecution != null) {
+            log.info("Found Job Execution With job execution id: {} and status: {}",
+                    jobExecution.getJobExecutionId(), jobExecution.getStatus());
+            job.setStatus(STARTED);
+            job.setJobExecutionId(jobExecution.getJobExecutionId());
+            job.setJobExecStart(DateUtil.convertToLocalDateTime(jobExecution.getStartTime()));
+        } else {
+            log.info("No Job Execution started yet for run id: {}", job.getRunId());
+        }
+    }
+
+    private void checkIfJobIsFinished(final BatchJobQueue job) {
+        JobExecutionDto jobExecution = dataFlowJdbcJobExecutionDao.findJobExecutionByJobExecutionId(job.getJobExecutionId());
+
+        switch (jobExecution.getBatchStatus()) {
+            case COMPLETED:
+                log.info("Job {} is COMPLETED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
+                job.setStatus(COMPLETED);
+                job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
+                break;
+            case FAILED:
+                log.info("Job {} FAILED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
+                job.setStatus(FAILED_RUN);
+                job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
+                break;
+            default:
+                // do nothing. job is probably still running
+        }
+
+    }
+
 
 }

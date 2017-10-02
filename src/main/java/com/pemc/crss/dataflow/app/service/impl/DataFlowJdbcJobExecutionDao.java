@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
 import com.pemc.crss.dataflow.app.dto.DistinctAddtlCompDto;
+import com.pemc.crss.dataflow.app.dto.JobExecutionDto;
 import com.pemc.crss.dataflow.app.support.FinalizeJobQuery;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlCalculationQuery;
@@ -8,6 +9,7 @@ import com.pemc.crss.dataflow.app.support.StlJobQuery;
 import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.commons.util.TaskUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
@@ -19,6 +21,7 @@ import org.springframework.batch.core.launch.NoSuchJobException;
 import org.springframework.batch.core.repository.dao.JdbcJobExecutionDao;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -246,6 +249,43 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         return this.getJdbcTemplate().query(StlCalculationQuery.executionQuery(), new DataFlowJdbcJobExecutionDao.JobExecutionColNameRowMapper(null),
                 new String[]{jobName.concat(parentGroup), startDate, endDate, startDate, endDate, type != null ? type.name() : ""});
     }
+
+    // Job Queue methods start
+    public JobExecutionDto findJobExecutionByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId);
+
+        String sql = "SELECT je.job_execution_id, je.start_time, je.end_time, je.status "
+                + " FROM batch_job_execution je where je.job_execution_id = :jobExecutionId";
+
+        return getNamedParameterJdbcTemplate().queryForObject(sql, paramSource, new BeanPropertyRowMapper<>(JobExecutionDto.class));
+    }
+
+    public JobExecutionDto findJobExecutionByRunId(final Long runId) {
+
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("runId", runId)
+                .addValue("keyName", TaskUtil.RUN_ID);
+
+        String sql = "SELECT je.job_execution_id, je.start_time, je.end_time, je.status "
+                + " FROM batch_job_execution_params jp INNER JOIN batch_job_execution je "
+                + " ON jp.job_execution_id = je.job_execution_id "
+                + " WHERE jp.key_name = :keyName AND jp.long_val = :runId "
+                + " ORDER BY je.start_time desc";
+
+        List<JobExecutionDto> jobExecutionDtos =  getNamedParameterJdbcTemplate().query(sql, paramSource,
+                new BeanPropertyRowMapper<>(JobExecutionDto.class));
+
+        if (!jobExecutionDtos.isEmpty()) {
+            if (jobExecutionDtos.size() > 1) {
+                log.warn("Found multiple job executions given run.id {}. Job Executions {}", runId, jobExecutionDtos);
+            }
+            return jobExecutionDtos.get(0);
+        }
+
+        return null;
+    }
+    // Job Queue methods end
 
     // Support methods
     private StlQueryProcessType resolveProcessType(final Map<String, String> mapParams) {

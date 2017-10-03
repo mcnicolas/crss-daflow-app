@@ -39,6 +39,7 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     private void validate(BatchJobQueue batchJobQueue) {
         BooleanBuilder predicate = new BooleanBuilder();
         predicate.and(QBatchJobQueue.batchJobQueue.status.eq(QueueStatus.ON_QUEUE))
+                .and(QBatchJobQueue.batchJobQueue.jobName.eq(batchJobQueue.getJobName()))
                 .and(QBatchJobQueue.batchJobQueue.taskObj.eq(batchJobQueue.getTaskObj()));
         if (queueRepository.findAll(predicate).iterator().hasNext()) {
             throw  new JobAlreadyOnQueueException("Job is already on queue");

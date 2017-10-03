@@ -21,18 +21,15 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     @Autowired
     private BatchJobQueueRepository queueRepository;
 
-    @Autowired
     public void save(BatchJobQueue batchJobQueue) {
         validate(batchJobQueue);
         queueRepository.save(batchJobQueue);
     }
 
-    @Autowired
     public BatchJobQueue get(Long id) {
         return queueRepository.findOne(id);
     }
 
-    @Autowired
     public Page<BatchJobQueue> getAllWithStatus(QueueStatus status, Pageable pageable) {
         BooleanBuilder predicate = new BooleanBuilder();
         predicate.and(QBatchJobQueue.batchJobQueue.status.eq(status));

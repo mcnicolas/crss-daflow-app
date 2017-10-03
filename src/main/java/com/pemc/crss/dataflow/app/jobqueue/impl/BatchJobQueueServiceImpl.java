@@ -10,7 +10,10 @@ import com.querydsl.core.BooleanBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import java.util.Iterator;
 
 @Service
 public class BatchJobQueueServiceImpl implements BatchJobQueueService {
@@ -38,11 +41,16 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
 
     private void validate(BatchJobQueue batchJobQueue) {
         BooleanBuilder predicate = new BooleanBuilder();
-        predicate.and(QBatchJobQueue.batchJobQueue.status.eq(QueueStatus.ON_QUEUE))
-                .and(QBatchJobQueue.batchJobQueue.jobName.eq(batchJobQueue.getJobName()))
-                .and(QBatchJobQueue.batchJobQueue.taskObj.eq(batchJobQueue.getTaskObj()));
-        if (queueRepository.findAll(predicate).iterator().hasNext()) {
-            throw  new JobAlreadyOnQueueException("Job is already on queue");
+        predicate.and(QBatchJobQueue.batchJobQueue.status.in(QueueStatus.ON_QUEUE, QueueStatus.STARTED, QueueStatus.STARTING));
+        Sort sortByRunId = new Sort(new Sort.Order(Sort.Direction.DESC, "runId"));
+        Iterator<BatchJobQueue> jobQueueIterator = queueRepository.findAll(predicate, sortByRunId).iterator();
+        if (!jobQueueIterator.hasNext()) {
+            return;
+        }
+        BatchJobQueue previousBatchJobQueue = jobQueueIterator.next();
+        if (previousBatchJobQueue.getJobName().equalsIgnoreCase(batchJobQueue.getJobName())
+                && previousBatchJobQueue.getTaskObj().equalsIgnoreCase(batchJobQueue.getTaskObj())) {
+            throw  new JobAlreadyOnQueueException("Same job is already on queue");
         }
     }
 }

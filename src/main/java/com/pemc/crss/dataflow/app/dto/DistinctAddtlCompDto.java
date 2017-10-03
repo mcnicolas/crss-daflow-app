@@ -22,10 +22,11 @@ public class DistinctAddtlCompDto {
     private List<String> generateFileRunningSteps = new ArrayList<>();
     private List<Long> successfullAcRuns = new ArrayList<>();
 
-    public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition) {
+    public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition, String groupId) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.pricingCondition = pricingCondition;
+        this.groupId = groupId;
     }
 
     public Date getStartDate() {
@@ -76,8 +77,9 @@ public class DistinctAddtlCompDto {
         this.taggingStatus = taggingStatus;
     }
 
-    public static DistinctAddtlCompDto create(final Date startDate, final Date endDate, final String pricingCondition) {
-        return new DistinctAddtlCompDto(startDate, endDate, pricingCondition);
+    public static DistinctAddtlCompDto create(final Date startDate, final Date endDate, final String pricingCondition,
+                                              final String groupId) {
+        return new DistinctAddtlCompDto(startDate, endDate, pricingCondition, groupId);
     }
 
     public BatchStatus getGenFileStatus() {

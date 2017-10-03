@@ -15,18 +15,21 @@ public class AddtlCompensationQuery {
             + "    %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID "
             + "JOIN "
             + "    %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID "
+            + "JOIN "
+            + "    %PREFIX%JOB_EXECUTION_PARAMS G on B.JOB_EXECUTION_ID = G.JOB_EXECUTION_ID "
             + "WHERE "
             + "    A.JOB_NAME like 'calcAc%' "
             + "    and B.STATUS like ? "
             + "    and (TO_CHAR(D.DATE_VAL, 'yyyy-MM-dd') like ? and D.KEY_NAME = 'startDate') "
             + "    and (TO_CHAR(E.DATE_VAL, 'yyyy-MM-dd') like ? and E.KEY_NAME = 'endDate') "
             + "    and (F.STRING_VAL like ? and F.KEY_NAME = 'acPC') "
+            + "    and (G.KEY_NAME = 'groupId' and G.STRING_VAL like ?) "
             + "ORDER BY JOB_INSTANCE_ID desc";
 
     public static final String ADDTL_COMP_DISTINCT_QUERY
             = "SELECT "
-            + "    DISTINCT ON (D.DATE_VAL, E.DATE_VAL, F.STRING_VAL) "
-            + "    D.DATE_VAL as start_date, E.DATE_VAL as end_date, F.STRING_VAL as pricing_condition "
+            + "    DISTINCT ON (D.DATE_VAL, E.DATE_VAL, F.STRING_VAL, G.STRING_VAL) "
+            + "    D.DATE_VAL as start_date, E.DATE_VAL as end_date, F.STRING_VAL as pricing_condition, G.STRING_VAL as group_id "
             + "FROM "
             + "    %PREFIX%JOB_INSTANCE A "
             + "JOIN "
@@ -37,12 +40,15 @@ public class AddtlCompensationQuery {
             + "    %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID "
             + "JOIN "
             + "    %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID "
+            + "JOIN "
+            + "    %PREFIX%JOB_EXECUTION_PARAMS G on B.JOB_EXECUTION_ID = G.JOB_EXECUTION_ID "
             + "WHERE "
             + "    A.JOB_NAME like 'calcAc%' "
             + "    and B.STATUS like ? "
             + "    and (D.KEY_NAME = 'startDate' and TO_CHAR(D.DATE_VAL, 'MM/DD/YYYY') like ?) "
             + "    and (E.KEY_NAME = 'endDate' and TO_CHAR(E.DATE_VAL, 'MM/DD/YYYY') like ?) "
             + "    and (F.KEY_NAME = 'acPC' and F.STRING_VAL like ?) "
+            + "    and (G.KEY_NAME = 'groupId' and G.STRING_VAL like ?) "
             + "ORDER BY D.DATE_VAL DESC, E.DATE_VAL DESC";
 
     public static final String ADDTL_COMP_COMPLETE_FINALIZE_QUERY

@@ -32,7 +32,7 @@ public class BatchJobQueueResource {
         Page<BatchJobQueue> jobQueuePage = batchJobQueueService.getAllWithStatus(status, pageable);
         List<BatchJobQueueDisplay> jobQueueDisplays = jobQueuePage.getContent().stream().map(BatchJobQueueDisplay::new)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(new PageImpl<>(jobQueueDisplays));
+        return ResponseEntity.ok(new PageImpl<>(jobQueueDisplays, pageable, jobQueuePage.getTotalElements()));
     }
 
     @PostMapping("/save")

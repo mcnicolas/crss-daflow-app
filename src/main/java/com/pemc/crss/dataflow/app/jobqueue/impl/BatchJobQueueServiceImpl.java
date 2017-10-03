@@ -1,7 +1,7 @@
 package com.pemc.crss.dataflow.app.jobqueue.impl;
 
-import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.exception.JobAlreadyOnQueueException;
+import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
@@ -30,8 +30,10 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     }
 
     @Autowired
-    public Page<BatchJobQueue> getAll(Pageable pageable) {
-        return queueRepository.findAll(pageable);
+    public Page<BatchJobQueue> getAllWithStatus(QueueStatus status, Pageable pageable) {
+        BooleanBuilder predicate = new BooleanBuilder();
+        predicate.and(QBatchJobQueue.batchJobQueue.status.eq(status));
+        return queueRepository.findAll(predicate, pageable);
     }
 
     private void validate(BatchJobQueue batchJobQueue) {

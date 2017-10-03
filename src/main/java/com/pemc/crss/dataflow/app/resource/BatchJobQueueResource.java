@@ -25,9 +25,11 @@ public class BatchJobQueueResource {
     private BatchJobQueueService batchJobQueueService;
 
     @GetMapping
-    public ResponseEntity<Page<BatchJobQueueDisplay>> getAll(Pageable pageable) {
+    public ResponseEntity<Page<BatchJobQueueDisplay>> getAll(@RequestParam("status") QueueStatus status,
+                                                             Pageable pageable) {
+
         log.debug("Request for getting job queue page. pageable = {}", pageable);
-        Page<BatchJobQueue> jobQueuePage = batchJobQueueService.getAll(pageable);
+        Page<BatchJobQueue> jobQueuePage = batchJobQueueService.getAllWithStatus(status, pageable);
         List<BatchJobQueueDisplay> jobQueueDisplays = jobQueuePage.getContent().stream()
                 .map(jobQueue -> new BatchJobQueueDisplay(jobQueue.getId(), jobQueue.getQueueDate(),
                         jobQueue.getModule(), jobQueue.getJobProcess(), jobQueue.getStatus(),

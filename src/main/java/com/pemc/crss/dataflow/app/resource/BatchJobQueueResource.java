@@ -1,7 +1,6 @@
 package com.pemc.crss.dataflow.app.resource;
 
 import com.pemc.crss.dataflow.app.dto.BatchJobQueueDisplay;
-import com.pemc.crss.dataflow.app.dto.BatchJobQueueForm;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
@@ -11,7 +10,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,12 +37,6 @@ public class BatchJobQueueResource {
         List<BatchJobQueueDisplay> jobQueueDisplays = jobQueuePage.getContent().stream().map(BatchJobQueueDisplay::new)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(new PageImpl<>(jobQueueDisplays, pageable, jobQueuePage.getTotalElements()));
-    }
-
-    @PostMapping("/save")
-    public void save(@RequestBody BatchJobQueueForm batchJobQueueForm) {
-        log.debug("Request for saving job queue. form = {}", batchJobQueueForm);
-        batchJobQueueService.save(batchJobQueueForm.toBatchJobQueue());
     }
 
     @PutMapping("/{id}/update-status")

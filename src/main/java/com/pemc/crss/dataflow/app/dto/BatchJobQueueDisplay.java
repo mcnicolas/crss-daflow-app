@@ -26,7 +26,7 @@ public class BatchJobQueueDisplay {
         this.module = batchJobQueue.getModule();
         this.jobProcess = batchJobQueue.getJobProcess();
         this.status = batchJobQueue.getStatus();
-        this.user = batchJobQueue.getUser();
+        this.user = batchJobQueue.getUsername();
     }
 
 }

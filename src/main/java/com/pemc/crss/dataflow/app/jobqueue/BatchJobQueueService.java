@@ -23,7 +23,7 @@ public interface BatchJobQueueService {
 
         Long runId = taskRunDto.getRunId();
 
-        jobQueue.setUser(taskRunDto.getCurrentUser());
+        jobQueue.setUsername(taskRunDto.getCurrentUser());
         jobQueue.setRunId(runId);
         jobQueue.setQueueDate(DateTimeUtil.parseDateTime(runId));
         jobQueue.setModule(module);

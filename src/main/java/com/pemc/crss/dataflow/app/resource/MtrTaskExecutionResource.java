@@ -1,9 +1,13 @@
 package com.pemc.crss.dataflow.app.resource;
 
-import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.util.reference.Module;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
+import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +34,9 @@ public class MtrTaskExecutionResource {
     @Qualifier("mtrTaskExecutionService")
     private TaskExecutionService taskExecutionService;
 
+    @Autowired
+    private BatchJobQueueService queueService;
+
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
@@ -38,10 +45,16 @@ public class MtrTaskExecutionResource {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        LOG.debug("Running job request. taskRunDto={}", taskRunDto);
+        LOG.debug("Queueing job request. taskRunDto={}", taskRunDto);
         String currentUser = SecurityUtil.getCurrentUser(principal);
+
+        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setCurrentUser(currentUser);
-        taskExecutionService.launchJob(taskRunDto);
+
+        // For now this resource only runs Generate MTR job
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING, JobProcess.GEN_MTR, taskRunDto);
+        queueService.save(jobQueue);
+
         return new ResponseEntity(HttpStatus.OK);
     }
 }

@@ -3,9 +3,13 @@ package com.pemc.crss.dataflow.app.resource;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.util.reference.Module;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
+import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -36,6 +40,9 @@ public class MeterprocessTaskExecutionResource {
     @Autowired
     private ExecutionParamRepository executionParamRepository;
 
+    @Autowired
+    private BatchJobQueueService queueService;
+
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
@@ -57,10 +64,34 @@ public class MeterprocessTaskExecutionResource {
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         String currentUser = SecurityUtil.getCurrentUser(principal);
-        LOG.debug("Running job request. taskRunDto={}", taskRunDto);
+        LOG.debug("Queueing job request. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setCurrentUser(currentUser);
-        taskExecutionService.launchJob(taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
+                determineMeterJobProcessByJobName(taskRunDto.getJobName()), taskRunDto);
+        queueService.save(jobQueue);
+
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    private JobProcess determineMeterJobProcessByJobName(final String jobName) {
+        //TODO: (optimization) Metering Job Names probably need to be set in shared repo
+        switch (jobName) {
+            case "computeWesmMq":
+                return JobProcess.RUN_WESM;
+            case "computeRcoaMq":
+                return JobProcess.RUN_RCOA;
+            case "stlNotReady":
+                return JobProcess.RUN_STL_READY;
+            case "stlReady":
+                return JobProcess.FINALIZE_STL_READY;
+            case "genReport":
+                return JobProcess.GEN_MQ_REPORT;
+            default:
+                throw new RuntimeException("Unrecognized metering job name: " + jobName);
+        }
     }
 
     @RequestMapping(value = "/get-dispatch-interval", method = RequestMethod.GET)

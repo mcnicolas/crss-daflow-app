@@ -2,10 +2,14 @@ package com.pemc.crss.dataflow.app.resource.settlement;
 
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.util.reference.Module;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
+import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -34,6 +38,9 @@ public class EnergyMarketFeeTaskExecutionResource {
     @Qualifier("energyMarketFeeTaskExecutionService")
     private TaskExecutionService taskExecutionService;
 
+    @Autowired
+    private BatchJobQueueService queueService;
+
     @PostMapping("/job-instances")
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(@RequestBody PageableRequest pageableRequest) {
 
@@ -42,44 +49,56 @@ public class EnergyMarketFeeTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running runGenInputWorkSpaceJob for emf. taskRunDto={}", taskRunDto);
+        log.info("Queueing runGenInputWorkSpaceJob for emf. taskRunDto={}", taskRunDto);
 
+        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-        taskExecutionService.launchJob(taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_EMF, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }
 
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running calculateJob for emf. taskRunDto={}", taskRunDto);
+        log.info("Queueing calculateJob for emf. taskRunDto={}", taskRunDto);
 
+        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-        taskExecutionService.launchJob(taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_EMF, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }
 
     @PostMapping("/finalize")
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running finalize job for emf. taskRunDto={}", taskRunDto);
+        log.info("Queueing finalize job for emf. taskRunDto={}", taskRunDto);
 
+        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-        taskExecutionService.launchJob(taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_EMF, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }
 
     @PostMapping("/generate-file")
     public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running generate file job for emf. taskRunDto={}", taskRunDto);
+        log.info("Queueing generate file job for emf. taskRunDto={}", taskRunDto);
 
+        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.FILE_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-        taskExecutionService.launchJob(taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_FILES_EMF, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }

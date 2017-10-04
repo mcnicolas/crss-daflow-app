@@ -23,7 +23,7 @@ ext {
     // need to uniquely generate version since scdf doesn't force pull image yet.
     dockerImageVersion = project.version + "." + 'git rev-parse --short HEAD'.execute().text.trim();
     scdfUrl = project.hasProperty('scdfUrl') ? project.getProperty('scdfUrl') : 'http://scdf.pemc.com'
-    descriptorPath = project.hasProperty('descriptorPath') ? project.getProperty('descriptorPath') : 'http://pemc-storage.southeastasia.cloudapp.azure.com/descriptors'
+    descriptorPath = project.hasProperty('descriptorPath') ? project.getProperty('descriptorPath') : 'http://pemc-storage.southeastasia.cloudapp.azure.com/pemc/descriptors'
     appProfile = project.hasProperty('appProfile') ? project.getProperty('appProfile') : 'dev'
     marathonUrl = project.hasProperty('marathonUrl') ? project.getProperty('marathonUrl') : ''
     environmentSet = project.hasProperty('environmentSet') ? project.getProperty('environmentSet') : ''

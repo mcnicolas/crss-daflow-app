@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
@@ -34,14 +35,6 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationExecDetailsDto;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationExecutionDto;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationFinalizeDto;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationGenFilesDto;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunDto;
-import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunListDto;
-import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -228,9 +221,20 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchAddtlCompensation(addtlCompensationDto, buildGroupId(addtlCompensationDto));
     }
 
-    private String buildGroupId(AddtlCompensationRunDto runDto) {
-        String groupId = runDto.getBillingStartDate() + runDto.getBillingEndDate() + runDto.getPricingCondition();
-        return groupId.replaceAll("-",""); // produces: YYYYMMDDYYYYMMDDPC ex: 2017012602170225AP
+    private String buildGroupId(AddtlCompensationRunDto runDto) throws URISyntaxException {
+
+        String groupId = (runDto.getBillingStartDate() + runDto.getBillingEndDate() + runDto.getPricingCondition()
+        ).replaceAll("-", "");
+
+        List<JobInstance> finalizeJobInstances = dataFlowJdbcJobExecutionDao.findAddtlCompCompleteFinalizeInstances(0,
+                Integer.MAX_VALUE, runDto.getBillingStartDate(), runDto.getBillingEndDate(), runDto.getPricingCondition());
+
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(finalizeJobInstances) &&
+                finalizeJobInstances.size() > 0) {
+            groupId = groupId.concat(String.valueOf(finalizeJobInstances.size()));
+        }
+
+        return groupId; // produces: YYYYMMDDYYYYMMDDPC ex: 2017012602170225AP
     }
 
     private void validateAddtlCompDtos(List<AddtlCompensationRunDto> addtlCompensationRunDtos) {
@@ -241,13 +245,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         AddtlCompensationRunDto addtlCompensationDto = addtlCompensationRunDtos.get(0);
         String startDate = addtlCompensationDto.getBillingStartDate();
         String endDate = addtlCompensationDto.getBillingEndDate();
-
-        List<JobInstance> finalizeJobInstances = dataFlowJdbcJobExecutionDao.findAddtlCompCompleteFinalizeInstances(0,
-                Integer.MAX_VALUE, startDate, endDate, addtlCompensationDto.getPricingCondition());
-
-        Preconditions.checkState(finalizeJobInstances.isEmpty(), String.format("Additional Compensation for billing period "
-                        + " [%s to %s] with %s pricing condition has already been finalized.", startDate, endDate,
-                addtlCompensationDto.getPricingCondition()));
 
         boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
         boolean hasFinal = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.FINAL);
@@ -281,7 +278,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
         saveAddltCompCalcAdditionalParams(runId, addtlCompensationDto);
 
-        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);;
+        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
 
@@ -380,7 +377,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     private MeterProcessType determineProcessType(String jobName) {
-        switch (jobName){
+        switch (jobName) {
             case AC_CALC_GMR_FINAL:
                 return MeterProcessType.FINAL;
             case AC_CALC_GMR_ADJ:

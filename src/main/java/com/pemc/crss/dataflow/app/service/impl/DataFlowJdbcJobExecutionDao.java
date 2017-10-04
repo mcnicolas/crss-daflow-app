@@ -89,7 +89,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     }
 
     public List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentId(final String jobNamePrefix,
-                                                    final List<String> processTypes, final String parentId) {
+                                                                             final List<String> processTypes, final String parentId) {
 
         MapSqlParameterSource querySqlSource = new MapSqlParameterSource()
                 .addValue("jobPrefix", jobNamePrefix + WILD_CARD)
@@ -97,13 +97,13 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 .addValue("parentId", Long.valueOf(parentId));
 
         String searchSql = "SELECT JI.JOB_INSTANCE_ID, JI.JOB_NAME from BATCH_JOB_INSTANCE JI "
-            + " JOIN BATCH_JOB_EXECUTION JE on JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
-            + " JOIN BATCH_JOB_EXECUTION_PARAMS PTYPE on JE.JOB_EXECUTION_ID = PTYPE.JOB_EXECUTION_ID "
-            + " JOIN BATCH_JOB_EXECUTION_PARAMS PID on JE.JOB_EXECUTION_ID = PID.JOB_EXECUTION_ID "
-            + " WHERE JI.JOB_NAME like :jobPrefix "
-            + " AND (PID.LONG_VAL = :parentId and PID.KEY_NAME = 'parentJob') "
-            + " AND (PTYPE.STRING_VAL in (:processTypes) and PTYPE.KEY_NAME = 'processType') "
-            + " ORDER BY JI.JOB_INSTANCE_ID DESC";
+                + " JOIN BATCH_JOB_EXECUTION JE on JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
+                + " JOIN BATCH_JOB_EXECUTION_PARAMS PTYPE on JE.JOB_EXECUTION_ID = PTYPE.JOB_EXECUTION_ID "
+                + " JOIN BATCH_JOB_EXECUTION_PARAMS PID on JE.JOB_EXECUTION_ID = PID.JOB_EXECUTION_ID "
+                + " WHERE JI.JOB_NAME like :jobPrefix "
+                + " AND (PID.LONG_VAL = :parentId and PID.KEY_NAME = 'parentJob') "
+                + " AND (PTYPE.STRING_VAL in (:processTypes) and PTYPE.KEY_NAME = 'processType') "
+                + " ORDER BY JI.JOB_INSTANCE_ID DESC";
 
         return getNamedParameterJdbcTemplate().query(searchSql, querySqlSource, new JobInstanceRowMapper());
     }
@@ -187,12 +187,13 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         log.debug("Querying Additional Compensation Job Select query with processType: {}");
         return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_INTS_QUERY),
                 new String[]{"%", DateUtil.convertToString(dto.getStartDate(), DateUtil.DEFAULT_DATE_FORMAT),
-                        DateUtil.convertToString(dto.getEndDate(), DateUtil.DEFAULT_DATE_FORMAT), dto.getPricingCondition()},
+                        DateUtil.convertToString(dto.getEndDate(), DateUtil.DEFAULT_DATE_FORMAT), dto.getPricingCondition(),
+                        dto.getGroupId()},
                 getJobInstanceExtractor(start, count));
     }
 
     public List<JobInstance> findAddtlCompCompleteFinalizeInstances(final int start, final int count,
-        final String startDate, final String endDate, final String pricingCondition) {
+                                                                    final String startDate, final String endDate, final String pricingCondition) {
         return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_COMPLETE_FINALIZE_QUERY),
                 new String[]{startDate, endDate, pricingCondition}, getJobInstanceExtractor(start, count));
     }
@@ -216,8 +217,9 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
         String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
         String pricingCondition = resolveQueryParam(mapParams.getOrDefault("pricingCondition", null));
+        String groupId = resolveQueryParam(mapParams.getOrDefault("groupId", null));
 
-        return new String[]{status, startDate, endDate, pricingCondition};
+        return new String[]{status, startDate, endDate, pricingCondition, groupId};
     }
 
     public Long countFinalizeJobInstances(MeterProcessType type, String startDate, String endDate) {
@@ -358,7 +360,8 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 Date startDate = rs.getDate("start_date");
                 Date endDate = rs.getDate("end_date");
                 String pricingCondition = rs.getString("pricing_condition");
-                list.add(DistinctAddtlCompDto.create(startDate, endDate, pricingCondition));
+                String groupId = rs.getString("group_id");
+                list.add(DistinctAddtlCompDto.create(startDate, endDate, pricingCondition, groupId));
                 ++rowNum;
             }
 

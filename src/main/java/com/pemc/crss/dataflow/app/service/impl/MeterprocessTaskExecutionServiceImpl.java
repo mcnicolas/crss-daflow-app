@@ -131,6 +131,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
         Preconditions.checkNotNull(taskRunDto.getJobName());
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
@@ -139,7 +140,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
-        final Long runId = System.currentTimeMillis();
+        final Long runId = taskRunDto.getRunId();
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 checkFinalizeDailyState(taskRunDto.getTradingDate());

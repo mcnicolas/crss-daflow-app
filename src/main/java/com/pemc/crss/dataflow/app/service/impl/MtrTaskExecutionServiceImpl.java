@@ -126,6 +126,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
     @Override
     @Transactional(value = "transactionManager")
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
         Preconditions.checkNotNull(taskRunDto.getJobName());
 
         String jobName = null;
@@ -141,7 +142,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("monthlyMtr")));
             }
-            String runId = String.valueOf(System.currentTimeMillis());
+            String runId = String.valueOf(taskRunDto.getRunId());
             arguments.add(concatKeyValue(METER_TYPE, taskRunDto.getMeterType()));
             arguments.add(concatKeyValue(RUN_ID, runId, "long"));
             arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));

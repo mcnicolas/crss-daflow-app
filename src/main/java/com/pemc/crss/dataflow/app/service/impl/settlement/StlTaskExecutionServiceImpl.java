@@ -763,7 +763,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
@@ -855,7 +856,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
@@ -899,7 +901,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void launchFinalizeJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
@@ -933,7 +936,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 

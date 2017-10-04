@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.service.impl.settlement;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
@@ -354,7 +355,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     // Calculate GMR is exclusive for TTA
     private void launchCalculateGmrJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 
@@ -388,7 +390,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     private void launchGenerateFileReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
 

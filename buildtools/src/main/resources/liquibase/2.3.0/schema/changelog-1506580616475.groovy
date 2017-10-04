@@ -33,7 +33,9 @@ databaseChangeLog {
       column(name: 'task_obj', type: 'VARCHAR(20000)') {
         constraints(nullable: false)
       }
-      column(name: 'user', type: 'VARCHAR(255)')
+      column(name: 'user_name', type: 'VARCHAR(255)') {
+        constraints(nullable: false)
+      }
     }
   }
 

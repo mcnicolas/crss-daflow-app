@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -55,8 +57,10 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Qualifier("mtrTaskExecutionService")
     private TaskExecutionService mtrTaskExecutionService;
 
+    @Autowired
+    private NamedParameterJdbcTemplate dataflowJdbcTemplate;
 
-    @Scheduled(fixedRateString = "${scheduler.interval-milliseconds}")
+    @Scheduled(fixedDelayString = "${scheduler.interval-milliseconds}")
     @Override
     public void execute() {
         BatchJobQueue nextJob = queueRepository.findFirstByStatusInOrderByRunIdAsc(Arrays.asList(ON_QUEUE, STARTED, STARTING));
@@ -82,7 +86,20 @@ public class SchedulerServiceImpl implements SchedulerService {
                     // do nothing
             }
 
-            queueRepository.save(nextJob);
+            String sql = "update batch_job_queue set status = :status, details = :details,"
+                    + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd "
+                    + " where id = :id";
+
+            MapSqlParameterSource updateSource = new MapSqlParameterSource()
+                    .addValue("status", nextJob.getStatus().name())
+                    .addValue("details", nextJob.getDetails())
+                    .addValue("jobExecutionId", nextJob.getJobExecutionId())
+                    .addValue("jobExecStart", nextJob.getJobExecStart())
+                    .addValue("jobExecEnd", nextJob.getJobExecEnd())
+                    .addValue("id", nextJob.getId());
+
+            dataflowJdbcTemplate.update(sql, updateSource);
+
         } else {
             log.info("No Jobs to run at the moment.");
         }

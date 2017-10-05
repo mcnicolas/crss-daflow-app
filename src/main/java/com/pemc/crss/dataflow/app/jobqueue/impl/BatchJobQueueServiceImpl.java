@@ -31,6 +31,9 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     }
 
     public Page<BatchJobQueue> getAllWithStatus(QueueStatus status, Pageable pageable) {
+        if (status == null) {
+            return queueRepository.findAll(pageable);
+        }
         BooleanBuilder predicate = new BooleanBuilder();
         predicate.and(QBatchJobQueue.batchJobQueue.status.eq(status));
         return queueRepository.findAll(predicate, pageable);

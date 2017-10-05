@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -55,6 +56,7 @@ public class SchedulerServiceImpl implements SchedulerService {
     private TaskExecutionService mtrTaskExecutionService;
 
 
+    @Scheduled(fixedRateString = "${scheduler.interval-milliseconds}")
     @Override
     public void execute() {
         BatchJobQueue nextJob = queueRepository.findFirstByStatusInOrderByRunIdAsc(Arrays.asList(ON_QUEUE, STARTED, STARTING));

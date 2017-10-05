@@ -22,6 +22,7 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     private BatchJobQueueRepository queueRepository;
 
     public void save(BatchJobQueue batchJobQueue) {
+        validate(batchJobQueue);
         queueRepository.save(batchJobQueue);
     }
 

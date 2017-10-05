@@ -42,12 +42,7 @@ public class BatchJobQueueResource {
     @PutMapping("/{id}/update-status")
     public void updateStatus(@PathVariable("id") Long id, @RequestParam("status") QueueStatus status) {
         log.debug("Request for updating status of job queue, id = {}, status = {}", id, status);
-        BatchJobQueue batchJobQueue = batchJobQueueService.get(id);
-        if (batchJobQueue == null) {
-            throw new RuntimeException("Batch job queue with id: {} cannot be found");
-        }
-        batchJobQueue.setStatus(status);
-        batchJobQueueService.save(batchJobQueue);
+        batchJobQueueService.updateStatus(id, status);
     }
 
 }

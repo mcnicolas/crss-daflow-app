@@ -22,7 +22,15 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     private BatchJobQueueRepository queueRepository;
 
     public void save(BatchJobQueue batchJobQueue) {
-        validate(batchJobQueue);
+        queueRepository.save(batchJobQueue);
+    }
+
+    public void updateStatus(long id, QueueStatus status) {
+        BatchJobQueue batchJobQueue = queueRepository.findOne(id);
+        if (batchJobQueue == null) {
+            throw new RuntimeException("Batch job queue with id: {} cannot be found");
+        }
+        batchJobQueue.setStatus(status);
         queueRepository.save(batchJobQueue);
     }
 

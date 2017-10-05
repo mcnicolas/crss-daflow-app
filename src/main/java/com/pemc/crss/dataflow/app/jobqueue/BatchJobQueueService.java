@@ -14,6 +14,8 @@ public interface BatchJobQueueService {
 
     void save(BatchJobQueue batchJobQueue);
 
+    void updateStatus(long id, QueueStatus status);
+
     BatchJobQueue get(Long id);
 
     Page<BatchJobQueue> getAllWithStatus(QueueStatus status, Pageable pageable);

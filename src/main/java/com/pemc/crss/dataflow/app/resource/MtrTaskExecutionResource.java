@@ -45,11 +45,11 @@ public class MtrTaskExecutionResource {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        LOG.debug("Queueing job request. taskRunDto={}", taskRunDto);
         String currentUser = SecurityUtil.getCurrentUser(principal);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setCurrentUser(currentUser);
+        LOG.debug("Queueing job request. taskRunDto={}", taskRunDto);
 
         // For now this resource only runs Generate MTR job
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING, JobProcess.GEN_MTR, taskRunDto);

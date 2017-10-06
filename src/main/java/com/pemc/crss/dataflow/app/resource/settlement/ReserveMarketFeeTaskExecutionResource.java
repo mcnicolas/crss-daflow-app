@@ -49,11 +49,11 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing runGenInputWorkSpaceJob for rmf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_RMF_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing runGenInputWorkSpaceJob for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_RMF, taskRunDto);
         queueService.save(jobQueue);
@@ -63,11 +63,11 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing calculateJob for rmf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing calculateJob for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_RMF, taskRunDto);
         queueService.save(jobQueue);
@@ -77,11 +77,11 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/finalize")
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing finalize job for rmf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing finalize job for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_RMF, taskRunDto);
         queueService.save(jobQueue);
@@ -91,11 +91,11 @@ public class ReserveMarketFeeTaskExecutionResource {
 
     @PostMapping("/generate-file")
     public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing generate file job for rmf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.FILE_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing generate file job for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_FILES_RMF, taskRunDto);
         queueService.save(jobQueue);

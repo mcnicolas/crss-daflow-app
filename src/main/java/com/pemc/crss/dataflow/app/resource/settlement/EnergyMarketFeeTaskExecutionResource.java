@@ -49,11 +49,11 @@ public class EnergyMarketFeeTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing runGenInputWorkSpaceJob for emf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing runGenInputWorkSpaceJob for emf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_EMF, taskRunDto);
         queueService.save(jobQueue);
@@ -63,11 +63,11 @@ public class EnergyMarketFeeTaskExecutionResource {
 
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing calculateJob for emf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing calculateJob for emf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_EMF, taskRunDto);
         queueService.save(jobQueue);
@@ -77,11 +77,11 @@ public class EnergyMarketFeeTaskExecutionResource {
 
     @PostMapping("/finalize")
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing finalize job for emf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing finalize job for emf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_EMF, taskRunDto);
         queueService.save(jobQueue);
@@ -91,11 +91,11 @@ public class EnergyMarketFeeTaskExecutionResource {
 
     @PostMapping("/generate-file")
     public ResponseEntity runGenerateFileJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing generate file job for emf. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.FILE_EMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing generate file job for emf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_FILES_EMF, taskRunDto);
         queueService.save(jobQueue);

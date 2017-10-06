@@ -49,11 +49,11 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, taskRunDto);
         queueService.save(jobQueue);
@@ -63,11 +63,11 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing calculateJob for trading amounts. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_STL);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing calculateJob for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, taskRunDto);
         queueService.save(jobQueue);
@@ -77,11 +77,11 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/calculate-gmr")
     public ResponseEntity runCalculateGmrJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing calculateGmrJob for trading amounts. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_GMR);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing calculateGmrJob for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_GMR_VAT, taskRunDto);
         queueService.save(jobQueue);
@@ -91,11 +91,11 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/finalize")
     public ResponseEntity runFinalizeJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing finalize job for trading amounts. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing finalize job for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_TA, taskRunDto);
         queueService.save(jobQueue);
@@ -105,11 +105,11 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/generate-file-energy")
     public ResponseEntity runGenerateFileJobEnergy(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing generate file job for energy trading amounts. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.FILE_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing generate file job for energy trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ENERGY_FILES, taskRunDto);
         queueService.save(jobQueue);
@@ -119,11 +119,11 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/generate-file-reserve")
     public ResponseEntity runGenerateFileJobReserve(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Queueing generate file job for reserve trading amounts. taskRunDto={}", taskRunDto);
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.FILE_RSV_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing generate file job for reserve trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_RESERVE_FILES, taskRunDto);
         queueService.save(jobQueue);

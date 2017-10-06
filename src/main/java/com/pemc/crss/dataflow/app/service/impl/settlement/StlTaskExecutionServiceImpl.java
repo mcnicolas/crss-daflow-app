@@ -14,7 +14,6 @@ import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
@@ -31,6 +30,7 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -51,9 +51,17 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static com.pemc.crss.dataflow.app.support.StlJobStage.*;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
-import static com.pemc.crss.shared.commons.util.TaskUtil.*;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_STL;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.GENERATE_IWS;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.DAILY;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.PRELIM;
+import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_DUE_DATE;
+import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_INVOICE_DATE;
+import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_REMARKS_INV;
+import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_REMARKS_MF;
 import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settlementJobLock;
 
 @Slf4j
@@ -834,17 +842,21 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             if (!settlementJobLockRepository.exists(predicate)) {
                 log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
                         groupId, getStlCalculationType(), processType);
-                SettlementJobLock jobLock = new SettlementJobLock();
-                jobLock.setCreatedDatetime(LocalDateTime.now());
-                jobLock.setStartDate(DateUtil.parseLocalDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd").atStartOfDay());
-                jobLock.setEndDate(DateUtil.parseLocalDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd").atStartOfDay());
-                jobLock.setGroupId(groupId);
-                jobLock.setParentJobId(Long.valueOf(taskRunDto.getParentJob()));
-                jobLock.setStlCalculationType(getStlCalculationType());
-                jobLock.setProcessType(processType);
-                jobLock.setLocked(false);
 
-                settlementJobLockRepository.save(jobLock);
+                MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                        .addValue("startDate", DateUtil.convertToDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd"))
+                        .addValue("endDate", DateUtil.convertToDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd"))
+                        .addValue("groupId", groupId)
+                        .addValue("parentJobId", Long.valueOf(taskRunDto.getParentJob()))
+                        .addValue("processType", processType.name())
+                        .addValue("stlCalculationType", getStlCalculationType().name());
+
+                String insertSql = "insert into settlement_job_lock(id, created_datetime, start_date, end_date, "
+                        + " group_id, parent_job_id, process_type, stl_calculation_type, locked) "
+                        + " values(nextval('hibernate_sequence'), now(), :startDate, :endDate, :groupId, :parentJobId, "
+                        + " :processType, :stlCalculationType, false)";
+
+                dataflowJdbcTemplate.update(insertSql, paramSource);
             }
 
         }
@@ -852,7 +864,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
@@ -897,7 +909,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         log.info("Running calculate job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     void launchFinalizeJob(final TaskRunDto taskRunDto) throws URISyntaxException {
@@ -932,7 +944,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
@@ -969,19 +981,23 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         log.info("Running generate file job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     private void saveAdjRun(MeterProcessType type, String jobId, String groupId, LocalDateTime start, LocalDateTime end) {
-        BatchJobAdjRun batchJobAdjRun = new BatchJobAdjRun();
-        batchJobAdjRun.setJobId(jobId);
-        batchJobAdjRun.setAdditionalCompensation(false);
-        batchJobAdjRun.setGroupId(groupId);
-        batchJobAdjRun.setMeterProcessType(type);
-        batchJobAdjRun.setBillingPeriodStart(start);
-        batchJobAdjRun.setBillingPeriodEnd(end);
-        batchJobAdjRun.setOutputReady(false);
-        batchJobAdjRunRepository.save(batchJobAdjRun);
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobId", jobId)
+                .addValue("groupId", groupId)
+                .addValue("processType", type.name())
+                .addValue("billPeriodStart", DateUtil.convertToDate(start))
+                .addValue("billPeriodEnd", DateUtil.convertToDate(end));
+
+        String insertSql = "insert into batch_job_adj_run(id, created_datetime, job_id, group_id, meter_process_type, "
+                + " addtl_comp, billing_period_start, billing_period_end, output_ready) "
+                + " values(nextval('hibernate_sequence'), now(), :jobId, :groupId, :processType, 'N', :billPeriodStart, "
+                + " :billPeriodEnd, 'N')";
+
+        dataflowJdbcTemplate.update(insertSql, paramSource);
     }
 
     void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
@@ -992,14 +1008,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             batchJobAddtlParamsInvoiceDate.setType("DATE");
             batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
             batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
-            batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
 
             BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
             batchJobAddtlParamsDueDate.setRunId(runId);
             batchJobAddtlParamsDueDate.setType("DATE");
             batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
             batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
-            batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsDueDate);
 
             switch (getStlCalculationType()) {
                 case TRADING_AMOUNTS:
@@ -1008,7 +1024,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     batchJobAddtlParamsRemarksInv.setType("STRING");
                     batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
                     batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
-                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+                    saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
                     break;
                 case ENERGY_MARKET_FEE:
                 case RESERVE_MARKET_FEE:
@@ -1017,7 +1033,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     batchJobAddtlParamsRemarksMf.setType("STRING");
                     batchJobAddtlParamsRemarksMf.setKey(AMS_REMARKS_MF);
                     batchJobAddtlParamsRemarksMf.setStringVal(taskRunDto.getAmsRemarksMf());
-                    batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksMf);
+                    saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksMf);
                     break;
                 default:
                     // do nothing

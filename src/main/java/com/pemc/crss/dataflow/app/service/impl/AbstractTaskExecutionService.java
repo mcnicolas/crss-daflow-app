@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobSkipLog;
@@ -16,6 +17,7 @@ import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobSkipLogRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import com.querydsl.core.BooleanBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.hateoas.ResourceSupport;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
@@ -53,6 +57,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Created by jdimayuga on 03/03/2017.
  */
+@Slf4j
 public abstract class AbstractTaskExecutionService implements TaskExecutionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTaskExecutionService.class);
@@ -121,6 +126,9 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected RedisTemplate genericRedisTemplate;
     @Autowired
     protected DataFlowJdbcJobExecutionDao dataFlowJdbcJobExecutionDao;
+
+    @Autowired
+    protected NamedParameterJdbcTemplate dataflowJdbcTemplate;
 
     @Value("${dataflow.url}")
     protected String dataFlowUrl;
@@ -340,5 +348,37 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
             batchJobRunLock.setLockedDate(new Date());
             batchJobRunLockRepository.save(batchJobRunLock);
         }
+    }
+
+    protected void lockJobJdbc(final TaskRunDto taskRunDto) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobName", taskRunDto.getJobName());
+        String updateSql = "update batch_job_run_lock set locked = true, locked_date = now() where job_name = :jobName";
+
+        if (dataflowJdbcTemplate.update(updateSql, paramSource) == 0) {
+            log.info("Inserting new job lock with name {}", taskRunDto.getJobName());
+            String insertSql = "insert into batch_job_run_lock(id, locked, job_name, locked_date, created_datetime) "
+                    + " values (nextval('hibernate_sequence'), true, :jobName, now(), now())";
+
+            dataflowJdbcTemplate.update(insertSql, paramSource);
+        }
+    }
+
+    protected void saveBatchJobAddtlParamsJdbc(final BatchJobAddtlParams addtlParams) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("runId", addtlParams.getRunId())
+                .addValue("typeCd", addtlParams.getType())
+                .addValue("keyName", addtlParams.getKey())
+                .addValue("stringVal", addtlParams.getStringVal())
+                .addValue("longVal", addtlParams.getLongVal())
+                .addValue("dateVal", DateUtil.convertToDate(addtlParams.getDateVal()))
+                .addValue("doubleVal", addtlParams.getDoubleVal());
+
+        String insertSql = "insert into batch_job_addtl_params(id, created_datetime, run_id, type_cd, key_name, "
+                + " string_val, long_val, date_val, double_val) values (nextval('hibernate_sequence'), now(), "
+                + " :runId, :typeCd, :keyName, :stringVal, :longVal, :dateVal, :doubleVal)";
+
+        dataflowJdbcTemplate.update(insertSql, paramSource);
+
     }
 }

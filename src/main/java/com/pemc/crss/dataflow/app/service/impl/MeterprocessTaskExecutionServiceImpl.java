@@ -164,37 +164,34 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
 
-                List<BatchJobAddtlParams> addtlParams = new ArrayList<>();
-
                 BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
                 paramsBillingPeriodId.setRunId(runId);
                 paramsBillingPeriodId.setType(PARAMS_TYPE_LONG);
                 paramsBillingPeriodId.setKey(PARAMS_BILLING_PERIOD_ID);
                 paramsBillingPeriodId.setLongVal(taskRunDto.getBillingPeriodId());
-                addtlParams.add(paramsBillingPeriodId);
+                saveBatchJobAddtlParamsJdbc(paramsBillingPeriodId);
 
                 BatchJobAddtlParams paramsBillingPeriod = new BatchJobAddtlParams();
                 paramsBillingPeriod.setRunId(runId);
                 paramsBillingPeriod.setType(PARAMS_TYPE_LONG);
                 paramsBillingPeriod.setKey(PARAMS_BILLING_PERIOD);
                 paramsBillingPeriod.setLongVal(taskRunDto.getBillingPeriod());
-                addtlParams.add(paramsBillingPeriod);
+                saveBatchJobAddtlParamsJdbc(paramsBillingPeriod);
 
                 BatchJobAddtlParams paramsSupplyMonth = new BatchJobAddtlParams();
                 paramsSupplyMonth.setRunId(runId);
                 paramsSupplyMonth.setType(PARAMS_TYPE_STRING);
                 paramsSupplyMonth.setKey(PARAMS_SUPPLY_MONTH);
                 paramsSupplyMonth.setStringVal(taskRunDto.getSupplyMonth());
-                addtlParams.add(paramsSupplyMonth);
+                saveBatchJobAddtlParamsJdbc(paramsSupplyMonth);
 
                 BatchJobAddtlParams paramsBillingPeriodName = new BatchJobAddtlParams();
                 paramsBillingPeriodName.setRunId(runId);
                 paramsBillingPeriodName.setType(PARAMS_TYPE_STRING);
                 paramsBillingPeriodName.setKey(PARAMS_BILLING_PERIOD_NAME);
                 paramsBillingPeriodName.setStringVal(taskRunDto.getBillingPeriodName());
-                addtlParams.add(paramsBillingPeriodName);
+                saveBatchJobAddtlParamsJdbc(paramsBillingPeriodName);
 
-                batchJobAddtlParamsRepository.save(addtlParams);
 
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
             }
@@ -208,7 +205,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 paramsSelectedMtns.setType(PARAMS_TYPE_STRING);
                 paramsSelectedMtns.setKey(MTNS);
                 paramsSelectedMtns.setStringVal(taskRunDto.getMtns());
-                batchJobAddtlParamsRepository.save(paramsSelectedMtns);
+                saveBatchJobAddtlParamsJdbc(paramsSelectedMtns);
             }
 
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));

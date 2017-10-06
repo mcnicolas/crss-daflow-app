@@ -2,7 +2,6 @@ package com.pemc.crss.dataflow.app.service.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.pemc.crss.shared.commons.util.TaskUtil.RUN_ID;
 import static java.util.stream.Collectors.toList;
 
 @Service("mtrTaskExecutionService")
@@ -155,7 +153,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
                 mtrSeins.setType("string");
                 mtrSeins.setKey(SEINS);
                 mtrSeins.setStringVal(taskRunDto.getSeins());
-                batchJobAddtlParamsRepository.save(mtrSeins);
+                saveBatchJobAddtlParamsJdbc(mtrSeins);
             }
         }
 

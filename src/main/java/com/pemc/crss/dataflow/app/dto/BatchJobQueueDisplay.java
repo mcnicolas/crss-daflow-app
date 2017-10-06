@@ -25,7 +25,7 @@ public class BatchJobQueueDisplay {
     private JobProcess jobProcess;
     private QueueStatus status;
     private String user;
-    private Map<String, String> detailsMap;
+    private Map<String, String> paramMap;
 
     public BatchJobQueueDisplay(BatchJobQueue batchJobQueue) {
         this.id = batchJobQueue.getId();
@@ -34,41 +34,41 @@ public class BatchJobQueueDisplay {
         this.jobProcess = batchJobQueue.getJobProcess();
         this.status = batchJobQueue.getStatus();
         this.user = batchJobQueue.getUsername();
-        this.detailsMap = buildRunDetails(batchJobQueue);
+        this.paramMap = buildRunDetails(batchJobQueue);
     }
 
     private Map<String, String> buildRunDetails(final BatchJobQueue jobQueue) {
-        Map<String, String> detailsMap = new LinkedHashMap<>();
+        Map<String, String> paramMap = new LinkedHashMap<>();
         TaskRunDto taskRunDto = ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class);
 
         switch (jobQueue.getModule()) {
             case SETTLEMENT:
-                putIfPresent(detailsMap, "Process Type", taskRunDto.getMeterProcessType());
+                putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                 if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
-                    putIfPresent(detailsMap, "Trading Date", taskRunDto.getTradingDate());
+                    putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
                 } else {
-                    putIfPresent(detailsMap, "Start Date",  taskRunDto.getStartDate());
-                    putIfPresent(detailsMap, "End Date", taskRunDto.getEndDate());
+                    putIfPresent(paramMap, "Start Date",  taskRunDto.getStartDate());
+                    putIfPresent(paramMap, "End Date", taskRunDto.getEndDate());
                 }
                 break;
             case METERING:
-                putIfPresent(detailsMap, "Process Type", taskRunDto.getMeterProcessType());
+                putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                 if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
-                    putIfPresent(detailsMap, "Trading Date", taskRunDto.getTradingDate());
+                    putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
                 } else {
-                    putIfPresent(detailsMap, "Start Date",  taskRunDto.getStartDate());
-                    putIfPresent(detailsMap, "End Date", taskRunDto.getEndDate());
+                    putIfPresent(paramMap, "Start Date",  taskRunDto.getStartDate());
+                    putIfPresent(paramMap, "End Date", taskRunDto.getEndDate());
                 }
-                putIfPresent(detailsMap, "Meter Type", taskRunDto.getMeterType());
-                putIfPresent(detailsMap, "MSP", taskRunDto.getMsp());
-                putIfPresent(detailsMap, "SEIN", taskRunDto.getSeins());
-                putIfPresent(detailsMap, "MTN", taskRunDto.getMtns());
+                putIfPresent(paramMap, "Meter Type", taskRunDto.getMeterType());
+                putIfPresent(paramMap, "MSP", taskRunDto.getMsp());
+                putIfPresent(paramMap, "SEIN", taskRunDto.getSeins());
+                putIfPresent(paramMap, "MTN", taskRunDto.getMtns());
                 break;
             default:
                 // do nothing
         }
 
-        return detailsMap;
+        return paramMap;
     }
 
     private void putIfPresent(final Map<String, String> map, final String key, final String value) {

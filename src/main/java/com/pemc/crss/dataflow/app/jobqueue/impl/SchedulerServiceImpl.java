@@ -94,8 +94,8 @@ public class SchedulerServiceImpl implements SchedulerService {
                     .addValue("status", nextJob.getStatus().name())
                     .addValue("details", nextJob.getDetails())
                     .addValue("jobExecutionId", nextJob.getJobExecutionId())
-                    .addValue("jobExecStart", nextJob.getJobExecStart())
-                    .addValue("jobExecEnd", nextJob.getJobExecEnd())
+                    .addValue("jobExecStart", DateUtil.convertToDate(nextJob.getJobExecStart()))
+                    .addValue("jobExecEnd", DateUtil.convertToDate(nextJob.getJobExecEnd()))
                     .addValue("id", nextJob.getId());
 
             dataflowJdbcTemplate.update(sql, updateSource);

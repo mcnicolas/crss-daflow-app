@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.resource;
 
+import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.BatchJobQueueDisplay;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,6 +45,15 @@ public class BatchJobQueueResource {
     public void updateStatus(@PathVariable("id") Long id, @RequestParam("status") QueueStatus status) {
         log.debug("Request for updating status of job queue, id = {}, status = {}", id, status);
         batchJobQueueService.updateStatus(id, status);
+    }
+
+    @GetMapping("/get-status-names")
+    public ResponseEntity<Map<QueueStatus, String>> getStatusNames() {
+        Map<QueueStatus, String> statusNames = Maps.newTreeMap();
+        for (QueueStatus statusName : QueueStatus.values()) {
+            statusNames.put(statusName, statusName.getDescription());
+        }
+        return ResponseEntity.ok(statusNames);
     }
 
 }

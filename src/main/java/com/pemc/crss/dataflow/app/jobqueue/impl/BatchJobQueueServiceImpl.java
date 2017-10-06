@@ -59,7 +59,7 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
         BatchJobQueue previousBatchJobQueue = jobQueueIterator.next();
         if (previousBatchJobQueue.getJobName().equalsIgnoreCase(batchJobQueue.getJobName())
                 && previousBatchJobQueue.getTaskObj().equalsIgnoreCase(batchJobQueue.getTaskObj())) {
-            throw  new JobAlreadyOnQueueException("Same job is already on queue");
+            throw new JobAlreadyOnQueueException("Same job is already on queue");
         }
     }
 }

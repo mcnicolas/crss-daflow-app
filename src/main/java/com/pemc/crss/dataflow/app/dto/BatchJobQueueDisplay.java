@@ -25,6 +25,7 @@ public class BatchJobQueueDisplay {
     private JobProcess jobProcess;
     private QueueStatus status;
     private String user;
+    private String details;
     private Map<String, String> paramMap;
 
     public BatchJobQueueDisplay(BatchJobQueue batchJobQueue) {
@@ -35,6 +36,7 @@ public class BatchJobQueueDisplay {
         this.status = batchJobQueue.getStatus();
         this.user = batchJobQueue.getUsername();
         this.paramMap = buildRunDetails(batchJobQueue);
+        this.details = batchJobQueue.getDetails();
     }
 
     private Map<String, String> buildRunDetails(final BatchJobQueue jobQueue) {

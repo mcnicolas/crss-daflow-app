@@ -61,6 +61,17 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/calculate-lr")
+    public ResponseEntity runCalculateLineRentalJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running calculate line rental. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setJobName(SettlementJobName.CALC_LR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping("/calculate-gmr")
     public ResponseEntity runCalculateGmrJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running calculateGmrJob for tta. taskRunDto={}", taskRunDto);
@@ -83,6 +94,17 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/finalize-lr")
+    public ResponseEntity runFinalizeLineRentalJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running finalize job for line rental. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setJobName(SettlementJobName.TAG_LR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping("/generate-file-energy")
     public ResponseEntity runGenerateFileJobEnergy(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         log.info("Running generate file job for energy ta. taskRunDto={}", taskRunDto);
@@ -99,6 +121,17 @@ public class TradingAmountsTaskExecutionResource {
         log.info("Running generate file job for reserve ta. taskRunDto={}", taskRunDto);
 
         taskRunDto.setJobName(SettlementJobName.FILE_RSV_TA);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/generate-file-line-rental")
+    public ResponseEntity runGenerateFileJobLineRental(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running generate file job for line rental. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setJobName(SettlementJobName.FILE_LR);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         taskExecutionService.launchJob(taskRunDto);
 

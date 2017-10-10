@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
+import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
@@ -63,8 +64,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
-    private static final String PARTIAL = "PARTIAL-";
-    private static final String FULL = "FULL-";
+    static final String PARTIAL = "PARTIAL-";
+    static final String FULL = "FULL-";
 
     // from batch_job_execution_context
     static final String INVOICE_GENERATION_FILENAME_KEY = "INVOICE_GENERATION_FILENAME";
@@ -354,7 +355,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }
-
         }
     }
 
@@ -499,7 +499,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void determineStlJobGroupDtoStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily) {
-        stlJobGroupDto.getSortedJobCalculationDtos().stream().findFirst().ifPresent(jobDto -> {
+        List<StlJobStage> excludedJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
+        stlJobGroupDto.getSortedJobCalculationDtos().stream().filter(dto -> !excludedJobStages.contains(dto))
+                .findFirst().ifPresent(jobDto -> {
 
             if (jobDto.getJobExecStatus().isRunning() || isDaily) {
                 stlJobGroupDto.setStatus(jobDto.getStatus());
@@ -582,7 +584,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return outdatedTradingDates;
     }
 
-    private SortedSet<LocalDate> createRange(final Date start, final Date end) {
+    SortedSet<LocalDate> createRange(final Date start, final Date end) {
         if (start == null || end == null) {
             return new TreeSet<>();
         }
@@ -718,7 +720,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     }
 
-    private void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
+    void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
                                      final Date calcEndDate) {
         SortedSet<LocalDate> datesToRemove = createRange(calcStartDate, calcEndDate);
 
@@ -729,7 +731,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         });
     }
 
-    private void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
+    void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
                                 final Date calcEndDate) {
 
        SortedSet<LocalDate> datesToAdd = createRange(calcStartDate, calcEndDate);
@@ -926,7 +928,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
 
-        log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+        log.info("Running finalize job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
         lockJob(taskRunDto);

@@ -56,6 +56,10 @@ public class StlJobGroupDto {
 
     // determines if job with group id and parent id is locked (applied only to FINAL / ADJUSTED)
     private boolean locked = false;
+
+    // determines if line rental calculation is finalized
+    private boolean lockedLr = false;
+
     private boolean canRunAdjustment = false;
 
     private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();

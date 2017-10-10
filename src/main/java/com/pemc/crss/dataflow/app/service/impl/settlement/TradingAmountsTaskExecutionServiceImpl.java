@@ -170,6 +170,16 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 determineIfJobsAreLocked(taskExecutionDto);
             }
 
+            // determine if line rental is finalized
+            if (Arrays.asList(FINAL, PRELIM).contains(taskExecutionDto.getProcessType())) {
+                boolean lrIsFinalized = settlementJobLockRepository.billingPeriodIsFinalized(
+                        DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
+                        DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()),
+                        taskExecutionDto.getProcessType().name(), StlCalculationType.LINE_RENTAL.name());
+
+                taskExecutionDto.getParentStlJobGroupDto().setLockedLr(lrIsFinalized);
+            }
+
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
 
                 boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
@@ -632,7 +642,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> properties = Lists.newArrayList();
 
-        switch (MeterProcessType.valueOf(type)) {
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        switch (processType) {
             case DAILY:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.CALC_DAILY_LR)));
@@ -651,7 +663,18 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
             default:
-                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + processType);
+        }
+
+        // Create SettlementJobLock. Do not include daily since it does not have finalize job
+        if (processType != DAILY) {
+            LocalDateTime billPeriodStartDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseStartDate(),
+                    DateUtil.DEFAULT_DATE_FORMAT);
+            LocalDateTime billPeriodEndDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseEndDate(),
+                    DateUtil.DEFAULT_DATE_FORMAT);
+
+            saveSettlementJobLock(groupId, Long.valueOf(taskRunDto.getParentJob()), processType, billPeriodStartDate,
+                    billPeriodEndDate, StlCalculationType.LINE_RENTAL);
         }
 
         log.info("Running calculate job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
@@ -689,7 +712,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJob(taskRunDto);
     }
 
-    // TODO: determine job profiles
     private void launchGenerateFileLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.getGroupId();
@@ -703,10 +725,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         switch (MeterProcessType.valueOf(type)) {
             case PRELIM:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(null)));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.GEN_FILE_PRELIM_LR)));
                 break;
             case FINAL:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(null)));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.GEN_FILE_FINAL_LR)));
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);

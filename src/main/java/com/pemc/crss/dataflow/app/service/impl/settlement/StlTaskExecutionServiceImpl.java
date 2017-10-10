@@ -77,7 +77,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Autowired
-    private SettlementJobLockRepository settlementJobLockRepository;
+    SettlementJobLockRepository settlementJobLockRepository;
 
     @Autowired
     ViewSettlementJobRepository viewSettlementJobRepository;
@@ -827,27 +827,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         // Create SettlementJobLock. Do not include daily since it does not have finalize job
         if (processType != DAILY) {
-            BooleanBuilder predicate = new BooleanBuilder();
-            predicate.and(settlementJobLock.groupId.eq(groupId)
-                     .and(settlementJobLock.processType.eq(processType))
-                     .and(settlementJobLock.stlCalculationType.eq(getStlCalculationType())));
-
-            if (!settlementJobLockRepository.exists(predicate)) {
-                log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
-                        groupId, getStlCalculationType(), processType);
-                SettlementJobLock jobLock = new SettlementJobLock();
-                jobLock.setCreatedDatetime(LocalDateTime.now());
-                jobLock.setStartDate(DateUtil.parseLocalDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd").atStartOfDay());
-                jobLock.setEndDate(DateUtil.parseLocalDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd").atStartOfDay());
-                jobLock.setGroupId(groupId);
-                jobLock.setParentJobId(Long.valueOf(taskRunDto.getParentJob()));
-                jobLock.setStlCalculationType(getStlCalculationType());
-                jobLock.setProcessType(processType);
-                jobLock.setLocked(false);
-
-                settlementJobLockRepository.save(jobLock);
-            }
-
+            saveSettlementJobLock(groupId, Long.valueOf(taskRunDto.getParentJob()), processType,  billPeriodStartDate,
+                    billPeriodEndDate, getStlCalculationType());
         }
 
         log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
@@ -968,6 +949,30 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJob(taskRunDto);
+    }
+
+    void saveSettlementJobLock(String groupId, Long parentJobId, MeterProcessType processType, LocalDateTime billPeriodStartDate,
+                               LocalDateTime billPeriodEndDate, StlCalculationType calculationType) {
+        BooleanBuilder predicate = new BooleanBuilder();
+        predicate.and(settlementJobLock.groupId.eq(groupId)
+                .and(settlementJobLock.processType.eq(processType))
+                .and(settlementJobLock.stlCalculationType.eq(getStlCalculationType())));
+
+        if (!settlementJobLockRepository.exists(predicate)) {
+            log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
+                    groupId, getStlCalculationType(), processType);
+            SettlementJobLock jobLock = new SettlementJobLock();
+            jobLock.setCreatedDatetime(LocalDateTime.now());
+            jobLock.setStartDate(billPeriodStartDate);
+            jobLock.setEndDate(billPeriodEndDate);
+            jobLock.setGroupId(groupId);
+            jobLock.setParentJobId(parentJobId);
+            jobLock.setStlCalculationType(calculationType);
+            jobLock.setProcessType(processType);
+            jobLock.setLocked(false);
+
+            settlementJobLockRepository.save(jobLock);
+        }
     }
 
     private void saveAdjRun(MeterProcessType type, String jobId, String groupId, LocalDateTime start, LocalDateTime end) {

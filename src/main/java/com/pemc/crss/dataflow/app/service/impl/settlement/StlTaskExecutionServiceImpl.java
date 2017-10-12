@@ -500,7 +500,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void determineStlJobGroupDtoStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily) {
         List<StlJobStage> excludedJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
-        stlJobGroupDto.getSortedJobCalculationDtos().stream().filter(dto -> !excludedJobStages.contains(dto))
+        stlJobGroupDto.getSortedJobCalculationDtos().stream().filter(dto -> !excludedJobStages.contains(dto.getJobStage()))
                 .findFirst().ifPresent(jobDto -> {
 
             if (jobDto.getJobExecStatus().isRunning() || isDaily) {

@@ -504,7 +504,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                         }
                         break;
                     case CALCULATE_LR:
-                        if (stlJobGroupDto.getRemainingDatesCalc().isEmpty()) {
+                        if (stlJobGroupDto.getRemainingDatesCalcLr().isEmpty()) {
                             stlJobGroupDto.setLineRentalTopStatus(convertStatus(jobDto.getJobExecStatus(), FULL + CALCULATE_LR.getLabel()));
                         } else {
                             stlJobGroupDto.setLineRentalTopStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + CALCULATE_LR.getLabel()));

@@ -25,6 +25,10 @@ public class StlJobGroupDto {
     private BatchStatus invoiceGenerationRsvTaStatus;
     private String status;
 
+    private String lineRentalTopStatus;
+    private BatchStatus taggingLrStatus;
+    private BatchStatus invoiceGenerationLrStatus;
+
     @Deprecated
     private boolean currentlyRunning;
     @Deprecated
@@ -35,6 +39,7 @@ public class StlJobGroupDto {
     private Date runStartDateTime;
     private Date runEndDateTime;
     private Date runEndDateTimeFileRsvTa;
+    private Date runEndDateTimeFileLr;
     private Long runId;
 
     // progress bar and status
@@ -45,11 +50,16 @@ public class StlJobGroupDto {
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
     private String invoiceGenFolderRsvTa;
+    private String invoiceGenFolderLr;
 
     private String billingPeriodStr;
 
     // determines if job with group id and parent id is locked (applied only to FINAL / ADJUSTED)
     private boolean locked = false;
+
+    // determines if line rental calculation is finalized
+    private boolean lockedLr = false;
+
     private boolean canRunAdjustment = false;
 
     private List<JobCalculationDto> jobCalculationDtos = new ArrayList<>();
@@ -58,15 +68,21 @@ public class StlJobGroupDto {
 
     private SortedSet<LocalDate> remainingDatesGenInputWs = new TreeSet<>();
 
+    private SortedSet<LocalDate> remainingDatesCalcLr = new TreeSet<>();
+
     private SortedSet<LocalDate> outdatedTradingDates = new TreeSet<>();
 
     private boolean runningStlCalculation;
 
     private boolean runningGenInputWorkspace;
 
+    private boolean runningLrCalculation;
+
     private Date maxPartialCalcRunDate;
 
     private Date maxPartialGenIwRunDate;
+
+    private Date maxPartialCalcLrRunDate;
 
     private Date gmrCalcRunDate;
 
@@ -87,6 +103,11 @@ public class StlJobGroupDto {
     public String getRunEndDateTimeFileRsvTaStr() {
         return runEndDateTimeFileRsvTa != null
                 ? DateUtil.convertToString(runEndDateTimeFileRsvTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
+    public String getRunEndDateTimeFileLrStr() {
+        return runEndDateTimeFileLr != null
+                ? DateUtil.convertToString(runEndDateTimeFileLr, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
     // consider gmr/vat recalculation if max partial calculation runDate > gmr calculation runDate

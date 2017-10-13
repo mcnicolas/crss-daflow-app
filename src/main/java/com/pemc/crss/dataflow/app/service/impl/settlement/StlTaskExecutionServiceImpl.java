@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
+import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
@@ -51,8 +52,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_LR;
 import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_STL;
 import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE_LR;
 import static com.pemc.crss.dataflow.app.support.StlJobStage.GENERATE_IWS;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.DAILY;
@@ -71,8 +74,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
-    private static final String PARTIAL = "PARTIAL-";
-    private static final String FULL = "FULL-";
+    static final String PARTIAL = "PARTIAL-";
+    static final String FULL = "FULL-";
 
     // from batch_job_execution_context
     static final String INVOICE_GENERATION_FILENAME_KEY = "INVOICE_GENERATION_FILENAME";
@@ -84,7 +87,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Autowired
-    private SettlementJobLockRepository settlementJobLockRepository;
+    SettlementJobLockRepository settlementJobLockRepository;
 
     @Autowired
     ViewSettlementJobRepository viewSettlementJobRepository;
@@ -362,7 +365,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
             }
-
         }
     }
 
@@ -507,7 +509,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void determineStlJobGroupDtoStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily) {
-        stlJobGroupDto.getSortedJobCalculationDtos().stream().findFirst().ifPresent(jobDto -> {
+        List<StlJobStage> excludedJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
+        stlJobGroupDto.getSortedJobCalculationDtos().stream().filter(dto -> !excludedJobStages.contains(dto.getJobStage()))
+                .findFirst().ifPresent(jobDto -> {
 
             if (jobDto.getJobExecStatus().isRunning() || isDaily) {
                 stlJobGroupDto.setStatus(jobDto.getStatus());
@@ -590,7 +594,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return outdatedTradingDates;
     }
 
-    private SortedSet<LocalDate> createRange(final Date start, final Date end) {
+    SortedSet<LocalDate> createRange(final Date start, final Date end) {
         if (start == null || end == null) {
             return new TreeSet<>();
         }
@@ -726,7 +730,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     }
 
-    private void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
+    void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
                                      final Date calcEndDate) {
         SortedSet<LocalDate> datesToRemove = createRange(calcStartDate, calcEndDate);
 
@@ -737,7 +741,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         });
     }
 
-    private void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
+    void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
                                 final Date calcEndDate) {
 
        SortedSet<LocalDate> datesToAdd = createRange(calcStartDate, calcEndDate);
@@ -834,31 +838,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         // Create SettlementJobLock. Do not include daily since it does not have finalize job
         if (processType != DAILY) {
-            BooleanBuilder predicate = new BooleanBuilder();
-            predicate.and(settlementJobLock.groupId.eq(groupId)
-                     .and(settlementJobLock.processType.eq(processType))
-                     .and(settlementJobLock.stlCalculationType.eq(getStlCalculationType())));
-
-            if (!settlementJobLockRepository.exists(predicate)) {
-                log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
-                        groupId, getStlCalculationType(), processType);
-
-                MapSqlParameterSource paramSource = new MapSqlParameterSource()
-                        .addValue("startDate", DateUtil.convertToDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd"))
-                        .addValue("endDate", DateUtil.convertToDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd"))
-                        .addValue("groupId", groupId)
-                        .addValue("parentJobId", Long.valueOf(taskRunDto.getParentJob()))
-                        .addValue("processType", processType.name())
-                        .addValue("stlCalculationType", getStlCalculationType().name());
-
-                String insertSql = "insert into settlement_job_lock(id, created_datetime, start_date, end_date, "
-                        + " group_id, parent_job_id, process_type, stl_calculation_type, locked) "
-                        + " values(nextval('hibernate_sequence'), now(), :startDate, :endDate, :groupId, :parentJobId, "
-                        + " :processType, :stlCalculationType, false)";
-
-                dataflowJdbcTemplate.update(insertSql, paramSource);
-            }
-
+            saveSettlementJobLock(groupId, processType, taskRunDto, getStlCalculationType());
         }
 
         log.info("Running generate input workspace job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
@@ -941,7 +921,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
 
-        log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+        log.info("Running finalize job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
         lockJobJdbc(taskRunDto);
@@ -982,6 +962,34 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJobJdbc(taskRunDto);
+    }
+
+    void saveSettlementJobLock(String groupId, MeterProcessType processType, TaskRunDto taskRunDto,
+                               StlCalculationType calculationType) {
+        BooleanBuilder predicate = new BooleanBuilder();
+        predicate.and(settlementJobLock.groupId.eq(groupId)
+                .and(settlementJobLock.processType.eq(processType))
+                .and(settlementJobLock.stlCalculationType.eq(calculationType)));
+
+        if (!settlementJobLockRepository.exists(predicate)) {
+            log.info("Creating new Settlement Job Lock. groupdId {}, stlCalculationType {}, processType: {}",
+                    groupId, calculationType, processType);
+
+            MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                    .addValue("startDate", DateUtil.convertToDate(taskRunDto.getBaseStartDate(), "yyyy-MM-dd"))
+                    .addValue("endDate", DateUtil.convertToDate(taskRunDto.getBaseEndDate(), "yyyy-MM-dd"))
+                    .addValue("groupId", groupId)
+                    .addValue("parentJobId", Long.valueOf(taskRunDto.getParentJob()))
+                    .addValue("processType", processType.name())
+                    .addValue("stlCalculationType", calculationType);
+
+            String insertSql = "insert into settlement_job_lock(id, created_datetime, start_date, end_date, "
+                    + " group_id, parent_job_id, process_type, stl_calculation_type, locked) "
+                    + " values(nextval('hibernate_sequence'), now(), :startDate, :endDate, :groupId, :parentJobId, "
+                    + " :processType, :stlCalculationType, false)";
+
+            dataflowJdbcTemplate.update(insertSql, paramSource);
+        }
     }
 
     private void saveAdjRun(MeterProcessType type, String jobId, String groupId, LocalDateTime start, LocalDateTime end) {

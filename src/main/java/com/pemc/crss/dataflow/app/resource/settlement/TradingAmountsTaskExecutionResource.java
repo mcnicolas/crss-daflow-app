@@ -75,6 +75,20 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/calculate-lr")
+    public ResponseEntity runCalculateLineRentalJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.CALC_LR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing calculateJob for line rental. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_LR, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping("/calculate-gmr")
     public ResponseEntity runCalculateGmrJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
@@ -103,6 +117,20 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/finalize-lr")
+    public ResponseEntity runFinalizeLineRentalJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.TAG_LR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing finalize job for line rental. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_LR, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping("/generate-file-energy")
     public ResponseEntity runGenerateFileJobEnergy(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
@@ -126,6 +154,21 @@ public class TradingAmountsTaskExecutionResource {
         log.info("Queueing generate file job for reserve trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_RESERVE_FILES, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/generate-file-line-rental")
+    public ResponseEntity runGenerateFileJobLineRental(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.FILE_LR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing generate file job for line rental. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_LR_FILES, taskRunDto);
         queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);

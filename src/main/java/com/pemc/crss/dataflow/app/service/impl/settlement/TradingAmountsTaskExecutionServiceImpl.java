@@ -684,7 +684,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJob(taskRunDto);
     }
 
-    // TODO: determine job profiles
     private void launchFinalizeLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.getGroupId();
@@ -698,10 +697,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         switch (MeterProcessType.valueOf(type)) {
             case PRELIM:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(null)));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
+                        fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_PRELIM_LR)));
                 break;
             case FINAL:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(null)));
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
+                        fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_FINAL_LR)));
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);

@@ -7,6 +7,7 @@ import org.springframework.batch.core.BatchStatus;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -15,6 +16,10 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_GMR;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_LR;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE_LR;
 
 @Data
 public class StlJobGroupDto {
@@ -117,8 +122,16 @@ public class StlJobGroupDto {
     }
 
     public boolean isCalculateGmrIsLatestJob() {
-        return !getSortedJobCalculationDtos().isEmpty() &&
-                Objects.equals(getSortedJobCalculationDtos().get(0).getJobStage(), StlJobStage.CALCULATE_GMR);
+        List<StlJobStage> lineRentalJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
+
+        List<JobCalculationDto> sortedCalcDtosWithoutLr = !jobCalculationDtos.isEmpty() ?
+                jobCalculationDtos.stream()
+                        .filter(jobDto -> !lineRentalJobStages.contains(jobDto.getJobStage()))
+                        .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
+                        .collect(Collectors.toList()) : new ArrayList<>();
+
+        return !sortedCalcDtosWithoutLr.isEmpty()
+                && Objects.equals(sortedCalcDtosWithoutLr.get(0).getJobStage(), CALCULATE_GMR);
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

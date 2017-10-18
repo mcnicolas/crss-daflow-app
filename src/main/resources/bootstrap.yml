@@ -10,7 +10,6 @@ spring:
       username: crssconfig
       password: crssconfigpassword
 ---
-
 spring:
   profiles: dev
   cloud:

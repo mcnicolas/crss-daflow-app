@@ -1,7 +1,9 @@
 package com.pemc.crss.dataflow.app.jobqueue.impl;
 
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.exception.JobAlreadyOnQueueException;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
+import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
@@ -57,9 +59,12 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
             return;
         }
         BatchJobQueue previousBatchJobQueue = jobQueueIterator.next();
-        if (previousBatchJobQueue.getJobName().equalsIgnoreCase(batchJobQueue.getJobName())
-                && previousBatchJobQueue.getTaskObj().equalsIgnoreCase(batchJobQueue.getTaskObj())) {
-            throw new JobAlreadyOnQueueException("Same job is already on queue");
+
+        TaskRunDto current = ModelMapper.toModel(batchJobQueue.getTaskObj(), TaskRunDto.class);
+        TaskRunDto previous = ModelMapper.toModel(previousBatchJobQueue.getTaskObj(), TaskRunDto.class);
+
+        if (current.equals(previous)) {
+            throw new JobAlreadyOnQueueException("Job is already on queue!");
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import lombok.Data;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @Data
 public class TaskRunDto {
@@ -45,4 +46,38 @@ public class TaskRunDto {
 
     //Meter process, possible values: ALL or comma separated mtn
     private String mtns;
+
+
+    @Override
+    public boolean equals(Object o) {
+        // do not include runId and ams remarks, supplyMonth, billingPeriodName, formattedBillingPeriod, currentUser
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TaskRunDto that = (TaskRunDto) o;
+
+        return new EqualsBuilder()
+                .appendSuper(super.equals(o))
+                .append(newGroup, that.newGroup)
+                .append(header, that.header)
+                .append(jobName, that.jobName)
+                .append(parentJob, that.parentJob)
+                .append(groupId, that.groupId)
+                .append(meterProcessType, that.meterProcessType)
+                .append(tradingDate, that.tradingDate)
+                .append(startDate, that.startDate)
+                .append(endDate, that.endDate)
+                .append(baseStartDate, that.baseStartDate)
+                .append(baseEndDate, that.baseEndDate)
+                .append(marketInformationType, that.marketInformationType)
+                .append(baseType, that.baseType)
+                .append(meterType, that.meterType)
+                .append(billingPeriodId, that.billingPeriodId)
+                .append(billingPeriod, that.billingPeriod)
+                .append(msp, that.msp)
+                .append(seins, that.seins)
+                .append(mtns, that.mtns)
+                .isEquals();
+    }
 }

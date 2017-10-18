@@ -210,7 +210,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 batchJobAddtlParamsRepository.save(paramsSelectedMtns);
             }
 
-            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             // for list by billing period
@@ -301,7 +300,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
                 }
-                arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
                 arguments.add(concatKeyValue("bp", taskRunDto.getFormattedBillingPeriod()));
                 jobName = "crss-meterprocess-task-stlready";
@@ -323,6 +321,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         if (jobName != null) {
+            arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), PARAMS_TYPE_LONG));
+
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);

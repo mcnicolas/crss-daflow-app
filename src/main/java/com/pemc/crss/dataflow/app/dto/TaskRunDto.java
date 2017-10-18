@@ -1,7 +1,8 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import lombok.Data;
-import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import java.util.Objects;
 
 @Data
 public class TaskRunDto {
@@ -47,37 +48,32 @@ public class TaskRunDto {
     //Meter process, possible values: ALL or comma separated mtn
     private String mtns;
 
-
     @Override
     public boolean equals(Object o) {
-        // do not include runId and ams remarks, supplyMonth, billingPeriodName, formattedBillingPeriod, currentUser
+        // do not include runId and ams fields, supplyMonth, billingPeriodName, formattedBillingPeriod, currentUser
         if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TaskRunDto)) return false;
 
         TaskRunDto that = (TaskRunDto) o;
-
-        return new EqualsBuilder()
-                .appendSuper(super.equals(o))
-                .append(newGroup, that.newGroup)
-                .append(header, that.header)
-                .append(jobName, that.jobName)
-                .append(parentJob, that.parentJob)
-                .append(groupId, that.groupId)
-                .append(meterProcessType, that.meterProcessType)
-                .append(tradingDate, that.tradingDate)
-                .append(startDate, that.startDate)
-                .append(endDate, that.endDate)
-                .append(baseStartDate, that.baseStartDate)
-                .append(baseEndDate, that.baseEndDate)
-                .append(marketInformationType, that.marketInformationType)
-                .append(baseType, that.baseType)
-                .append(meterType, that.meterType)
-                .append(billingPeriodId, that.billingPeriodId)
-                .append(billingPeriod, that.billingPeriod)
-                .append(msp, that.msp)
-                .append(seins, that.seins)
-                .append(mtns, that.mtns)
-                .isEquals();
+        return newGroup == that.newGroup &&
+                header == that.header &&
+                Objects.equals(jobName, that.jobName) &&
+                Objects.equals(parentJob, that.parentJob) &&
+                Objects.equals(groupId, that.groupId) &&
+                Objects.equals(meterProcessType, that.meterProcessType) &&
+                Objects.equals(tradingDate, that.tradingDate) &&
+                Objects.equals(startDate, that.startDate) &&
+                Objects.equals(endDate, that.endDate) &&
+                Objects.equals(baseStartDate, that.baseStartDate) &&
+                Objects.equals(baseEndDate, that.baseEndDate) &&
+                Objects.equals(marketInformationType, that.marketInformationType) &&
+                Objects.equals(baseType, that.baseType) &&
+                Objects.equals(meterType, that.meterType) &&
+                Objects.equals(billingPeriodId, that.billingPeriodId) &&
+                Objects.equals(billingPeriod, that.billingPeriod) &&
+                Objects.equals(supplyMonth, that.supplyMonth) &&
+                Objects.equals(msp, that.msp) &&
+                Objects.equals(seins, that.seins) &&
+                Objects.equals(mtns, that.mtns);
     }
 }

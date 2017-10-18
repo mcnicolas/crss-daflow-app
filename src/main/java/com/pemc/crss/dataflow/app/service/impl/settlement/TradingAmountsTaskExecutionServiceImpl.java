@@ -681,7 +681,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         log.info("Running calculate job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     private void launchFinalizeLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
@@ -711,7 +711,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         log.info("Running finalize line rental job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     private void launchGenerateFileLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
@@ -742,7 +742,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         log.info("Running generate line rental file job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
 
@@ -781,7 +781,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
     private void launchGenerateFileReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException {
@@ -818,7 +818,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         log.info("Running generate reserve file job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
-        lockJob(taskRunDto);
+        lockJobJdbc(taskRunDto);
     }
 
 

@@ -323,7 +323,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
-            lockJob(taskRunDto);
+            lockJobJdbc(taskRunDto);
         }
     }
 

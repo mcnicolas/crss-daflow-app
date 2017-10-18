@@ -148,7 +148,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                             && distinctAddtlCompDto.getTaggingStatus().equals(BatchStatus.COMPLETED)) {
                         // get generated AC files folder name
                         Optional<JobInstance> genFileJobInstanceOpt = jobExplorer.findJobInstancesByJobName(
-                                AC_GEN_FILE + "-" + distinctAddtlCompDto.getGroupId(),
+                                AC_GEN_FILE + distinctAddtlCompDto.getGroupId(),
                                 0, Integer.MAX_VALUE).stream().findFirst();
 
                         genFileJobInstanceOpt.ifPresent(jobInstance -> getJobExecutions(jobInstance)

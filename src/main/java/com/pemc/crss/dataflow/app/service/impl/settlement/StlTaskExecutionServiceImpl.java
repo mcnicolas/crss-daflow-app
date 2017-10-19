@@ -981,7 +981,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     .addValue("groupId", groupId)
                     .addValue("parentJobId", Long.valueOf(taskRunDto.getParentJob()))
                     .addValue("processType", processType.name())
-                    .addValue("stlCalculationType", calculationType);
+                    .addValue("stlCalculationType", calculationType.name());
 
             String insertSql = "insert into settlement_job_lock(id, created_datetime, start_date, end_date, "
                     + " group_id, parent_job_id, process_type, stl_calculation_type, locked) "

@@ -55,9 +55,12 @@ public class BatchJobQueueDisplay {
                 break;
             case METERING:
                 putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
-                if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
+
+                // for metering DAILY meterprocesstype are considered null
+                if (Objects.equals(taskRunDto.getMeterProcessType(), null)) {
                     putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
                 } else {
+                    // for PRELIM / FINAL / ADJUSTED processTypes
                     putIfPresent(paramMap, "Start Date",  taskRunDto.getStartDate());
                     putIfPresent(paramMap, "End Date", taskRunDto.getEndDate());
                 }

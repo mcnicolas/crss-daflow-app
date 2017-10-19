@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -14,6 +15,10 @@ import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.repository.dao.JobExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -43,6 +48,12 @@ public class MeterprocessTaskExecutionResource {
     @Autowired
     private BatchJobQueueService queueService;
 
+    @Autowired
+    private JobExplorer jobExplorer;
+
+    @Autowired
+    protected JobExecutionDao jobExecutionDao;
+
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
@@ -69,6 +80,10 @@ public class MeterprocessTaskExecutionResource {
         taskRunDto.setCurrentUser(currentUser);
         LOG.debug("Queueing job request. taskRunDto={}", taskRunDto);
 
+        if (taskRunDto.getParentJob() != null) {
+            setJobParams(taskRunDto);
+        }
+
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
                 determineMeterJobProcessByJobName(taskRunDto.getJobName()), taskRunDto);
         queueService.save(jobQueue);
@@ -91,6 +106,18 @@ public class MeterprocessTaskExecutionResource {
                 return JobProcess.GEN_MQ_REPORT;
             default:
                 throw new RuntimeException("Unrecognized metering job name: " + jobName);
+        }
+    }
+
+    private void setJobParams(final TaskRunDto taskRunDto) {
+        JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
+        if (jobInstance != null) {
+            jobExecutionDao.findJobExecutions(jobInstance).stream().findFirst().ifPresent(jobExec -> {
+                JobParameters jobParameters = jobExec.getJobParameters();
+                taskRunDto.setMeterProcessType(jobParameters.getString("processType"));
+                taskRunDto.setStartDate(DateUtil.convertToString(jobParameters.getDate("startDate"), DateUtil.DEFAULT_DATE_FORMAT));
+                taskRunDto.setEndDate(DateUtil.convertToString(jobParameters.getDate("endDate"), DateUtil.DEFAULT_DATE_FORMAT));
+            });
         }
     }
 

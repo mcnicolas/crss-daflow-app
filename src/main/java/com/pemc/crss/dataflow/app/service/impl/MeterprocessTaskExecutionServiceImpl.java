@@ -10,6 +10,7 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.commons.util.TaskUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctWesmBillingPeriod;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
@@ -211,7 +212,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             // for list by billing period
-            arguments.add(concatKeyValue(BP, taskRunDto.getFormattedBillingPeriod()));
+            arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
@@ -299,7 +300,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
                 }
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
-                arguments.add(concatKeyValue(BP, taskRunDto.getFormattedBillingPeriod()));
+                arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
@@ -312,7 +313,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     arguments.add(concatKeyValue(MQ_REPORT_STAT_AFTER_FINALIZE, BatchStatus.COMPLETED.name()));
                 }
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
-                arguments.add(concatKeyValue(BP, jobParameters.getString(BP)));
+                arguments.add(concatKeyValue(TaskUtil.BP, jobParameters.getString(TaskUtil.BP)));
                 jobName = "crss-meterprocess-task-mqcomputation";
             }
         }

@@ -78,7 +78,6 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String STL_READY_USERNAME = "stlReadyUsername";
     protected static final String STL_NOT_READY_USERNAME = "stlNotReadyUsername";
     protected static final String MQ_REPORT_USERNAME = "mqReportUsername";
-    protected static final String BP = "bp";
     protected static final String RCOA_USERNAME = "rcoaUsername";
     protected static final String QUOTE = "\"";
     protected static final String PARAMS_TYPE_STRING = "string";

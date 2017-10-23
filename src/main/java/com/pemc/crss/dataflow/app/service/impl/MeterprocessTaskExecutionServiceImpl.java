@@ -211,7 +211,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             // for list by billing period
-            arguments.add(concatKeyValue("bp", taskRunDto.getFormattedBillingPeriod()));
+            arguments.add(concatKeyValue(BP, taskRunDto.getFormattedBillingPeriod()));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
@@ -299,7 +299,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
                 }
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
-                arguments.add(concatKeyValue("bp", taskRunDto.getFormattedBillingPeriod()));
+                arguments.add(concatKeyValue(BP, taskRunDto.getFormattedBillingPeriod()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                 if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
@@ -312,6 +312,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     arguments.add(concatKeyValue(MQ_REPORT_STAT_AFTER_FINALIZE, BatchStatus.COMPLETED.name()));
                 }
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
+                arguments.add(concatKeyValue(BP, taskRunDto.getFormattedBillingPeriod()));
                 jobName = "crss-meterprocess-task-mqcomputation";
             }
         }

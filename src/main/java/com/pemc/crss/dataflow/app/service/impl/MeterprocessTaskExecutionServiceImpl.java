@@ -312,7 +312,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     arguments.add(concatKeyValue(MQ_REPORT_STAT_AFTER_FINALIZE, BatchStatus.COMPLETED.name()));
                 }
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
-                arguments.add(concatKeyValue(BP, taskRunDto.getFormattedBillingPeriod()));
+                arguments.add(concatKeyValue(BP, jobParameters.getString(BP)));
                 jobName = "crss-meterprocess-task-mqcomputation";
             }
         }

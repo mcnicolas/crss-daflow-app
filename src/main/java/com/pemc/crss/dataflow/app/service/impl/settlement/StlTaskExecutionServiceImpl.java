@@ -143,35 +143,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     }
 
-    private Date extractDateFromBillingPeriod(final String billingPeriod, final String param) {
-        try {
-            String toParse = null;
-            switch (param) {
-                case "startDate":
-                    // returns 160126 from 160126160225
-                    toParse = billingPeriod.substring(0, 6);
-                    break;
-                case "endDate":
-                    // returns 160225 from 160126160225
-                    toParse = billingPeriod.substring(6, billingPeriod.length());
-                    break;
-                case "dailyDate":
-                    toParse = billingPeriod;
-                    break;
-                default:
-                    // do nothing
-            }
-
-            return DateUtil.convertToDate(toParse, "yyMMdd");
-        } catch (Exception e) {
-            log.error("Unable to parse {} from the provided billing period: {}. Cause: {}",
-                    param, billingPeriod, e);
-
-            // return 1970-01-01 so as not to encounter npes later on.
-            return new Date(0);
-        }
-    }
-
     SettlementTaskExecutionDto initializeTaskExecutionDto(final DistinctStlReadyJob stlReadyJob, final String parentId) {
 
         String billingPeriod = stlReadyJob.getBillingPeriod();
@@ -187,10 +158,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         taskExecutionDto.setStlReadyStatus(BatchStatus.COMPLETED);
 
         if (!stlReadyJob.getProcessType().equals(DAILY)) {
-            taskExecutionDto.setBillPeriodStartDate(extractDateFromBillingPeriod(billingPeriod, "startDate"));
-            taskExecutionDto.setBillPeriodEndDate(extractDateFromBillingPeriod(billingPeriod, "endDate"));
+            taskExecutionDto.setBillPeriodStartDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "startDate"));
+            taskExecutionDto.setBillPeriodEndDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "endDate"));
         } else {
-            taskExecutionDto.setDailyDate(extractDateFromBillingPeriod(billingPeriod, "dailyDate"));
+            taskExecutionDto.setDailyDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "dailyDate"));
         }
 
         taskExecutionDto.setProcessType(stlReadyJob.getProcessType());

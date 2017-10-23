@@ -693,7 +693,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             .collect(Collectors.toList());
 
                     List<Long> finalizedGroupIdsOfChildJobs = stlJobLocks.stream()
-                            .filter(lock -> childGroupIds.contains(Long.valueOf(lock.getGroupId())))
+                            .filter(lock -> childGroupIds.contains(Long.valueOf(lock.getGroupId())) && lock.isLocked())
                             .map(lock -> Long.valueOf(lock.getGroupId()))
                             .collect(Collectors.toList());
 

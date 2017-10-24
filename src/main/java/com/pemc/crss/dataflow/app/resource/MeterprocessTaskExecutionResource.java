@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.repository.dao.JobExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -53,6 +54,9 @@ public class MeterprocessTaskExecutionResource {
 
     @Autowired
     private JobExplorer jobExplorer;
+
+    @Autowired
+    private JobExecutionDao jobExecutionDao;
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
@@ -112,7 +116,7 @@ public class MeterprocessTaskExecutionResource {
     private void setJobParams(final TaskRunDto taskRunDto) {
         JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
         if (jobInstance != null) {
-            jobExplorer.getJobExecutions(jobInstance).stream().findFirst().ifPresent(jobExec -> {
+            jobExecutionDao.findJobExecutions(jobInstance).stream().findFirst().ifPresent(jobExec -> {
                 JobParameters jobParameters = jobExec.getJobParameters();
                 taskRunDto.setMeterProcessType(jobParameters.getString("processType"));
                 taskRunDto.setStartDate(DateUtil.convertToString(jobParameters.getDate("startDate"), DateUtil.DEFAULT_DATE_FORMAT));

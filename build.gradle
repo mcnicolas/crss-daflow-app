@@ -12,7 +12,6 @@ ext {
     nodeVersion = '4.4.7'
 }
 
-
 project.buildDir = 'target'
 
 

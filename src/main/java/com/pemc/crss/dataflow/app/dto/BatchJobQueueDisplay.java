@@ -54,7 +54,11 @@ public class BatchJobQueueDisplay {
                 }
                 break;
             case METERING:
-                putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
+                if (taskRunDto.getMeterProcessType() != null) {
+                    putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
+                } else {
+                    paramMap.put("Process Type", "DAILY");
+                }
 
                 // DAILY
                 if (Objects.equals(taskRunDto.getMeterProcessType(), null) ||

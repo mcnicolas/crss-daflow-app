@@ -1,8 +1,8 @@
 package com.pemc.crss.dataflow.app.resource;
 
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
@@ -18,14 +18,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.explore.JobExplorer;
-import org.springframework.batch.core.repository.dao.JobExecutionDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -50,9 +53,6 @@ public class MeterprocessTaskExecutionResource {
 
     @Autowired
     private JobExplorer jobExplorer;
-
-    @Autowired
-    protected JobExecutionDao jobExecutionDao;
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(Pageable pageable) {
@@ -112,11 +112,12 @@ public class MeterprocessTaskExecutionResource {
     private void setJobParams(final TaskRunDto taskRunDto) {
         JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
         if (jobInstance != null) {
-            jobExecutionDao.findJobExecutions(jobInstance).stream().findFirst().ifPresent(jobExec -> {
+            jobExplorer.getJobExecutions(jobInstance).stream().findFirst().ifPresent(jobExec -> {
                 JobParameters jobParameters = jobExec.getJobParameters();
                 taskRunDto.setMeterProcessType(jobParameters.getString("processType"));
                 taskRunDto.setStartDate(DateUtil.convertToString(jobParameters.getDate("startDate"), DateUtil.DEFAULT_DATE_FORMAT));
                 taskRunDto.setEndDate(DateUtil.convertToString(jobParameters.getDate("endDate"), DateUtil.DEFAULT_DATE_FORMAT));
+                taskRunDto.setTradingDate(DateUtil.convertToString(jobParameters.getDate("date"), DateUtil.DEFAULT_DATE_FORMAT));
             });
         }
     }

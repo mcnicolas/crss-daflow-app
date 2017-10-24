@@ -218,7 +218,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
             JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
             String processType = jobParameters.getString(PROCESS_TYPE);
-            boolean isDaily = processType== null;
+            boolean isDaily = processType == null || Objects.equals(processType, MeterProcessType.DAILY.name());
             if (isDaily) {
                 if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
                     checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));

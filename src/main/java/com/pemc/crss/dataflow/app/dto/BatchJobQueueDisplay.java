@@ -11,9 +11,17 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_ENERGY_FILES;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_EMF;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_RMF;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_LR_FILES;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_RESERVE_FILES;
 
 @Data
 @NoArgsConstructor
@@ -45,12 +53,20 @@ public class BatchJobQueueDisplay {
 
         switch (jobQueue.getModule()) {
             case SETTLEMENT:
+                // file gen jobs use baseStartDate / baseEndDate
+                final List<JobProcess> fileJobProcess = Arrays.asList(GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES,
+                        GEN_FILES_EMF, GEN_FILES_RMF);
+
+                JobProcess jobProcess = jobQueue.getJobProcess();
+
                 putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                 if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
                     putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
                 } else {
-                    putIfPresent(paramMap, "Start Date",  taskRunDto.getStartDate());
-                    putIfPresent(paramMap, "End Date", taskRunDto.getEndDate());
+                    putIfPresent(paramMap, "Start Date",  fileJobProcess.contains(jobProcess) ?
+                            taskRunDto.getBaseStartDate() : taskRunDto.getStartDate());
+                    putIfPresent(paramMap, "End Date", fileJobProcess.contains(jobProcess) ?
+                            taskRunDto.getBaseEndDate() : taskRunDto.getEndDate());
                 }
                 break;
             case METERING:

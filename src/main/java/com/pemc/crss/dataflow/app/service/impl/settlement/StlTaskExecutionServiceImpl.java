@@ -634,8 +634,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
                         .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLocked()));
 
-                boolean headerIsFinalized = stlJobGroupDto.isHeader() && stlJobGroupDto.isLocked();
-
                 Optional<SettlementJobLock> latestAdjustedStlLock = stlJobLocks.stream()
                         .filter(stlJobLock -> stlJobLock.getProcessType() == ADJUSTED && stlJobLock.isLocked())
                         .sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
@@ -677,22 +675,23 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             stlJobGroupDto.setLocked(taskExecutionDto.getParentId() < stlJobLock.getParentJobId()));
                 }
 
-                // Set canRunAdjustment. Only parent stlJobGroupDto can run multiple adjustment
-                if (stlJobGroupDto.isHeader() && latestStlJobFromMetering != null && headerIsFinalized) {
+                // Set canRunAdjustment
+                if (stlJobLocks.stream().allMatch(SettlementJobLock::isLocked)) {
+                    // get latest Settlement Job Lock and check if groupId matches
+                    stlJobLocks.stream().sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
+                            .findFirst().ifPresent(stlJobLock -> stlJobGroupDto.setCanRunAdjustment(
+                                    Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId()))
+                    );
 
-                    switch (processType) {
-                        case FINAL:
-                            // final can only run adjustment if there are no other meter triggered adjustments
-                            stlJobGroupDto.setCanRunAdjustment(latestStlJobFromMetering.getProcessType() == FINAL);
-                            break;
-                        case ADJUSTED:
-                            // adjusted can only run adjustment if it's the latest meter triggered adjustment
-                            String latestStlJobGroupId = parseGroupId(latestStlJobFromMetering.getBillingPeriod(),
-                                    latestStlJobFromMetering.getProcessType(), latestStlJobFromMetering.getParentId());
-                            stlJobGroupDto.setCanRunAdjustment(Objects.equals(latestStlJobGroupId, stlJobGroupDto.getGroupId()));
-                            break;
-                        default:
-                            // do nothing
+                    // additional checking from metering triggered adjustments
+                    if (latestStlJobFromMetering != null) {
+
+                        String latestStlJobGroupId = parseGroupId(latestStlJobFromMetering.getBillingPeriod(),
+                                latestStlJobFromMetering.getProcessType(), latestStlJobFromMetering.getParentId());
+
+                        if (!Objects.equals(latestStlJobGroupId, taskExecutionDto.getParentStlJobGroupDto().getGroupId())) {
+                            stlJobGroupDto.setCanRunAdjustment(false);
+                        }
                     }
 
                 }

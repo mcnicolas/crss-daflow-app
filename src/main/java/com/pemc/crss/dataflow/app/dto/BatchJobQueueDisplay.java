@@ -18,6 +18,10 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.CALC_GMR_VAT;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.FINALIZE_EMF;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.FINALIZE_LR;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.FINALIZE_RMF;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.FINALIZE_TA;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_ENERGY_FILES;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_EMF;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_RMF;
@@ -56,7 +60,8 @@ public class BatchJobQueueDisplay {
             case SETTLEMENT:
                 // file gen jobs use baseStartDate / baseEndDate
                 final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
-                        GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT);
+                        GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT,
+                        FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF);
 
                 JobProcess jobProcess = jobQueue.getJobProcess();
 

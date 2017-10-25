@@ -121,10 +121,13 @@ public class SchedulerServiceImpl implements SchedulerService {
                     break;
                 case GEN_INPUT_WS_TA:
                 case CALC_TA:
+                case CALC_LR:
                 case CALC_GMR_VAT:
                 case FINALIZE_TA:
+                case FINALIZE_LR:
                 case GEN_ENERGY_FILES:
                 case GEN_RESERVE_FILES:
+                case GEN_LR_FILES:
                     tradingAmountsTaskExecutionService.launchJob(taskDto);
                     break;
                 case GEN_INPUT_WS_EMF:
@@ -140,7 +143,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                     reserveMarketFeeTaskExecutionService.launchJob(taskDto);
                     break;
                 default:
-                    // do nothing
+                    throw new RuntimeException("Unrecognized Job Process: " + job.getJobProcess());
             }
 
             job.setStatus(STARTING);

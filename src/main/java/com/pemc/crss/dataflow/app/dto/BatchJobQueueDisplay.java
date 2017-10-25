@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.CALC_GMR_VAT;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_ENERGY_FILES;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_EMF;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_RMF;
@@ -54,8 +55,8 @@ public class BatchJobQueueDisplay {
         switch (jobQueue.getModule()) {
             case SETTLEMENT:
                 // file gen jobs use baseStartDate / baseEndDate
-                final List<JobProcess> fileJobProcess = Arrays.asList(GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES,
-                        GEN_FILES_EMF, GEN_FILES_RMF);
+                final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
+                        GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT);
 
                 JobProcess jobProcess = jobQueue.getJobProcess();
 
@@ -63,9 +64,9 @@ public class BatchJobQueueDisplay {
                 if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
                     putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
                 } else {
-                    putIfPresent(paramMap, "Start Date",  fileJobProcess.contains(jobProcess) ?
+                    putIfPresent(paramMap, "Start Date",  jobProcessThatUseBaseDates.contains(jobProcess) ?
                             taskRunDto.getBaseStartDate() : taskRunDto.getStartDate());
-                    putIfPresent(paramMap, "End Date", fileJobProcess.contains(jobProcess) ?
+                    putIfPresent(paramMap, "End Date", jobProcessThatUseBaseDates.contains(jobProcess) ?
                             taskRunDto.getBaseEndDate() : taskRunDto.getEndDate());
                 }
                 break;

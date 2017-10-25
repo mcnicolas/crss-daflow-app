@@ -665,13 +665,15 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
             case ADJUSTED:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.CALC_MONTHLY_ADJ_LR_MTR_ADJ)));
+                boolean finalBased = MeterProcessType.valueOf(taskRunDto.getBaseType()).equals(FINAL);
+
+                final String activeProfile = finalBased ? SettlementJobProfile.CALC_MONTHLY_ADJ_LR_MTR_FIN :
+                        SettlementJobProfile.CALC_MONTHLY_ADJ_LR_MTR_ADJ;
+
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(activeProfile)));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
-
-                // TODO: remove this once job in stl is deployed
-                throw new RuntimeException("Failed to launch job. Unhandled processType: " + processType);
+                break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + processType);
         }
@@ -706,11 +708,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
                         fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_FINAL_LR)));
+                break;
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
                         fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_ADJ_LR)));
-                // TODO: remove this once job in stl is deployed
-                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+                break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }

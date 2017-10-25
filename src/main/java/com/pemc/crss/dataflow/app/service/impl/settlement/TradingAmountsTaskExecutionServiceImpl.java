@@ -172,7 +172,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             }
 
             // determine if line rental is finalized
-            if (Arrays.asList(FINAL, PRELIM).contains(taskExecutionDto.getProcessType())) {
+            if (Arrays.asList(FINAL, PRELIM, ADJUSTED).contains(taskExecutionDto.getProcessType())) {
                 boolean lrIsFinalized = settlementJobLockRepository.billingPeriodIsFinalized(
                         DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
                         DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()),
@@ -664,17 +664,20 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
                 break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.CALC_MONTHLY_ADJ_LR)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+
+                // TODO: remove this once job in stl is deployed
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + processType);
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + processType);
         }
 
         // Create SettlementJobLock. Do not include daily since it does not have finalize job
         if (processType != DAILY) {
-            LocalDateTime billPeriodStartDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseStartDate(),
-                    DateUtil.DEFAULT_DATE_FORMAT);
-            LocalDateTime billPeriodEndDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseEndDate(),
-                    DateUtil.DEFAULT_DATE_FORMAT);
-
             saveSettlementJobLock(groupId, processType, taskRunDto, StlCalculationType.LINE_RENTAL);
         }
 
@@ -703,7 +706,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
                         fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_FINAL_LR)));
-                break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
+                        fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_ADJ_LR)));
+                // TODO: remove this once job in stl is deployed
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
@@ -735,6 +742,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.GEN_FILE_FINAL_LR)));
                 break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.GEN_FILE_ADJ_LR)));
+                // TODO: remove this once job in stl is deployed
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }

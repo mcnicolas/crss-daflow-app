@@ -18,7 +18,6 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ViewSettlementJobRepository;
@@ -82,9 +81,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     @Autowired
     private BatchJobAdjRunRepository batchJobAdjRunRepository;
-
-    @Autowired
-    private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Autowired
     SettlementJobLockRepository settlementJobLockRepository;

@@ -666,7 +666,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.CALC_MONTHLY_ADJ_LR)));
+                        SettlementJobProfile.CALC_MONTHLY_ADJ_LR_MTR_ADJ)));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
 

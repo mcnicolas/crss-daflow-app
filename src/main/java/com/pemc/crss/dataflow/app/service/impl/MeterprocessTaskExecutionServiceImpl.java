@@ -251,7 +251,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(RCOA_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-mqcomputation";
             } else if (RUN_STL_NOT_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
-                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                if (isDaily) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
                 } else if (MeterProcessType.PRELIM.name().equals(taskRunDto.getMeterProcessType())) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_PRELIM)));
@@ -272,7 +272,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 String existingFinalRunAggregatedMtnWithinRange = EMPTY;
                 String currentRunningMtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parentJobRunId, MTNS);
                 List<String> mtnAlreadyFinalized = new ArrayList<>();
-                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                if (isDaily) {
                     checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                     // prevent running if selected mtn is already run within date range or the like
                     existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, dateFormat.format(jobParameters.getDate(DATE)), null, null);
@@ -303,7 +303,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+                if (isDaily) {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ_REPORT)));
                 } else {
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ_REPORT)));
@@ -441,7 +441,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             JobParameters jParams = jobExecution.getJobParameters();
             String processType = jParams.getString(PROCESS_TYPE);
-            boolean isDaily = processType == null;
+            boolean isDaily = processType == null || Objects.equals(MeterProcessType.DAILY.name(), processType);
             String sDate;
             String eDate = null;
             if (isDaily) {

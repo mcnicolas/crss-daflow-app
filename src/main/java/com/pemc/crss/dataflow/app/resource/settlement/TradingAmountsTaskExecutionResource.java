@@ -174,21 +174,26 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/stl-validation")
+    public ResponseEntity runStlValidationJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Queueing stl validation job for trading amounts. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.STL_VALIDATION);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing stl validation job for trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.STL_VALIDATION, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping(value = "/get-batch-job-skip-logs")
     public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest) {
         LOG.debug("Finding skip logs request. pageable={}", pageableRequest.getPageable());
         return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageableRequest), HttpStatus.OK);
-    }
-
-    @PostMapping("/stl-validation")
-    public ResponseEntity runStlValidationJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
-        log.info("Running stl validation job for trading amounts. taskRunDto={}", taskRunDto);
-
-        taskRunDto.setJobName(SettlementJobName.STL_VALIDATION);
-        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-        taskExecutionService.launchJob(taskRunDto);
-
-        return new ResponseEntity(HttpStatus.OK);
     }
 
 }

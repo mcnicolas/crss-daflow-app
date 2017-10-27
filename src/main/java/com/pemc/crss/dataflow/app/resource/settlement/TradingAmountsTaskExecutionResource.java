@@ -100,4 +100,15 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageableRequest), HttpStatus.OK);
     }
 
+    @PostMapping("/stl-validation")
+    public ResponseEntity runStlValidationJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        log.info("Running stl validation job for trading amounts. taskRunDto={}", taskRunDto);
+
+        taskRunDto.setJobName(SettlementJobName.STL_VALIDATION);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        taskExecutionService.launchJob(taskRunDto);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
 }

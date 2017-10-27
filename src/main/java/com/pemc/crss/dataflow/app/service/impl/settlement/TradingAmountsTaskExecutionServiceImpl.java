@@ -71,6 +71,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FIL
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_TA;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_LR;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.STL_VALIDATION;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_TA;
 
 @Slf4j
@@ -296,6 +297,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case FILE_LR:
                 launchGenerateFileLineRentalJob(taskRunDto);
+                break;
+            case STL_VALIDATION:
+                launchStlValidateJob(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -955,4 +959,50 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     String getAdjustedGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_ADJ;
     }
+
+    // STL VALIDATION JOB LAUNCH
+    void launchStlValidateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        final Long runId = System.currentTimeMillis();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (MeterProcessType.valueOf(type)) {
+            case DAILY:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.VALIDATION_STL_DAILY)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
+                break;
+            case PRELIM:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.VALIDATION_STL_MONTHLY_PRELIM)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            case FINAL:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.VALIDATION_STL_MONTHLY_FINAL)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.VALIDATION_STL_MONTHLY_ADJ)));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running stl validation job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob("crss-settlement-task-validation", properties, arguments);
+        lockJob(taskRunDto);
+    }
+
+
 }

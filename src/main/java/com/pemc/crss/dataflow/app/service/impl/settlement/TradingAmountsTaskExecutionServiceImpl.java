@@ -639,12 +639,13 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, StlCalculationType.LINE_RENTAL);
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
         List<String> properties = Lists.newArrayList();
-
-        MeterProcessType processType = MeterProcessType.valueOf(type);
 
         switch (processType) {
             case DAILY:
@@ -690,9 +691,13 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     private void launchFinalizeLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
-        final Long runId = System.currentTimeMillis();
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, StlCalculationType.LINE_RENTAL);
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
@@ -700,7 +705,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> properties = Lists.newArrayList();
 
-        switch (MeterProcessType.valueOf(type)) {
+        switch (processType) {
             case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
                         fetchSpringProfilesActive(SettlementJobProfile.TAG_MONTHLY_PRELIM_LR)));
@@ -768,6 +773,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS);
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
@@ -775,7 +783,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> properties = Lists.newArrayList();
 
-        switch (MeterProcessType.valueOf(type)) {
+        switch (processType) {
             case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.CALC_MONTHLY_PRELIM_GMR_VAT)));
@@ -872,7 +880,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         iwsSteps.put(RETRIEVE_DATA_STEP, "Retrieve Data Step");
         iwsSteps.put(RETRIEVE_BCQ_STEP, "Retrieve Bcq Step");
         iwsSteps.put(GEN_RESERVE_IW_STEP, "Generate Reserve Workspace step");
-
 
         return iwsSteps;
     }

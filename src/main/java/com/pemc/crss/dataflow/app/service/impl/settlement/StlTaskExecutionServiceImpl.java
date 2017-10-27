@@ -12,6 +12,7 @@ import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
 import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
+import com.pemc.crss.shared.commons.util.DateTimeUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
@@ -740,11 +741,23 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return arguments;
     }
 
+    void validateFinalized(final String groupId, final MeterProcessType processType, final StlCalculationType calcType) {
+        LocalDateTime finalizedDate = settlementJobLockRepository.getLockDateByCalculationTypeGroupIdAndProcessType(
+                groupId, calcType, processType);
+
+        if (finalizedDate != null) {
+            throw new RuntimeException("Launch job failed. Job was already FINALIZED on " + DateTimeUtil.formatDateTime(finalizedDate));
+        }
+    }
+
     void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, getStlCalculationType());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
@@ -754,8 +767,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 DateUtil.DEFAULT_DATE_FORMAT);
         LocalDateTime billPeriodEndDate = DateUtil.parseStringDateToLocalDateTime(taskRunDto.getBaseEndDate(),
                 DateUtil.DEFAULT_DATE_FORMAT);
-
-        MeterProcessType processType = MeterProcessType.valueOf(type);
 
         switch (processType) {
             case DAILY:
@@ -818,12 +829,15 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, getStlCalculationType());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
         List<String> properties = Lists.newArrayList();
 
-        switch (MeterProcessType.valueOf(type)) {
+        switch (processType) {
             case DAILY:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getDailyCalculateProfile())));
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getTradingDate(), "date"));
@@ -863,6 +877,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, getStlCalculationType());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
@@ -870,7 +887,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         List<String> properties = Lists.newArrayList();
 
-        switch (MeterProcessType.valueOf(type)) {
+        switch (processType) {
             case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getPrelimTaggingProfile())));

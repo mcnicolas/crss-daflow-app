@@ -601,7 +601,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         dto.setLatestJobExecEndDate(jobExecution.getEndTime());
     }
 
-    void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto) {
+    void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto, final String billingPeriodStr) {
 
         LocalDateTime billPeriodStart = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate());
         LocalDateTime billPeriodEnd =   DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate());
@@ -632,7 +632,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLocked()));
 
                 Optional<SettlementJobLock> latestAdjustedStlLock = stlJobLocks.stream()
-                        .filter(stlJobLock -> stlJobLock.getProcessType() == ADJUSTED && stlJobLock.isLocked())
+                        .filter(stlJobLock -> stlJobLock.getProcessType() == ADJUSTED && stlJobLock.isLocked() &&
+                                // do not include child jobs with FINAL parent since their parentId is equal to the billingPeriod
+                                !Objects.equals(stlJobLock.getParentJobId(), Long.valueOf(billingPeriodStr)))
                         .sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
                         .findFirst();
 

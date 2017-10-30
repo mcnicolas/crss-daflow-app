@@ -91,7 +91,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            determineIfJobsAreLocked(taskExecutionDto);
+            determineIfJobsAreLocked(taskExecutionDto, stlReadyJob.getBillingPeriod());
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();

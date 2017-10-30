@@ -94,7 +94,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
-            determineIfJobsAreLocked(taskExecutionDto);
+            determineIfJobsAreLocked(taskExecutionDto, stlReadyJob.getBillingPeriod());
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
                 List<JobCalculationDto> jobDtos = stlJobGroupDto.getJobCalculationDtos();

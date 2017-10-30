@@ -169,17 +169,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             taskExecutionDto.setStlJobGroupDtoMap(stlJobGroupDtoMap);
 
             if (Arrays.asList(FINAL, ADJUSTED, PRELIM).contains(taskExecutionDto.getProcessType())) {
-                determineIfJobsAreLocked(taskExecutionDto);
-            }
-
-            // determine if line rental is finalized
-            if (Arrays.asList(FINAL, PRELIM, ADJUSTED).contains(taskExecutionDto.getProcessType())) {
-                boolean lrIsFinalized = settlementJobLockRepository.billingPeriodIsFinalized(
-                        DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate()),
-                        DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate()),
-                        taskExecutionDto.getProcessType().name(), StlCalculationType.LINE_RENTAL.name());
-
-                taskExecutionDto.getParentStlJobGroupDto().setLockedLr(lrIsFinalized);
+                determineIfJobsAreLocked(taskExecutionDto, stlReadyJob.getBillingPeriod());
             }
 
             taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
@@ -207,6 +197,18 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
                     stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
                             viewSettlementJobs, billPeriodStart, billPeriodEnd));
+                }
+
+                // determine if line rental is finalized
+                if (!isDaily) {
+                    // all non headers are of ADJUSTED type
+                    MeterProcessType lrMeterProcessType = stlJobGroupDto.isHeader() ? processType : MeterProcessType.ADJUSTED;
+
+                    LocalDateTime finalizedLrDate = settlementJobLockRepository
+                            .getLockDateByCalculationTypeGroupIdAndProcessType(stlJobGroupDto.getGroupId(),
+                                    StlCalculationType.LINE_RENTAL, lrMeterProcessType);
+
+                    stlJobGroupDto.setLockedLr(finalizedLrDate != null);
                 }
 
                 if (isDaily) {

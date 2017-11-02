@@ -639,7 +639,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         return jobCalculationDtoMap;
     }
 
-    // Launch Line Rental Jobs start (Line rental calc is not applicable to ADJUSTED)
+    // Launch Line Rental Jobs start
     private void launchCalculateLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
@@ -758,8 +758,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.GEN_FILE_ADJ_LR)));
-                // TODO: remove this once job in stl is deployed
-                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+                break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }

@@ -105,7 +105,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
                 stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos, billPeriodStart, billPeriodEnd));
 
-                determineStlJobGroupDtoStatus(stlJobGroupDto, false);
+                determineStlJobGroupDtoStatus(stlJobGroupDto, false, billPeriodStart, billPeriodEnd);
 
                 if (stlJobGroupDto.isHeader()) {
 

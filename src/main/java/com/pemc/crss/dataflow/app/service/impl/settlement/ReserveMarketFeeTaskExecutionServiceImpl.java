@@ -102,7 +102,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
                 stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos, billPeriodStart, billPeriodEnd));
 
-                determineStlJobGroupDtoStatus(stlJobGroupDto, false);
+                determineStlJobGroupDtoStatus(stlJobGroupDto, false, billPeriodStart, billPeriodEnd);
 
             });
 

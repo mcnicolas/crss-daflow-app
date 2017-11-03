@@ -186,9 +186,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
                 stlJobGroupDto.setRemainingDatesGenInputWs(getRemainingDatesForGenInputWs(jobDtos, billPeriodStart, billPeriodEnd));
 
-                determineStlJobGroupDtoStatus(stlJobGroupDto, isDaily);
+                determineStlJobGroupDtoStatus(stlJobGroupDto, isDaily, billPeriodStart, billPeriodEnd);
 
-                determineStlJobGroupDtoLrStatus(stlJobGroupDto, isDaily);
+                determineStlJobGroupDtoLrStatus(stlJobGroupDto, isDaily, billPeriodStart, billPeriodEnd);
 
                 if (!isDaily && stlJobGroupDto.isHeader()) {
 
@@ -491,7 +491,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         return remainingCalcLrDates;
     }
 
-    private void determineStlJobGroupDtoLrStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily) {
+    private void determineStlJobGroupDtoLrStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily,
+                                                 final Date billPeriodStart, final Date billPeriodEnd) {
         List<StlJobStage> includedJobStages = Arrays.asList(StlJobStage.GENERATE_IWS, StlJobStage.CALCULATE_LR,
                 StlJobStage.FINALIZE_LR);
 
@@ -501,17 +502,19 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             if (jobDto.getJobExecStatus().isRunning() || isDaily) {
                 stlJobGroupDto.setLineRentalTopStatus(jobDto.getStatus());
             } else {
+                boolean startAndEndDateIsEqual = billPeriodStart.equals(jobDto.getStartDate()) && billPeriodEnd.equals(jobDto.getEndDate());
+
                 // special rules for generate input ws and line rental calculations
                 switch (jobDto.getJobStage()) {
                     case GENERATE_IWS:
-                        if (stlJobGroupDto.getRemainingDatesGenInputWs().isEmpty()) {
+                        if (stlJobGroupDto.getRemainingDatesGenInputWs().isEmpty() || startAndEndDateIsEqual) {
                             stlJobGroupDto.setLineRentalTopStatus(convertStatus(jobDto.getJobExecStatus(), FULL + GENERATE_IWS.getLabel()));
                         } else {
                             stlJobGroupDto.setLineRentalTopStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + GENERATE_IWS.getLabel()));
                         }
                         break;
                     case CALCULATE_LR:
-                        if (stlJobGroupDto.getRemainingDatesCalcLr().isEmpty()) {
+                        if (stlJobGroupDto.getRemainingDatesCalcLr().isEmpty() || startAndEndDateIsEqual) {
                             stlJobGroupDto.setLineRentalTopStatus(convertStatus(jobDto.getJobExecStatus(), FULL + CALCULATE_LR.getLabel()));
                         } else {
                             stlJobGroupDto.setLineRentalTopStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + CALCULATE_LR.getLabel()));

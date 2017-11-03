@@ -476,7 +476,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return remainingGenInputWsDates;
     }
 
-    void determineStlJobGroupDtoStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily) {
+    void determineStlJobGroupDtoStatus(final StlJobGroupDto stlJobGroupDto, final boolean isDaily, final Date billPeriodStart,
+                                       final Date billPeriodEnd) {
         List<StlJobStage> excludedJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
         stlJobGroupDto.getSortedJobCalculationDtos().stream().filter(dto -> !excludedJobStages.contains(dto.getJobStage()))
                 .findFirst().ifPresent(jobDto -> {
@@ -484,17 +485,19 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             if (jobDto.getJobExecStatus().isRunning() || isDaily) {
                 stlJobGroupDto.setStatus(jobDto.getStatus());
             } else {
+                boolean startAndEndDateIsEqual = billPeriodStart.equals(jobDto.getStartDate()) && billPeriodEnd.equals(jobDto.getEndDate());
+
                 // special rules for generate input ws and calculations
                 switch (jobDto.getJobStage()) {
                     case GENERATE_IWS:
-                        if (stlJobGroupDto.getRemainingDatesGenInputWs().isEmpty()) {
+                        if (stlJobGroupDto.getRemainingDatesGenInputWs().isEmpty() || startAndEndDateIsEqual) {
                             stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), FULL + GENERATE_IWS.getLabel()));
                         } else {
                             stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + GENERATE_IWS.getLabel()));
                         }
                         break;
                     case CALCULATE_STL:
-                        if (stlJobGroupDto.getRemainingDatesCalc().isEmpty()) {
+                        if (stlJobGroupDto.getRemainingDatesCalc().isEmpty() || startAndEndDateIsEqual) {
                             stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), FULL + CALCULATE_STL.getLabel()));
                         } else {
                             stlJobGroupDto.setStatus(convertStatus(jobDto.getJobExecStatus(), PARTIAL + CALCULATE_STL.getLabel()));

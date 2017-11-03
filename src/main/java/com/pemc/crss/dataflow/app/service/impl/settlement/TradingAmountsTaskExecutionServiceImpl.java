@@ -442,7 +442,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     // STL VALIDATION JOB LAUNCH
-    void launchStlValidateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    private void launchStlValidateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         final Long runId = System.currentTimeMillis();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
@@ -460,20 +460,20 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case PRELIM:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.VALIDATION_STL_MONTHLY_PRELIM)));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
                 break;
             case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.VALIDATION_STL_MONTHLY_FINAL)));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
                 break;
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.VALIDATION_STL_MONTHLY_ADJ)));
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), "date"));
+                arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+                arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);

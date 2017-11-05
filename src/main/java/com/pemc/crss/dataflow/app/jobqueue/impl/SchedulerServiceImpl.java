@@ -13,11 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.COMPLETED;
@@ -56,6 +58,9 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Autowired
     @Qualifier("mtrTaskExecutionService")
     private TaskExecutionService mtrTaskExecutionService;
+
+    @Value("${scheduler.launch-timeout-seconds}")
+    private Long launchTimeoutSeconds;
 
     @Autowired
     private NamedParameterJdbcTemplate dataflowJdbcTemplate;
@@ -166,7 +171,13 @@ public class SchedulerServiceImpl implements SchedulerService {
             job.setJobExecutionId(jobExecution.getJobExecutionId());
             job.setJobExecStart(DateUtil.convertToLocalDateTime(jobExecution.getStartTime()));
         } else {
-            log.info("No Job Execution started yet for run id: {}", job.getRunId());
+            if (job.getQueueDate().plusSeconds(launchTimeoutSeconds).isAfter(LocalDateTime.now())) {
+                log.error("Job {} with id {} has exceeded timeout limit. Failing Job.", job.getJobName(), job.getId());
+                job.setStatus(FAILED_EXECUTION);
+                job.setDetails("Job for launch has exceeded timeout limit.");
+            } else {
+                log.info("No Job Execution started yet for run id: {}", job.getRunId());
+            }
         }
     }
 

@@ -92,8 +92,8 @@ public class SchedulerServiceImpl implements SchedulerService {
             }
 
             String sql = "update batch_job_queue set status = :status, details = :details,"
-                    + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd "
-                    + " where id = :id";
+                    + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd, "
+                    + " starting_date = :startingDate where id = :id";
 
             MapSqlParameterSource updateSource = new MapSqlParameterSource()
                     .addValue("status", nextJob.getStatus().name())
@@ -101,6 +101,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                     .addValue("jobExecutionId", nextJob.getJobExecutionId())
                     .addValue("jobExecStart", DateUtil.convertToDate(nextJob.getJobExecStart()))
                     .addValue("jobExecEnd", DateUtil.convertToDate(nextJob.getJobExecEnd()))
+                    .addValue("startingDate", DateUtil.convertToDate(nextJob.getStartingDate()))
                     .addValue("id", nextJob.getId());
 
             dataflowJdbcTemplate.update(sql, updateSource);
@@ -153,6 +154,7 @@ public class SchedulerServiceImpl implements SchedulerService {
             }
 
             job.setStatus(STARTING);
+            job.setStartingDate(LocalDateTime.now());
         } catch (Exception e) {
 
             log.error("Exception {} encountered when running {}, error: {}", e.getClass(), job.getJobProcess(), e.getMessage());
@@ -171,8 +173,7 @@ public class SchedulerServiceImpl implements SchedulerService {
             job.setJobExecutionId(jobExecution.getJobExecutionId());
             job.setJobExecStart(DateUtil.convertToLocalDateTime(jobExecution.getStartTime()));
         } else {
-            LocalDateTime timeout = job.getQueueDate().plusSeconds(launchTimeoutSeconds);
-            if (LocalDateTime.now().isAfter(timeout)) {
+            if (job.getStartingDate() != null && LocalDateTime.now().isAfter(job.getStartingDate().plusSeconds(launchTimeoutSeconds))) {
                 log.error("Job {} with id {} has exceeded timeout limit. Failing Job.", job.getJobName(), job.getId());
                 job.setStatus(FAILED_EXECUTION);
                 job.setDetails("Job for launch has exceeded timeout limit.");

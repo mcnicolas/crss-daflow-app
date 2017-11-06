@@ -171,7 +171,8 @@ public class SchedulerServiceImpl implements SchedulerService {
             job.setJobExecutionId(jobExecution.getJobExecutionId());
             job.setJobExecStart(DateUtil.convertToLocalDateTime(jobExecution.getStartTime()));
         } else {
-            if (job.getQueueDate().plusSeconds(launchTimeoutSeconds).isAfter(LocalDateTime.now())) {
+            LocalDateTime timeout = job.getQueueDate().plusSeconds(launchTimeoutSeconds);
+            if (LocalDateTime.now().isAfter(timeout)) {
                 log.error("Job {} with id {} has exceeded timeout limit. Failing Job.", job.getJobName(), job.getId());
                 job.setStatus(FAILED_EXECUTION);
                 job.setDetails("Job for launch has exceeded timeout limit.");

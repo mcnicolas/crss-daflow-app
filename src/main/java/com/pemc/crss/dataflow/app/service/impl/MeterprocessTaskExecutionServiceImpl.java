@@ -152,7 +152,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 checkFinalizeDailyState(taskRunDto.getTradingDate());
                 checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
                 // prevent running if selected mtn is already run within date range or the like
-                existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, dateFormat.format(taskRunDto.getTradingDate()), null, null);
+                existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, taskRunDto.getTradingDate(), null, null);
                 checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
@@ -170,7 +170,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
 
                 // prevent running if selected mtn is already run within date range or the like
-                existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(processType, null, dateFormat.format(taskRunDto.getStartDate()),dateFormat.format(taskRunDto.getEndDate()));
+                existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(processType, null, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));

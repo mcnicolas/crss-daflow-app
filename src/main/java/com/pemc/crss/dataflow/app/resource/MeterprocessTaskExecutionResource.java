@@ -170,7 +170,11 @@ public class MeterprocessTaskExecutionResource {
     private String getAggregatedSelectedMtnFinalStlReadyRun(String processType, String date, String startDate, String endDate) {
         if (StringUtils.isNotEmpty(processType)) {
             if ("DAILY".equalsIgnoreCase(processType)) {
-                return executionParamRepository.getAggregatedSelectedMtnsDailyWithinRange(date);
+                if (date != null) {
+                    return executionParamRepository.getAggregatedSelectedMtnsDailyWithinRange(date);
+                } else {
+                    return EMPTY;
+                }
             } else {
                 return executionParamRepository.getAggregatedSelectedMtnsMonthlyWithinRange(startDate, endDate, processType);
             }

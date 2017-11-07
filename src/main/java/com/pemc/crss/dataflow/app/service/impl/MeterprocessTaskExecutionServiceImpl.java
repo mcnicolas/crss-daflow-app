@@ -148,7 +148,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             List<String> mtnAlreadyFinalized = new ArrayList<>();
             String currentRunningMtns = taskRunDto.getMtns();
 
-            if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
+            if (taskRunDto.getMeterProcessType() == null || PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 checkFinalizeDailyState(taskRunDto.getTradingDate());
                 checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
                 // prevent running if selected mtn is already run within date range or the like

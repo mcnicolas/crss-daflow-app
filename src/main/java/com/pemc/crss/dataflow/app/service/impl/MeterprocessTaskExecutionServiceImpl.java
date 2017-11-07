@@ -143,9 +143,17 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         final Long runId = taskRunDto.getRunId();
         if (RUN_WESM_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            String existingFinalRunAggregatedMtnWithinRange;
+            List<String> mtnAlreadyFinalized = new ArrayList<>();
+            String currentRunningMtns = taskRunDto.getMtns();
+
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 checkFinalizeDailyState(taskRunDto.getTradingDate());
                 checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
+                // prevent running if selected mtn is already run within date range or the like
+                existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, dateFormat.format(taskRunDto.getTradingDate()), null, null);
+                checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
@@ -160,6 +168,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
 
                 checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
+
+                // prevent running if selected mtn is already run within date range or the like
+                existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(processType, null, dateFormat.format(taskRunDto.getStartDate()),dateFormat.format(taskRunDto.getEndDate()));
+                checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));

@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobQueue;
+import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import com.querydsl.core.BooleanBuilder;
@@ -15,7 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 @Service
 public class BatchJobQueueServiceImpl implements BatchJobQueueService {
@@ -48,6 +51,12 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
         BooleanBuilder predicate = new BooleanBuilder();
         predicate.and(QBatchJobQueue.batchJobQueue.status.eq(status));
         return queueRepository.findAll(predicate, pageable);
+    }
+
+    @Override
+    public List<BatchJobQueue> findQueuedAndInProgressJobs(final JobProcess jobProcess) {
+        return queueRepository.findByJobProcessAndStatusIn(jobProcess,
+                Arrays.asList(QueueStatus.ON_QUEUE, QueueStatus.STARTED, QueueStatus.STARTING));
     }
 
     private void validate(BatchJobQueue batchJobQueue) {

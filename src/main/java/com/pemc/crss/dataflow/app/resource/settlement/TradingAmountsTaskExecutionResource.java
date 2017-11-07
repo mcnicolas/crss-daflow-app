@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RestController
@@ -49,6 +52,16 @@ public class TradingAmountsTaskExecutionResource {
 
     @PostMapping("/generate-input-workspace")
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        if (taskRunDto.isNewGroup()) {
+            for (BatchJobQueue runAdjJob : queueService.findQueuedAndInProgressJobs(JobProcess.GEN_INPUT_WS_TA)) {
+                TaskRunDto runAdjTaskDto = ModelMapper.toModel(runAdjJob.getTaskObj(), TaskRunDto.class);
+                if (runAdjTaskDto.isNewGroup() && Objects.equals(taskRunDto.getParentJob(), runAdjTaskDto.getParentJob())) {
+                    throw new RuntimeException("Cannot queue run adjustment job. Another run adjustment job"
+                            + " with the same billing period is already queued");
+                }
+            }
+        }
 
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);

@@ -673,8 +673,15 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             .anyMatch(finalizedGroupId -> finalizedGroupId > Long.valueOf(stlJobGroupDto.getGroupId())));
 
                     // 3.2: lock if the latest finalized Adjusted Stl run's parent id is more recent than the child's parent id
-                    latestAdjustedStlLock.ifPresent(stlJobLock ->
-                            stlJobGroupDto.setLocked(taskExecutionDto.getParentId() < stlJobLock.getParentJobId()));
+                    latestAdjustedStlLock.ifPresent(stlJobLock -> {
+                        if (stlJobLock.getGroupId().startsWith(billingPeriodStr) &&
+                                !Objects.equals(taskExecutionDto.getParentStlJobGroupDto().getGroupId(), stlJobLock.getGroupId())) {
+                            // latest tagged ADJUSTED run is meter-triggered and is different from the child's parent
+                            stlJobGroupDto.setLocked(true);
+                        } else {
+                            stlJobGroupDto.setLocked(taskExecutionDto.getParentId() < stlJobLock.getParentJobId());
+                        }
+                    });
                 }
 
                 // Set canRunAdjustment

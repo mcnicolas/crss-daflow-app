@@ -685,25 +685,31 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
 
                 // Set canRunAdjustment
-                if (stlJobLocks.stream().allMatch(SettlementJobLock::isLocked)) {
-                    // get latest Settlement Job Lock and check if groupId matches
-                    stlJobLocks.stream().sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
-                            .findFirst().ifPresent(stlJobLock -> stlJobGroupDto.setCanRunAdjustment(
-                                    Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId()))
-                    );
+                // get latest Settlement Job Lock and check if groupId matches and has not yet executed run adj job
+                stlJobLocks.stream().filter(SettlementJobLock::isLocked)
+                        .sorted(Collections.reverseOrder(Comparator.comparing(SettlementJobLock::getLockDate)))
+                        .findFirst()
+                        .ifPresent(stlJobLock -> {
+                            boolean hasExecutedRunAdj;
 
-                    // additional checking from metering triggered adjustments
-                    if (latestStlJobFromMetering != null) {
+                            Map<String, StlJobGroupDto> jobGroupDtoMap = taskExecutionDto.getStlJobGroupDtoMap();
 
-                        String latestStlJobGroupId = parseGroupId(latestStlJobFromMetering.getBillingPeriod(),
-                                latestStlJobFromMetering.getProcessType(), latestStlJobFromMetering.getParentId());
+                            if (stlJobGroupDto.isHeader()) {
+                                // for parent check if there are any child runs
+                                hasExecutedRunAdj = jobGroupDtoMap.size() > 1;
+                            } else {
+                                // for child check if there's another child with a greater groupId long value
+                                // (since child group ids are timestamp based)
+                                hasExecutedRunAdj = jobGroupDtoMap.values().stream().filter(jobGroupDto -> !jobGroupDto.isHeader())
+                                        .anyMatch(jobGroupDto ->
+                                                Long.valueOf(jobGroupDto.getGroupId()) > Long.valueOf(stlJobGroupDto.getGroupId()));
+                            }
 
-                        if (!Objects.equals(latestStlJobGroupId, taskExecutionDto.getParentStlJobGroupDto().getGroupId())) {
-                            stlJobGroupDto.setCanRunAdjustment(false);
-                        }
-                    }
+                            boolean canRunAdj = Objects.equals(stlJobLock.getGroupId(), stlJobGroupDto.getGroupId())
+                                    && !hasExecutedRunAdj;
 
-                }
+                            stlJobGroupDto.setCanRunAdjustment(canRunAdj);
+                        });
             }
         }
 

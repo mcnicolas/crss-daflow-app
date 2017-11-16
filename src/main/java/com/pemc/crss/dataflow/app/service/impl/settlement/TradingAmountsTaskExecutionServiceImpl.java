@@ -210,6 +210,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                                     StlCalculationType.LINE_RENTAL, lrMeterProcessType);
 
                     stlJobGroupDto.setLockedLr(finalizedLrDate != null);
+
+                    // lock lr if trading amounts can no longer be finalized (only possible for ADJUSTED parent / child runs)
+                    if (!stlJobGroupDto.isLockedLr() && stlJobGroupDto.isLocked()
+                            && stlJobGroupDto.getTaggingStatus() != BatchStatus.COMPLETED) {
+                        stlJobGroupDto.setLockedLr(true);
+                    }
                 }
 
                 if (isDaily) {

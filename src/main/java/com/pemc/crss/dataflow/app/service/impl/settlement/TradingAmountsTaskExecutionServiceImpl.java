@@ -104,6 +104,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             StlJobGroupDto initialJobGroupDto = new StlJobGroupDto();
             initialJobGroupDto.setGroupId(stlReadyGroupId);
+            initialJobGroupDto.setHeader(true);
 
             taskExecutionDto.setParentStlJobGroupDto(initialJobGroupDto);
 

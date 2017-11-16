@@ -60,6 +60,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
             StlJobGroupDto initialJobGroupDto = new StlJobGroupDto();
             initialJobGroupDto.setGroupId(stlReadyGroupId);
+            initialJobGroupDto.setHeader(true);
 
             taskExecutionDto.setParentStlJobGroupDto(initialJobGroupDto);
 

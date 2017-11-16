@@ -57,6 +57,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
             StlJobGroupDto initialJobGroupDto = new StlJobGroupDto();
             initialJobGroupDto.setGroupId(stlReadyGroupId);
+            initialJobGroupDto.setHeader(true);
 
             taskExecutionDto.setParentStlJobGroupDto(initialJobGroupDto);
 

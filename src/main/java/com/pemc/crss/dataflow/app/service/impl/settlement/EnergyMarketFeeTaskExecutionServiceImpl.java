@@ -136,25 +136,17 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
 
     @Override
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
-        validateJobName(taskRunDto.getJobName());
-
         log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
                 taskRunDto.getBaseType());
 
         switch (taskRunDto.getJobName()) {
             case GEN_EMF_INPUT_WS:
-                validateJobName(CALC_EMF);
-                validateJobName(TAG_EMF);
                 launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_EMF:
-                validateJobName(GEN_EMF_INPUT_WS);
-                validateJobName(TAG_EMF);
                 launchCalculateJob(taskRunDto);
                 break;
             case TAG_EMF:
-                validateJobName(GEN_EMF_INPUT_WS);
-                validateJobName(CALC_EMF);
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_EMF:

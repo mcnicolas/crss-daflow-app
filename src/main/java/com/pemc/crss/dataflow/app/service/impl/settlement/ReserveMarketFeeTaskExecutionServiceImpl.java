@@ -125,25 +125,17 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
 
     @Override
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
-        validateJobName(taskRunDto.getJobName());
-
         log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
                 taskRunDto.getBaseType());
 
         switch (taskRunDto.getJobName()) {
             case GEN_RMF_INPUT_WS:
-                validateJobName(CALC_RMF);
-                validateJobName(TAG_RMF);
                 launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_RMF:
-                validateJobName(GEN_RMF_INPUT_WS);
-                validateJobName(TAG_RMF);
                 launchCalculateJob(taskRunDto);
                 break;
             case TAG_RMF:
-                validateJobName(GEN_RMF_INPUT_WS);
-                validateJobName(CALC_RMF);
                 launchFinalizeJob(taskRunDto);
                 break;
             case FILE_RMF:

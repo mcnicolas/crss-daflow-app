@@ -256,52 +256,32 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     @Override
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
-        validateJobName(taskRunDto.getJobName());
-
         log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
                 taskRunDto.getBaseType());
 
         switch (taskRunDto.getJobName()) {
             case GEN_EBRSV_INPUT_WS:
-                validateJobName(CALC_STL);
-                validateJobName(CALC_GMR);
-                validateJobName(TAG_TA);
                 launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_STL:
-                validateJobName(GEN_EBRSV_INPUT_WS);
-                validateJobName(CALC_GMR);
-                validateJobName(TAG_TA);
                 launchCalculateJob(taskRunDto);
                 break;
             case CALC_LR:
-                validateJobName(GEN_EBRSV_INPUT_WS);
-                validateJobName(TAG_LR);
                 launchCalculateLineRentalJob(taskRunDto);
                 break;
             case CALC_GMR:
-                validateJobName(GEN_EBRSV_INPUT_WS);
-                validateJobName(CALC_STL);
-                validateJobName(TAG_TA);
                 launchCalculateGmrJob(taskRunDto);
                 break;
             case TAG_TA:
-                validateJobName(GEN_EBRSV_INPUT_WS);
-                validateJobName(CALC_STL);
-                validateJobName(CALC_GMR);
                 launchFinalizeJob(taskRunDto);
                 break;
             case TAG_LR:
-                validateJobName(GEN_EBRSV_INPUT_WS);
-                validateJobName(CALC_LR);
                 launchFinalizeLineRentalJob(taskRunDto);
                 break;
             case FILE_TA:
-                validateJobName(FILE_RSV_TA);
                 launchGenerateFileJob(taskRunDto);
                 break;
             case FILE_RSV_TA:
-                validateJobName(FILE_TA);
                 launchGenerateFileReserveTaJob(taskRunDto);
                 break;
             case FILE_LR:

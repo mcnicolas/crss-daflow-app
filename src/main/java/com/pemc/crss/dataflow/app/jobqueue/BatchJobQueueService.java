@@ -24,6 +24,8 @@ public interface BatchJobQueueService {
 
     List<BatchJobQueue> findQueuedAndInProgressJobs(JobProcess jobProcess);
 
+    void validateAdjustedProcess(final TaskRunDto taskRunDtoToQueue, final JobProcess finalizeJobProcess);
+
     static BatchJobQueue newInst(final Module module, final JobProcess jobProcess, final TaskRunDto taskRunDto) {
         final BatchJobQueue jobQueue = new BatchJobQueue();
 

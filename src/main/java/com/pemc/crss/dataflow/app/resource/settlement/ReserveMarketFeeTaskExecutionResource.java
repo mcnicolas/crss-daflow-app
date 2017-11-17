@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
@@ -65,6 +66,9 @@ public class ReserveMarketFeeTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_RMF_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing runGenInputWorkSpaceJob for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_RMF, taskRunDto);
@@ -79,6 +83,9 @@ public class ReserveMarketFeeTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing calculateJob for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_RMF, taskRunDto);
@@ -93,12 +100,21 @@ public class ReserveMarketFeeTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_RMF);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing finalize job for rmf. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_RMF, taskRunDto);
         queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    private void validateAdjustedRun(final TaskRunDto taskRunDto) {
+        if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.ADJUSTED.name()) || taskRunDto.isNewGroup()) {
+            queueService.validateAdjustedProcess(taskRunDto, JobProcess.FINALIZE_RMF);
+        }
     }
 
     @PostMapping("/generate-file")

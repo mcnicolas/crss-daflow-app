@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.jobqueue.impl;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.exception.JobAlreadyOnQueueException;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobQueue;
@@ -19,12 +20,16 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class BatchJobQueueServiceImpl implements BatchJobQueueService {
 
     @Autowired
     private BatchJobQueueRepository queueRepository;
+
+    private static final List<QueueStatus> IN_PROGRESS_STATUSES = Arrays.asList(QueueStatus.ON_QUEUE,
+            QueueStatus.STARTED, QueueStatus.STARTING);
 
     public void save(BatchJobQueue batchJobQueue) {
         validate(batchJobQueue);
@@ -55,13 +60,29 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
 
     @Override
     public List<BatchJobQueue> findQueuedAndInProgressJobs(final JobProcess jobProcess) {
-        return queueRepository.findByJobProcessAndStatusIn(jobProcess,
-                Arrays.asList(QueueStatus.ON_QUEUE, QueueStatus.STARTED, QueueStatus.STARTING));
+        return queueRepository.findByJobProcessAndStatusIn(jobProcess, IN_PROGRESS_STATUSES);
+    }
+
+    @Override
+    public void validateAdjustedProcess(final TaskRunDto taskRunDtoToQueue, JobProcess finalizeJobProcess) {
+        List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(finalizeJobProcess);
+
+        boolean finalizeJobInProgress = inProgressJobs.stream()
+                .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))
+                .anyMatch(taskRunDto ->
+                    Objects.equals(taskRunDto.getBaseStartDate(), taskRunDtoToQueue.getBaseStartDate()) &&
+                    Objects.equals(taskRunDto.getBaseEndDate(), taskRunDtoToQueue.getBaseEndDate()) &&
+                    Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.ADJUSTED.name()));
+
+        if (finalizeJobInProgress) {
+            throw new RuntimeException(String.format("Cannot queue job. A %s ADJUSTED job with the same billing period "
+                    + "is already queued.", finalizeJobProcess));
+        }
     }
 
     private void validate(BatchJobQueue batchJobQueue) {
         BooleanBuilder predicate = new BooleanBuilder();
-        predicate.and(QBatchJobQueue.batchJobQueue.status.in(QueueStatus.ON_QUEUE, QueueStatus.STARTED, QueueStatus.STARTING));
+        predicate.and(QBatchJobQueue.batchJobQueue.status.in(IN_PROGRESS_STATUSES));
         Sort sortByRunId = new Sort(new Sort.Order(Sort.Direction.DESC, "runId"));
         Iterator<BatchJobQueue> jobQueueIterator = queueRepository.findAll(predicate, sortByRunId).iterator();
         if (!jobQueueIterator.hasNext()) {

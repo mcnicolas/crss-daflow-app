@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
@@ -66,6 +67,9 @@ public class TradingAmountsTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, taskRunDto);
@@ -80,6 +84,9 @@ public class TradingAmountsTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_STL);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing calculateJob for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, taskRunDto);
@@ -94,6 +101,9 @@ public class TradingAmountsTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.CALC_LR);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing calculateJob for line rental. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_LR, taskRunDto);
@@ -110,6 +120,8 @@ public class TradingAmountsTaskExecutionResource {
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
         log.info("Queueing calculateGmrJob for trading amounts. taskRunDto={}", taskRunDto);
 
+        validateAdjustedRun(taskRunDto);
+
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_GMR_VAT, taskRunDto);
         queueService.save(jobQueue);
 
@@ -122,6 +134,9 @@ public class TradingAmountsTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_TA);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing finalize job for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_TA, taskRunDto);
@@ -136,12 +151,21 @@ public class TradingAmountsTaskExecutionResource {
         taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setJobName(SettlementJobName.TAG_LR);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        validateAdjustedRun(taskRunDto);
+
         log.info("Queueing finalize job for line rental. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.FINALIZE_LR, taskRunDto);
         queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    private void validateAdjustedRun(final TaskRunDto taskRunDto) {
+        if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.ADJUSTED.name()) || taskRunDto.isNewGroup()) {
+            queueService.validateAdjustedProcess(taskRunDto, JobProcess.FINALIZE_TA);
+        }
     }
 
     @PostMapping("/generate-file-energy")

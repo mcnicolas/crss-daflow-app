@@ -27,6 +27,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_RMF;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_LR_FILES;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_RESERVE_FILES;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.RUN_WESM;
 
 @Data
 @NoArgsConstructor
@@ -40,6 +41,7 @@ public class BatchJobQueueDisplay {
     private String user;
     private String details;
     private Map<String, String> paramMap;
+    private Long meteringParentId;
 
     public BatchJobQueueDisplay(BatchJobQueue batchJobQueue) {
         this.id = batchJobQueue.getId();
@@ -55,6 +57,7 @@ public class BatchJobQueueDisplay {
     private Map<String, String> buildRunDetails(final BatchJobQueue jobQueue) {
         Map<String, String> paramMap = new LinkedHashMap<>();
         TaskRunDto taskRunDto = ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class);
+        JobProcess jobProcess = jobQueue.getJobProcess();
 
         switch (jobQueue.getModule()) {
             case SETTLEMENT:
@@ -62,8 +65,6 @@ public class BatchJobQueueDisplay {
                 final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
                         GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT,
                         FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF);
-
-                JobProcess jobProcess = jobQueue.getJobProcess();
 
                 putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                 if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
@@ -76,6 +77,10 @@ public class BatchJobQueueDisplay {
                 }
                 break;
             case METERING:
+                if (taskRunDto.getParentJob() != null) {
+                    this.meteringParentId = Long.valueOf(taskRunDto.getParentJob());
+                }
+
                 if (taskRunDto.getMeterProcessType() != null) {
                     putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                 } else {
@@ -94,7 +99,15 @@ public class BatchJobQueueDisplay {
                 putIfPresent(paramMap, "Meter Type", taskRunDto.getMeterType());
                 putIfPresent(paramMap, "MSP", taskRunDto.getMsp());
                 putIfPresent(paramMap, "SEIN", taskRunDto.getSeins());
-                putIfPresent(paramMap, "MTN", taskRunDto.getMtns());
+
+                if (jobProcess == RUN_WESM) {
+                    // no selected MTNS means "ALL" mtns are included
+                    String mtns = StringUtils.isNotEmpty(taskRunDto.getMtns()) ? taskRunDto.getMtns() : "ALL";
+                    paramMap.put("MTN", mtns);
+                } else {
+                    putIfPresent(paramMap, "MTN", taskRunDto.getMtns());
+                }
+
                 break;
             default:
                 // do nothing

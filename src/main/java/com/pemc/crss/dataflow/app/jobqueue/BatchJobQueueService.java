@@ -1,5 +1,6 @@
 package com.pemc.crss.dataflow.app.jobqueue;
 
+import com.pemc.crss.dataflow.app.dto.BatchJobQueueDisplay;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.commons.util.DateTimeUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
@@ -25,6 +26,8 @@ public interface BatchJobQueueService {
     List<BatchJobQueue> findQueuedAndInProgressJobs(JobProcess jobProcess);
 
     void validateAdjustedProcess(final TaskRunDto taskRunDtoToQueue, final JobProcess finalizeJobProcess);
+
+    void setMtnParam(final BatchJobQueueDisplay queueDisplay);
 
     static BatchJobQueue newInst(final Module module, final JobProcess jobProcess, final TaskRunDto taskRunDto) {
         final BatchJobQueue jobQueue = new BatchJobQueue();

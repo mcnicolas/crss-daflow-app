@@ -1,16 +1,23 @@
 package com.pemc.crss.dataflow.app.jobqueue.impl;
 
+import com.pemc.crss.dataflow.app.dto.BatchJobQueueDisplay;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.exception.JobAlreadyOnQueueException;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.ModelMapper;
+import com.pemc.crss.shared.commons.util.TaskUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
+import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import com.querydsl.core.BooleanBuilder;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +34,12 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
 
     @Autowired
     private BatchJobQueueRepository queueRepository;
+
+    @Autowired
+    protected JobExplorer jobExplorer;
+
+    @Autowired
+    private BatchJobAddtlParamsService batchJobAddtlParamsService;
 
     private static final List<QueueStatus> IN_PROGRESS_STATUSES = Arrays.asList(QueueStatus.ON_QUEUE,
             QueueStatus.STARTED, QueueStatus.STARTING);
@@ -80,7 +93,26 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
         }
     }
 
-    private void validate(BatchJobQueue batchJobQueue) {
+    @Override
+    public void setMtnParam(final BatchJobQueueDisplay queueDisplay) {
+        Long parentJobId = queueDisplay.getMeteringParentId();
+
+        JobInstance jobInstance = jobExplorer.getJobInstance(parentJobId);
+        if (jobInstance != null) {
+            JobParameters parameters = jobExplorer.getJobExecutions(jobInstance).get(0).getJobParameters();
+            Long runId = parameters.getLong(TaskUtil.RUN_ID);
+
+            String mtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(runId, "mtns");
+
+            if (StringUtils.isNotEmpty(mtns)) {
+                queueDisplay.getParamMap().put("MTN", mtns);
+            } else {
+                queueDisplay.getParamMap().put("MTN", "ALL");
+            }
+        }
+    }
+
+    private void validate(final BatchJobQueue batchJobQueue) {
         BooleanBuilder predicate = new BooleanBuilder();
         predicate.and(QBatchJobQueue.batchJobQueue.status.in(IN_PROGRESS_STATUSES));
         Sort sortByRunId = new Sort(new Sort.Order(Sort.Direction.DESC, "runId"));

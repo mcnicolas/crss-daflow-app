@@ -21,9 +21,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.FINALIZE_STL_READY;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_MQ_REPORT;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.RUN_RCOA;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.RUN_STL_READY;
 
 @Slf4j
 @RestController
@@ -43,6 +49,11 @@ public class BatchJobQueueResource {
         Page<BatchJobQueue> jobQueuePage = batchJobQueueService.getAllWithStatus(queueStatus, pageable);
         List<BatchJobQueueDisplay> jobQueueDisplays = jobQueuePage.getContent().stream().map(BatchJobQueueDisplay::new)
                 .collect(Collectors.toList());
+
+        jobQueueDisplays.stream().filter(queueDisplay -> Arrays.asList(RUN_RCOA, RUN_STL_READY, FINALIZE_STL_READY, GEN_MQ_REPORT)
+                .contains(queueDisplay.getJobProcess()) && queueDisplay.getMeteringParentId() != null)
+                .forEach(queueDisplay -> batchJobQueueService.setMtnParam(queueDisplay));
+
         return ResponseEntity.ok(new PageImpl<>(jobQueueDisplays, pageable, jobQueuePage.getTotalElements()));
     }
 

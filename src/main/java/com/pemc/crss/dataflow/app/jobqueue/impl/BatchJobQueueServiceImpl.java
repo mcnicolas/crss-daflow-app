@@ -14,6 +14,7 @@ import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import com.querydsl.core.BooleanBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
@@ -29,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 public class BatchJobQueueServiceImpl implements BatchJobQueueService {
 
@@ -97,18 +99,22 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     public void setMtnParam(final BatchJobQueueDisplay queueDisplay) {
         Long parentJobId = queueDisplay.getMeteringParentId();
 
-        JobInstance jobInstance = jobExplorer.getJobInstance(parentJobId);
-        if (jobInstance != null) {
-            JobParameters parameters = jobExplorer.getJobExecutions(jobInstance).get(0).getJobParameters();
-            Long runId = parameters.getLong(TaskUtil.RUN_ID);
+        try {
+            JobInstance jobInstance = jobExplorer.getJobInstance(parentJobId);
+            if (jobInstance != null) {
+                JobParameters parameters = jobExplorer.getJobExecutions(jobInstance).get(0).getJobParameters();
+                Long runId = parameters.getLong(TaskUtil.RUN_ID);
 
-            String mtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(runId, "mtns");
+                String mtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(runId, "mtns");
 
-            if (StringUtils.isNotEmpty(mtns)) {
-                queueDisplay.getParamMap().put("MTN", mtns);
-            } else {
-                queueDisplay.getParamMap().put("MTN", "ALL");
+                if (StringUtils.isNotEmpty(mtns)) {
+                    queueDisplay.getParamMap().put("MTN", mtns);
+                } else {
+                    queueDisplay.getParamMap().put("MTN", "ALL");
+                }
             }
+        } catch (Exception e) {
+            log.warn("Unable to set mtn param due to {}", e.getMessage());
         }
     }
 

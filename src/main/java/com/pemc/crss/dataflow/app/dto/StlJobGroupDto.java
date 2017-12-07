@@ -34,11 +34,6 @@ public class StlJobGroupDto {
     private BatchStatus taggingLrStatus;
     private BatchStatus invoiceGenerationLrStatus;
 
-    @Deprecated
-    private boolean currentlyRunning;
-    @Deprecated
-    private boolean latestAdjustment;
-
     private boolean header;
     private String groupId;
     private Date runStartDateTime;

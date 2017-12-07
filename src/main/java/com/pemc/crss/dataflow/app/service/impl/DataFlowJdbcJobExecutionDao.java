@@ -2,10 +2,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 
 import com.pemc.crss.dataflow.app.dto.DistinctAddtlCompDto;
 import com.pemc.crss.dataflow.app.dto.JobExecutionDto;
-import com.pemc.crss.dataflow.app.support.FinalizeJobQuery;
-import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlCalculationQuery;
-import com.pemc.crss.dataflow.app.support.StlJobQuery;
 import com.pemc.crss.dataflow.app.support.StlQueryProcessType;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
@@ -126,62 +123,6 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         }
     }
 
-    // Stl Job Queries
-    public Long countStlJobInstances(final PageableRequest pageableRequest) {
-        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
-
-        switch (processType) {
-            case ADJUSTED:
-            case PRELIM:
-            case FINAL:
-            case ALL_MONTHLY:
-                return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterMonthlyCountQuery(), Long.class,
-                        getStlMonthlyParams(pageableRequest.getMapParams(), processType));
-            case DAILY:
-                return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterDailyCountQuery(), Long.class,
-                        getStlDailyParams(pageableRequest.getMapParams()));
-            default:
-                return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterAllCountQuery(), Long.class);
-        }
-    }
-
-    public List<JobInstance> findStlJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
-        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
-
-        switch (processType) {
-            case ADJUSTED:
-            case PRELIM:
-            case FINAL:
-            case ALL_MONTHLY:
-                return this.getJdbcTemplate().query(StlJobQuery.stlFilterMonthlySelectQuery(),
-                        getStlMonthlyParams(pageableRequest.getMapParams(), processType),
-                        getJobInstanceExtractor(start, count));
-            case DAILY:
-                return this.getJdbcTemplate().query(StlJobQuery.stlFilterDailySelectQuery(),
-                        getStlDailyParams(pageableRequest.getMapParams()),
-                        getJobInstanceExtractor(start, count));
-            default:
-                return this.getJdbcTemplate().query(StlJobQuery.stlFilterAllSelectQuery(),
-                        getJobInstanceExtractor(start, count));
-        }
-    }
-
-    // Find only Monthly stlReady jobs
-    public Long countMonthlyStlReadyJobInstances(final PageableRequest pageableRequest) {
-        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
-
-        return this.getJdbcTemplate().queryForObject(StlJobQuery.stlFilterMonthlyCountQuery(), Long.class,
-                getStlMonthlyParams(pageableRequest.getMapParams(), processType));
-    }
-
-    public List<JobInstance> findMonthlyStlReadyJobInstances(final int start, final int count, final PageableRequest pageableRequest) {
-        StlQueryProcessType processType = resolveProcessType(pageableRequest.getMapParams());
-
-        return this.getJdbcTemplate().query(StlJobQuery.stlFilterMonthlySelectQuery(),
-                getStlMonthlyParams(pageableRequest.getMapParams(), processType),
-                getJobInstanceExtractor(start, count));
-    }
-
     // Additional Compensation Queries
     public List<JobInstance> findAddtlCompJobInstances(final int start, final int count, final DistinctAddtlCompDto dto) {
         log.debug("Querying Additional Compensation Job Select query with processType: {}");
@@ -220,15 +161,6 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         String groupId = resolveQueryParam(mapParams.getOrDefault("groupId", null));
 
         return new String[]{status, startDate, endDate, pricingCondition, groupId};
-    }
-
-    public Long countFinalizeJobInstances(MeterProcessType type, String startDate, String endDate) {
-        String jobName = MeterProcessType.ADJUSTED == type
-                ? FinalizeJobQuery.FINALIZE_JOB_NAME_ADJ
-                : FinalizeJobQuery.FINALIZE_JOB_NAME_FINAL;
-
-        return this.getJdbcTemplate().queryForObject(FinalizeJobQuery.countQuery(), Long.class,
-                new String[]{jobName, startDate, endDate, type.name()});
     }
 
     public List<JobExecution> findStlCalcJobInstances(String parentGroup, MeterProcessType type, String startDate, String endDate) {
@@ -307,13 +239,6 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
 
         return new String[]{processType, startDate, endDate};
-    }
-
-    private String[] getStlDailyParams(final Map<String, String> mapParams) {
-        String tradingDateStart = getStringValFromMap(mapParams, "tradingDateStart", StlJobQuery.DEFAULT_TRADING_DATE_START);
-        String tradingDateEnd = getStringValFromMap(mapParams, "tradingDateEnd", StlJobQuery.DEFAULT_TRADING_DATE_END);
-
-        return new String[]{tradingDateStart, tradingDateEnd};
     }
 
     private String resolveQueryParam(String param) {

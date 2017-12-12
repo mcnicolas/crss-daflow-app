@@ -337,7 +337,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
-            lockJobJdbc(taskRunDto);
+
+            //Removed job locking since there's already job queueing.
+            //lockJobJdbc(taskRunDto);
         }
     }
 

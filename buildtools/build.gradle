@@ -1,6 +1,9 @@
 apply plugin: 'liquibase'
 apply from: 'liquibase.gradle'
 
+ext {
+    projectVersion = project.version
+}
 buildscript {
     repositories {
         jcenter()
@@ -25,13 +28,13 @@ buildscript {
         classpath 'org.apache.commons:commons-lang3:3.4'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.3'
         classpath 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.8.3'
-        classpath ('com.pemc.crss:crss-shared-commons-util:2.3.0.BUILD-SNAPSHOT'){
+        classpath ("com.pemc.crss:crss-shared-commons-util:$projectVersion"){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-commons-model:2.3.0.BUILD-SNAPSHOT'){
+        classpath ("com.pemc.crss:crss-shared-commons-model:$projectVersion"){
             transitive = false
         }
-        classpath ('com.pemc.crss:crss-shared-core-dataflow:2.3.0.BUILD-SNAPSHOT'){
+        classpath ("com.pemc.crss:crss-shared-core-dataflow:$projectVersion"){
             transitive = false
         }
     }

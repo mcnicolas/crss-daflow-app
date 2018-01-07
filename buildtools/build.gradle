@@ -1,10 +1,10 @@
 apply plugin: 'liquibase'
 apply from: 'liquibase.gradle'
-
-ext {
-    projectVersion = project.version
-}
 buildscript {
+
+    ext {
+        projectVersion = project.version
+    }
     repositories {
         jcenter()
         mavenCentral()

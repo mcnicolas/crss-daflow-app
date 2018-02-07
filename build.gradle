@@ -73,6 +73,12 @@ repositories {
     maven {
         url "http://pemc-storage.southeastasia.cloudapp.azure.com:8081/repository/pemc-releases/"
     }
+    maven {
+        url "http://nexus.dev2.crss.exist.com/repository/pemc-snapshots/"
+    }
+    maven {
+        url "http://nexus.dev2.crss.exist.com/repository/pemc-releases/"
+    }
 }
 
 

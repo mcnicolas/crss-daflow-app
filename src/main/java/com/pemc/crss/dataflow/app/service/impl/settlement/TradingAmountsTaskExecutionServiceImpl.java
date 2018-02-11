@@ -34,45 +34,14 @@ import javax.transaction.Transactional;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_LR;
-import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE_LR;
-import static com.pemc.crss.dataflow.app.support.StlJobStage.GENERATE_IWS;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.DAILY;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.PRELIM;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_BUYER_LINE_RENTAL;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SCALING_FACTOR;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.CALC_SELLER_LINE_RENTAL;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.DISAGGREGATE_BCQ;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.GEN_RESERVE_IW_STEP;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_BCQ_STEP;
-import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.RETRIEVE_DATA_STEP;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.*;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
+import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.*;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_GMR;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_LR;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.CALC_STL;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_LR;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_RSV_TA;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_TA;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.GEN_EBRSV_INPUT_WS;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_LR;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.STL_VALIDATION;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.TAG_TA;
+import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
 
 @Slf4j
 @Service("tradingAmountsTaskExecutionService")
@@ -224,17 +193,17 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                             .getLatestJobExecStartTimeByProcessTypeAndParentId(processType.name(), parentIdStr);
 
                     stlJobGroupDto.getSortedJobCalculationDtos().stream()
-                        .filter(jobDto -> Objects.equals(GENERATE_IWS, jobDto.getJobStage())
-                                && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
-                        .findFirst()
-                        .ifPresent(genIwsDto -> {
-                                if (latestStlReadyJobExecStartTime != null && latestStlReadyJobExecStartTime.isAfter(
-                                        DateUtil.convertToLocalDateTime(genIwsDto.getRunDate()))) {
-                                    stlJobGroupDto.getOutdatedTradingDates()
-                                            .add(DateUtil.convertToLocalDate(taskExecutionDto.getDailyDate()));
-                                }
-                            }
-                        );
+                            .filter(jobDto -> Objects.equals(GENERATE_IWS, jobDto.getJobStage())
+                                    && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
+                            .findFirst()
+                            .ifPresent(genIwsDto -> {
+                                        if (latestStlReadyJobExecStartTime != null && latestStlReadyJobExecStartTime.isAfter(
+                                                DateUtil.convertToLocalDateTime(genIwsDto.getRunDate()))) {
+                                            stlJobGroupDto.getOutdatedTradingDates()
+                                                    .add(DateUtil.convertToLocalDate(taskExecutionDto.getDailyDate()));
+                                        }
+                                    }
+                            );
                 }
             });
 
@@ -362,9 +331,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     private void initializeTaggingLineRental(final List<JobInstance> taggingLineRentalJobInstances,
-                           final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
-                           final SettlementTaskExecutionDto taskExecutionDto,
-                           final String stlReadyGroupId) {
+                                             final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                             final SettlementTaskExecutionDto taskExecutionDto,
+                                             final String stlReadyGroupId) {
 
         Set<String> tagNames = Sets.newHashSet();
 
@@ -409,9 +378,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     private void initializeFileGenLineRental(final List<JobInstance> fileGenJobLineRentalInstances,
-                                            final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
-                                            final SettlementTaskExecutionDto taskExecutionDto,
-                                            final String stlReadyGroupId) {
+                                             final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                             final SettlementTaskExecutionDto taskExecutionDto,
+                                             final String stlReadyGroupId) {
 
         Set<String> generationNames = Sets.newHashSet();
 
@@ -566,9 +535,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     private void initializeFileGenReserveTa(final List<JobInstance> fileGenJobInstances,
-                           final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
-                           final SettlementTaskExecutionDto taskExecutionDto,
-                           final String stlReadyGroupId) {
+                                            final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                            final SettlementTaskExecutionDto taskExecutionDto,
+                                            final String stlReadyGroupId) {
 
         Set<String> generationNames = Sets.newHashSet();
 
@@ -961,8 +930,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     private Map<String, String> getCalculateLrStepsForSkipLogs() {
         Map<String, String> calcLrSteps = new LinkedHashMap<>();
-        calcLrSteps.put(CALC_BUYER_LINE_RENTAL, "Calculate Buyer Line Rental");
-        calcLrSteps.put(CALC_SELLER_LINE_RENTAL, "Calculate Seller Line Rental");
+        calcLrSteps.put(CALC_LINE_RENTAL, "Calculate Line Rental");
 
         return calcLrSteps;
     }

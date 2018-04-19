@@ -173,11 +173,6 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
     }
 
     private void checkIfIssued(String msp, String meterprocessType, String tradingDate, String startDate, String endDate) {
-
-        LOG.info("msp: " + msp);
-        LOG.info("tradingDate: " + tradingDate);
-        LOG.info("startDate: " + startDate);
-        LOG.info("endDate: " + endDate);
         msp = StringUtils.isNotEmpty(msp) ? msp : StringUtils.EMPTY;
         if (PROCESS_TYPE_DAILY.equalsIgnoreCase(meterprocessType)) {
             String errorMessage = "Cannot run Generate MTR on Trading Day ( %s ). MSP%s already have MTR Issued on that date";

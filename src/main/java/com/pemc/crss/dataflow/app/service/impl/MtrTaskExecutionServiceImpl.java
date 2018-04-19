@@ -3,13 +3,14 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
+import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.ViewMtrIssuanceRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,9 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
     @Autowired
     private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
+
+    @Autowired
+    private ViewMtrIssuanceRepository viewMtrIssuanceRepository;
 
     @Override
     public Page<MtrTaskExecutionDto> findJobInstances(Pageable pageable) {
@@ -132,6 +136,9 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
         List<String> arguments = Lists.newArrayList();
 
         if (RUN_MTR_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            checkIfIssued(taskRunDto.getMsp(), taskRunDto.getMeterProcessType(), taskRunDto.getTradingDate(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+
             if (PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), "date"));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive("dailyMtr")));
@@ -160,6 +167,30 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
         if (jobName != null) {
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
+        }
+
+    }
+
+    private void checkIfIssued(String msp, String meterprocessType, String tradingDate, String startDate, String endDate) {
+
+        msp = StringUtils.isNotEmpty(msp) ? msp : StringUtils.EMPTY;
+        if (PROCESS_TYPE_DAILY.equalsIgnoreCase(meterprocessType)) {
+            String errorMessage = "Cannot run Generate MTR on Trading Day ( %s ). MSP%s already have MTR Issued on that date";
+            Preconditions.checkState(
+                    StringUtils.isNotEmpty(msp) ?
+                    viewMtrIssuanceRepository.countIssuedWithMsp(msp, tradingDate) > 0:
+                            viewMtrIssuanceRepository.countIssued(tradingDate) > 0,
+                    String.format(errorMessage, tradingDate, StringUtils.isNotEmpty(msp) ? " (" + msp + ")" : msp)
+            );
+        } else {
+            String errorMessage = "Cannot run Generate MTR on Billing Period ( %s ). MSP%s already have MTR Issued on that date";
+            Preconditions.checkState(
+                    StringUtils.isNotEmpty(msp) ?
+                            viewMtrIssuanceRepository.countIssuedWithMsp(msp, startDate, endDate) > 0 :
+                            viewMtrIssuanceRepository.countIssued(startDate, endDate) > 0,
+                    String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""),
+                            StringUtils.isNotEmpty(msp) ? " (" + msp + ")" : msp)
+            );
         }
 
     }

@@ -8,6 +8,7 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ViewMtrIssuanceRepository;
@@ -178,16 +179,18 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             String errorMessage = "Cannot run Generate MTR on Trading Day ( %s ). MSP%s already have MTR Issued on that date";
             Preconditions.checkState(
                     StringUtils.isNotEmpty(msp) ?
-                    viewMtrIssuanceRepository.countIssuedWithMsp(msp, tradingDate) > 0:
-                            viewMtrIssuanceRepository.countIssued(tradingDate) > 0,
+                    viewMtrIssuanceRepository.countIssuedWithMsp(msp, DateUtil.convertToDate(tradingDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0:
+                            viewMtrIssuanceRepository.countIssued(DateUtil.convertToDate(tradingDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0,
                     String.format(errorMessage, tradingDate, StringUtils.isNotEmpty(msp) ? " (" + msp + ")" : msp)
             );
         } else {
             String errorMessage = "Cannot run Generate MTR on Billing Period ( %s ). MSP%s already have MTR Issued on that date";
             Preconditions.checkState(
                     StringUtils.isNotEmpty(msp) ?
-                            viewMtrIssuanceRepository.countIssuedWithMsp(msp, startDate, endDate) > 0 :
-                            viewMtrIssuanceRepository.countIssued(startDate, endDate) > 0,
+                            viewMtrIssuanceRepository.countIssuedWithMsp(msp, DateUtil.convertToDate(startDate, DateUtil.DEFAULT_DATE_FORMAT),
+                                    DateUtil.convertToDate(endDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0 :
+                            viewMtrIssuanceRepository.countIssued( DateUtil.convertToDate(startDate, DateUtil.DEFAULT_DATE_FORMAT),
+                                    DateUtil.convertToDate(endDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0,
                     String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""),
                             StringUtils.isNotEmpty(msp) ? " (" + msp + ")" : msp)
             );

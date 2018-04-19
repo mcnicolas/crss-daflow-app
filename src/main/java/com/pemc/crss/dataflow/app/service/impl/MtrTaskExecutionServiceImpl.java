@@ -183,8 +183,8 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             String errorMessage = "Cannot run Generate MTR on Trading Day ( %s ). MSP%s already have MTR Issued on that date";
             Preconditions.checkState(
                     StringUtils.isNotEmpty(msp) ?
-                    viewMtrIssuanceRepository.countIssuedWithMsp(msp, DateUtil.convertToDate(tradingDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0:
-                            viewMtrIssuanceRepository.countIssued(DateUtil.convertToDate(tradingDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0,
+                    viewMtrIssuanceRepository.countIssuedWithMsp(msp, DateUtil.convertToDate(tradingDate, DateUtil.DEFAULT_DATE_FORMAT)) < 1:
+                            viewMtrIssuanceRepository.countIssued(DateUtil.convertToDate(tradingDate, DateUtil.DEFAULT_DATE_FORMAT)) < 1,
                     String.format(errorMessage, tradingDate, StringUtils.isNotEmpty(msp) ? " (" + msp + ")" : msp)
             );
         } else {
@@ -192,9 +192,9 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             Preconditions.checkState(
                     StringUtils.isNotEmpty(msp) ?
                             viewMtrIssuanceRepository.countIssuedWithMsp(msp, DateUtil.convertToDate(startDate, DateUtil.DEFAULT_DATE_FORMAT),
-                                    DateUtil.convertToDate(endDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0 :
+                                    DateUtil.convertToDate(endDate, DateUtil.DEFAULT_DATE_FORMAT)) < 1 :
                             viewMtrIssuanceRepository.countIssued( DateUtil.convertToDate(startDate, DateUtil.DEFAULT_DATE_FORMAT),
-                                    DateUtil.convertToDate(endDate, DateUtil.DEFAULT_DATE_FORMAT)) > 0,
+                                    DateUtil.convertToDate(endDate, DateUtil.DEFAULT_DATE_FORMAT)) < 1,
                     String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : ""),
                             StringUtils.isNotEmpty(msp) ? " (" + msp + ")" : msp)
             );

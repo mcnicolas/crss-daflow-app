@@ -8,6 +8,7 @@ import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
+import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -20,12 +21,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.List;
 
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.COMPLETED;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.FAILED_EXECUTION;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.FAILED_RUN;
-import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.ON_QUEUE;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTED;
 import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTING;
 
@@ -68,46 +68,57 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Scheduled(fixedDelayString = "${scheduler.interval-milliseconds}")
     @Override
     public void execute() {
-        BatchJobQueue nextJob = queueRepository.findFirstByStatusInOrderByRunIdAsc(Arrays.asList(ON_QUEUE, STARTED, STARTING));
+        // Add additional methods here
+        executeGroup(METERING_JOBS);
+        executeGroup(STL_JOBS);
+    }
 
-        if (nextJob != null) {
-            switch (nextJob.getStatus()) {
-                case ON_QUEUE:
-                    log.info("Running next Job in Queue. RunId: {}. Process: {}, JobName: {}",
-                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                    runNextQueuedJob(nextJob);
-                    break;
-                case STARTING:
-                    log.info("Checking Job if Started: RunId: {}. Process: {}. JobName: {}",
-                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                    checkIfJobStarted(nextJob);
-                    break;
-                case STARTED:
-                     log.info("Checking Job if Finished: RunId: {}. Process: {}. JobName: {}",
-                            nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                     checkIfJobIsFinished(nextJob);
-                     break;
-                default:
-                    // do nothing
+    private void executeGroup(List<JobProcess> jobProcesses) {
+        try {
+            BatchJobQueue nextJob = queueRepository.findFirstByStatusInAndJobProcessInOrderByRunIdAsc(IN_PROGRESS_STATUS, jobProcesses);
+
+            if (nextJob != null) {
+                switch (nextJob.getStatus()) {
+                    case ON_QUEUE:
+                        log.info("Running next Job in Queue. RunId: {}. Process: {}, JobName: {}",
+                                nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                        runNextQueuedJob(nextJob);
+                        break;
+                    case STARTING:
+                        log.info("Checking Job if Started: RunId: {}. Process: {}. JobName: {}",
+                                nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                        checkIfJobStarted(nextJob);
+                        break;
+                    case STARTED:
+                        log.info("Checking Job if Finished: RunId: {}. Process: {}. JobName: {}",
+                                nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                        checkIfJobIsFinished(nextJob);
+                        break;
+                    default:
+                        // do nothing
+                }
+
+                String sql = "UPDATE batch_job_queue SET status = :status, details = :details,"
+                        + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd, "
+                        + " starting_date = :startingDate WHERE id = :id";
+
+                MapSqlParameterSource updateSource = new MapSqlParameterSource()
+                        .addValue("status", nextJob.getStatus().name())
+                        .addValue("details", nextJob.getDetails())
+                        .addValue("jobExecutionId", nextJob.getJobExecutionId())
+                        .addValue("jobExecStart", DateUtil.convertToDate(nextJob.getJobExecStart()))
+                        .addValue("jobExecEnd", DateUtil.convertToDate(nextJob.getJobExecEnd()))
+                        .addValue("startingDate", DateUtil.convertToDate(nextJob.getStartingDate()))
+                        .addValue("id", nextJob.getId());
+
+                dataflowJdbcTemplate.update(sql, updateSource);
+
+            } else {
+                log.info("No Jobs to run at the moment.");
             }
-
-            String sql = "update batch_job_queue set status = :status, details = :details,"
-                    + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd, "
-                    + " starting_date = :startingDate where id = :id";
-
-            MapSqlParameterSource updateSource = new MapSqlParameterSource()
-                    .addValue("status", nextJob.getStatus().name())
-                    .addValue("details", nextJob.getDetails())
-                    .addValue("jobExecutionId", nextJob.getJobExecutionId())
-                    .addValue("jobExecStart", DateUtil.convertToDate(nextJob.getJobExecStart()))
-                    .addValue("jobExecEnd", DateUtil.convertToDate(nextJob.getJobExecEnd()))
-                    .addValue("startingDate", DateUtil.convertToDate(nextJob.getStartingDate()))
-                    .addValue("id", nextJob.getId());
-
-            dataflowJdbcTemplate.update(sql, updateSource);
-
-        } else {
-            log.info("No Jobs to run at the moment.");
+        } catch (Exception e) {
+            log.error("Exception {} encountered when running job group {}. Error: {}", e.getClass(),
+                    jobProcesses, e.getMessage());
         }
     }
 

@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 @Data
@@ -48,6 +49,15 @@ public class TaskRunDto {
     //Meter process, possible values: ALL or comma separated mtn
     private String mtns;
 
+    //Additional Compensation
+    private String billingId;
+    private String mtn;
+    private BigDecimal approvedRate;
+    private String billingStartDate;
+    private String billingEndDate;
+    private String pricingCondition;
+    private String jobId;
+
     @Override
     public boolean equals(Object o) {
         // do not include runId and ams fields, supplyMonth, billingPeriodName, formattedBillingPeriod, currentUser
@@ -74,6 +84,13 @@ public class TaskRunDto {
                 Objects.equals(supplyMonth, that.supplyMonth) &&
                 Objects.equals(msp, that.msp) &&
                 Objects.equals(seins, that.seins) &&
-                Objects.equals(mtns, that.mtns);
+                Objects.equals(mtns, that.mtns) &&
+                Objects.equals(billingId, that.billingId) &&
+                Objects.equals(mtn, that.mtn) &&
+                Objects.equals(approvedRate, that.approvedRate) &&
+                Objects.equals(billingStartDate, that.billingEndDate) &&
+                Objects.equals(pricingCondition, that.pricingCondition) &&
+                Objects.equals(jobId, that.jobId);
+
     }
 }

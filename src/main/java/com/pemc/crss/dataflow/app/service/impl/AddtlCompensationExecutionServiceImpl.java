@@ -4,13 +4,13 @@ import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
+import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.security.Principal;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -31,12 +31,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
@@ -195,10 +193,22 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     @Override
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
-
+        switch (taskRunDto.getJobName()) {
+            case AddtlCompJobName.AC_CALC:
+                launchAddtlCompensation(taskRunDto);
+                break;
+            case AddtlCompJobName.AC_CALC_GMR_BASE_NAME:
+                finalizeAC(taskRunDto);
+                break;
+            case AddtlCompJobName.AC_GEN_FILE:
+                generateFilesAc(taskRunDto);
+                break;
+            default:
+                throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
+        }
     }
 
-    public void launchGroupAddtlCompensation(AddtlCompensationRunListDto addtlCompensationRunDtos, Principal principal) throws URISyntaxException {
+    /*public void launchGroupAddtlCompensation(AddtlCompensationRunListDto addtlCompensationRunDtos, Principal principal) throws URISyntaxException {
         if (!CollectionUtils.isEmpty(addtlCompensationRunDtos.getAddtlCompensationRunDtos())) {
 
             // only get the first instance since all of them have the same start / end / pc
@@ -210,24 +220,20 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
             for (AddtlCompensationRunDto addtlCompensationRunDto : addtlCompensationRunDtos.getAddtlCompensationRunDtos()) {
                 addtlCompensationRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-                launchAddtlCompensation(addtlCompensationRunDto, groupId);
+                launchAddtlCompensation(null, groupId);
             }
 
             lockJob(AC_CALC);
         }
-    }
+    }*/
 
-    public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto) throws URISyntaxException {
-        launchAddtlCompensation(addtlCompensationDto, buildGroupId(addtlCompensationDto));
-    }
+    private String buildGroupId(TaskRunDto taskRunDto) throws URISyntaxException {
 
-    private String buildGroupId(AddtlCompensationRunDto runDto) throws URISyntaxException {
-
-        String groupId = (runDto.getBillingStartDate() + runDto.getBillingEndDate() + runDto.getPricingCondition()
+        String groupId = (taskRunDto.getBillingStartDate() + taskRunDto.getBillingEndDate() + taskRunDto.getPricingCondition()
         ).replaceAll("-", "");
 
         List<JobInstance> finalizeJobInstances = dataFlowJdbcJobExecutionDao.findAddtlCompCompleteFinalizeInstances(0,
-                Integer.MAX_VALUE, runDto.getBillingStartDate(), runDto.getBillingEndDate(), runDto.getPricingCondition());
+                Integer.MAX_VALUE, taskRunDto.getBillingStartDate(), taskRunDto.getBillingEndDate(), taskRunDto.getPricingCondition());
 
         if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(finalizeJobInstances) &&
                 finalizeJobInstances.size() > 0) {
@@ -237,7 +243,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         return groupId; // produces: YYYYMMDDYYYYMMDDPC ex: 2017012602170225AP
     }
 
-    private void validateAddtlCompDtos(List<AddtlCompensationRunDto> addtlCompensationRunDtos) {
+    public void validateAddtlCompDtos(List<AddtlCompensationRunDto> addtlCompensationRunDtos) {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_CALC) == 0,
                 "There is an existing ".concat(AC_CALC).concat(" job running"));
 
@@ -259,24 +265,25 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    public void launchAddtlCompensation(AddtlCompensationRunDto addtlCompensationDto, String groupId) throws URISyntaxException {
-        String startDate = addtlCompensationDto.getBillingStartDate();
-        String endDate = addtlCompensationDto.getBillingEndDate();
+    private void launchAddtlCompensation(TaskRunDto taskRunDto) throws URISyntaxException {
+        String startDate = taskRunDto.getBillingStartDate();
+        String endDate = taskRunDto.getBillingEndDate();
+        String groupId = buildGroupId(taskRunDto);
 
-        saveAddtlCompParam(addtlCompensationDto, groupId);
+        saveAddtlCompParam(taskRunDto, groupId);
 
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
-        final Long runId = System.currentTimeMillis();
+        final Long runId = taskRunDto.getRunId();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(PARENT_JOB, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
-        arguments.add(concatKeyValue(AC_PRICING_CONDITION, addtlCompensationDto.getPricingCondition()));
-        arguments.add(concatKeyValue(USERNAME, addtlCompensationDto.getCurrentUser()));
-        saveAddltCompCalcAdditionalParams(runId, addtlCompensationDto);
+        arguments.add(concatKeyValue(AC_PRICING_CONDITION, taskRunDto.getPricingCondition()));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+        saveAddltCompCalcAdditionalParams(runId, taskRunDto);
 
         boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
@@ -286,12 +293,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
-    public void finalizeAC(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, Principal principal) throws URISyntaxException {
+    private void finalizeAC(TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_CALC_GMR_BASE_NAME) == 0,
                 "There is an existing ".concat(AC_CALC_GMR_BASE_NAME).concat(" job running"));
-        String startDate = addtlCompensationFinalizeDto.getStartDate();
-        String endDate = addtlCompensationFinalizeDto.getEndDate();
-        String pricingCondition = addtlCompensationFinalizeDto.getPricingCondition();
+        String startDate = taskRunDto.getStartDate();
+        String endDate = taskRunDto.getEndDate();
+        String pricingCondition = taskRunDto.getPricingCondition();
 
         boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
 
@@ -300,27 +307,28 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         final Long runId = System.currentTimeMillis();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
-        arguments.add(concatKeyValue(GROUP_ID, addtlCompensationFinalizeDto.getGroupId()));
+        arguments.add(concatKeyValue(GROUP_ID, taskRunDto.getGroupId()));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
-        arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
 
-        String jobName = determineJobAndSetProfile(hasAdjusted, addtlCompensationFinalizeDto, properties);
-        saveAdjRun(addtlCompensationFinalizeDto, jobName, hasAdjusted);
+        String jobName = determineJobAndSetProfile(hasAdjusted, taskRunDto, properties);
+        saveAdjRun(taskRunDto, jobName, hasAdjusted);
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
-        lockJob(AC_CALC_GMR_BASE_NAME);
+//        lockJob(AC_CALC_GMR_BASE_NAME);
     }
 
-    private void saveAdjRun(AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, String jobName, boolean hasAdjusted) {
+    // TODO: convert to jdbc
+    private void saveAdjRun(TaskRunDto taskRunDto, String jobName, boolean hasAdjusted) {
         LocalDateTime start = null;
         LocalDateTime end = null;
 
         try {
-            start = DateUtil.getStartRangeDate(addtlCompensationFinalizeDto.getStartDate());
-            end = DateUtil.getStartRangeDate(addtlCompensationFinalizeDto.getEndDate());
+            start = DateUtil.getStartRangeDate(taskRunDto.getStartDate());
+            end = DateUtil.getStartRangeDate(taskRunDto.getEndDate());
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -328,7 +336,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         BatchJobAdjRun adjVatRun = new BatchJobAdjRun();
         adjVatRun.setAdditionalCompensation(true);
         adjVatRun.setJobId(null);
-        adjVatRun.setGroupId(addtlCompensationFinalizeDto.getGroupId());
+        adjVatRun.setGroupId(taskRunDto.getGroupId());
         MeterProcessType processType = determineProcessType(jobName);
 
         if (processType == null) {
@@ -343,13 +351,13 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         batchJobAdjRunRepository.save(adjVatRun);
     }
 
-    private String determineJobAndSetProfile(final boolean hasAdjusted, AddtlCompensationFinalizeDto addtlCompensationFinalizeDto, List<String> properties) throws URISyntaxException {
+    private String determineJobAndSetProfile(final boolean hasAdjusted, TaskRunDto taskRunDto, List<String> properties) throws URISyntaxException {
         LocalDateTime start = null;
         LocalDateTime end = null;
 
         try {
-            start = DateUtil.getStartRangeDate(addtlCompensationFinalizeDto.getStartDate());
-            end = DateUtil.getStartRangeDate(addtlCompensationFinalizeDto.getEndDate());
+            start = DateUtil.getStartRangeDate(taskRunDto.getStartDate());
+            end = DateUtil.getStartRangeDate(taskRunDto.getEndDate());
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -387,13 +395,13 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    public void generateFilesAc(AddtlCompensationGenFilesDto genFilesDto, Principal principal) throws URISyntaxException {
+    private void generateFilesAc(TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_GEN_FILE) == 0,
                 "There is an existing ".concat(AC_GEN_FILE).concat(" job running"));
-        String startDate = genFilesDto.getStartDate();
-        String endDate = genFilesDto.getEndDate();
-        String pricingCondition = genFilesDto.getPricingCondition();
-        String groupId = genFilesDto.getGroupId();
+        String startDate = taskRunDto.getStartDate();
+        String endDate = taskRunDto.getEndDate();
+        String pricingCondition = taskRunDto.getPricingCondition();
+        String groupId = taskRunDto.getGroupId();
 
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
@@ -404,38 +412,39 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));
         arguments.add(concatKeyValue(END_DATE, endDate, "date"));
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
-        arguments.add(concatKeyValue(USERNAME, SecurityUtil.getCurrentUser(principal)));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_GEN_FILE_PROFILE)));
 
-        saveAMSadditionalParams(runId, genFilesDto);
+        saveAMSadditionalParams(runId, taskRunDto);
 
         launchJob(ADDTL_COMP_FILE_GEN_TASK_NAME, properties, arguments);
-        lockJob(AC_GEN_FILE);
+//        lockJob(AC_GEN_FILE);
     }
 
-    private void saveAMSadditionalParams(final Long runId, final AddtlCompensationGenFilesDto genFilesDto) {
-        log.info("Saving additional AC AMS params. AddtlCompensationGenFilesDto: {}", genFilesDto);
+    // TODO: convert save to jdbc
+    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+        log.info("Saving additional AC AMS params. AddtlCompensationGenFilesDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
             batchJobAddtlParamsInvoiceDate.setRunId(runId);
             batchJobAddtlParamsInvoiceDate.setType("DATE");
             batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
-            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(genFilesDto.getAmsInvoiceDate()));
+            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
             batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
 
             BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
             batchJobAddtlParamsDueDate.setRunId(runId);
             batchJobAddtlParamsDueDate.setType("DATE");
             batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
-            batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(genFilesDto.getAmsDueDate()));
+            batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
             batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
 
             BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
             batchJobAddtlParamsRemarksInv.setRunId(runId);
             batchJobAddtlParamsRemarksInv.setType("STRING");
             batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
-            batchJobAddtlParamsRemarksInv.setStringVal(genFilesDto.getAmsRemarksInv());
+            batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
             batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
 
         } catch (ParseException e) {
@@ -443,46 +452,47 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    private void saveAddltCompCalcAdditionalParams(final Long runId, final AddtlCompensationRunDto addtlCompensationDto) {
-        log.debug("Saving AC Calc additional params. addtlCompensationDto: {}", addtlCompensationDto);
+    // TODO: convert save to jdbc
+    private void saveAddltCompCalcAdditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+        log.debug("Saving AC Calc additional params. addtlCompensationDto: {}", taskRunDto);
 
         BatchJobAddtlParams batchJobAddtlParamsBillingId = new BatchJobAddtlParams();
         batchJobAddtlParamsBillingId.setRunId(runId);
         batchJobAddtlParamsBillingId.setType("STRING");
         batchJobAddtlParamsBillingId.setKey(AC_BILLING_ID);
-        batchJobAddtlParamsBillingId.setStringVal(addtlCompensationDto.getBillingId());
+        batchJobAddtlParamsBillingId.setStringVal(taskRunDto.getBillingId());
         batchJobAddtlParamsRepository.save(batchJobAddtlParamsBillingId);
 
         BatchJobAddtlParams batchJobAddtlParamsMtn = new BatchJobAddtlParams();
         batchJobAddtlParamsMtn.setRunId(runId);
         batchJobAddtlParamsMtn.setType("STRING");
         batchJobAddtlParamsMtn.setKey(AC_MTN);
-        batchJobAddtlParamsMtn.setStringVal(addtlCompensationDto.getMtn());
+        batchJobAddtlParamsMtn.setStringVal(taskRunDto.getMtn());
         batchJobAddtlParamsRepository.save(batchJobAddtlParamsMtn);
 
         BatchJobAddtlParams batchJobAddtlParamPricingCondition = new BatchJobAddtlParams();
         batchJobAddtlParamPricingCondition.setRunId(runId);
         batchJobAddtlParamPricingCondition.setType("STRING");
         batchJobAddtlParamPricingCondition.setKey(AC_PRICING_CONDITION);
-        batchJobAddtlParamPricingCondition.setStringVal(addtlCompensationDto.getPricingCondition());
+        batchJobAddtlParamPricingCondition.setStringVal(taskRunDto.getPricingCondition());
         batchJobAddtlParamsRepository.save(batchJobAddtlParamPricingCondition);
 
         BatchJobAddtlParams batchJobAddtlParamApprovedRate = new BatchJobAddtlParams();
         batchJobAddtlParamApprovedRate.setRunId(runId);
         batchJobAddtlParamApprovedRate.setType("DOUBLE");
         batchJobAddtlParamApprovedRate.setKey(AC_APPROVED_RATE);
-        batchJobAddtlParamApprovedRate.setDoubleVal(addtlCompensationDto.getApprovedRate().doubleValue());
+        batchJobAddtlParamApprovedRate.setDoubleVal(taskRunDto.getApprovedRate().doubleValue());
         batchJobAddtlParamsRepository.save(batchJobAddtlParamApprovedRate);
 
     }
 
-    private void saveAddtlCompParam(AddtlCompensationRunDto addtlCompensationDto, String groupId) {
+    private void saveAddtlCompParam(TaskRunDto taskRunDto, String groupId) {
         LocalDateTime start = null;
         LocalDateTime end = null;
 
         try {
-            start = DateUtil.getStartRangeDate(addtlCompensationDto.getBillingStartDate());
-            end = DateUtil.getStartRangeDate(addtlCompensationDto.getBillingEndDate());
+            start = DateUtil.getStartRangeDate(taskRunDto.getBillingStartDate());
+            end = DateUtil.getStartRangeDate(taskRunDto.getBillingEndDate());
         } catch (ParseException e) {
             log.error("Unable to parse dates.", e);
         }
@@ -490,10 +500,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         AddtlCompParams addtlCompParams = new AddtlCompParams();
         addtlCompParams.setBillingStartDate(start);
         addtlCompParams.setBillingEndDate(end);
-        addtlCompParams.setPricingCondition(addtlCompensationDto.getPricingCondition());
-        addtlCompParams.setBillingId(addtlCompensationDto.getBillingId());
-        addtlCompParams.setMtn(addtlCompensationDto.getMtn());
-        addtlCompParams.setApprovedRate(addtlCompensationDto.getApprovedRate());
+        addtlCompParams.setPricingCondition(taskRunDto.getPricingCondition());
+        addtlCompParams.setBillingId(taskRunDto.getBillingId());
+        addtlCompParams.setMtn(taskRunDto.getMtn());
+        addtlCompParams.setApprovedRate(taskRunDto.getApprovedRate());
         addtlCompParams.setGroupId(groupId);
         addtlCompParams.setStatus("STARTED");
 

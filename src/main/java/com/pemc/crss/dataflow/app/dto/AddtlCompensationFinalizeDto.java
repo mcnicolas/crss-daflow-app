@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.dto;
 /**
  * Created by kacejo on 5/16/17.
  */
+@Deprecated
 public class AddtlCompensationFinalizeDto {
     private String startDate;
     private String endDate;

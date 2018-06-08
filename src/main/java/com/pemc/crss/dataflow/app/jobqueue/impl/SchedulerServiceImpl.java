@@ -59,6 +59,10 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Qualifier("mtrTaskExecutionService")
     private TaskExecutionService mtrTaskExecutionService;
 
+    @Autowired
+    @Qualifier("addtlCompensationExecutionService")
+    private TaskExecutionService addtlCompensationExecutionService;
+
     @Value("${scheduler.launch-timeout-seconds}")
     private Long launchTimeoutSeconds;
 
@@ -159,6 +163,11 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case FINALIZE_RMF:
                 case GEN_FILES_RMF:
                     reserveMarketFeeTaskExecutionService.launchJob(taskDto);
+                    break;
+                case CALC_AC:
+                case FINALIZE_AC:
+                case GEN_FILES_AC:
+                    addtlCompensationExecutionService.launchJob(taskDto);
                     break;
                 default:
                     throw new RuntimeException("Unrecognized Job Process: " + job.getJobProcess());

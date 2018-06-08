@@ -17,7 +17,7 @@ public interface SchedulerService {
     // Define here jobs groups that can run in parallel
 
     // including here DEFAULT types just in case
-    List<MeterProcessType> DAILY_AND_AC = Arrays.asList(MeterProcessType.DAILY, MeterProcessType.DAILY, MeterProcessType.DEFAULT);
+    List<MeterProcessType> DAILY_AND_AC = Arrays.asList(MeterProcessType.DAILY, MeterProcessType.AC, MeterProcessType.DEFAULT);
 
     List<MeterProcessType> MONTHLY = Arrays.asList(MeterProcessType.PRELIM, MeterProcessType.PRELIMINARY,
             MeterProcessType.FINAL, MeterProcessType.ADJUSTED);

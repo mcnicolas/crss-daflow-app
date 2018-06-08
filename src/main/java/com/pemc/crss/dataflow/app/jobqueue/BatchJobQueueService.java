@@ -65,6 +65,10 @@ public interface BatchJobQueueService {
             default:
         }
 
+        if (jobQueue.getMeterProcessType() == null) {
+            jobQueue.setMeterProcessType(MeterProcessType.DEFAULT);
+        }
+
 
         return jobQueue;
     }

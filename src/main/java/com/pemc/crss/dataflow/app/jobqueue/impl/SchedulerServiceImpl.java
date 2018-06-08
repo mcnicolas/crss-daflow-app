@@ -5,10 +5,10 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.jobqueue.SchedulerService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
-import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -73,13 +73,14 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Override
     public void execute() {
         // Add additional methods here
-        executeGroup(METERING_JOBS);
-        executeGroup(STL_JOBS);
+        executeGroup(DAILY_AND_AC);
+        executeGroup(MONTHLY);
     }
 
-    private void executeGroup(List<JobProcess> jobProcesses) {
+    private void executeGroup(List<MeterProcessType> meterProcessTypes) {
         try {
-            BatchJobQueue nextJob = queueRepository.findFirstByStatusInAndJobProcessInOrderByRunIdAsc(IN_PROGRESS_STATUS, jobProcesses);
+            BatchJobQueue nextJob = queueRepository.findFirstByStatusInAndMeterProcessTypeInOrderByRunIdAsc(
+                    IN_PROGRESS_STATUS, meterProcessTypes);
 
             if (nextJob != null) {
                 switch (nextJob.getStatus()) {
@@ -121,8 +122,8 @@ public class SchedulerServiceImpl implements SchedulerService {
                 log.info("No Jobs to run at the moment.");
             }
         } catch (Exception e) {
-            log.error("Exception {} encountered when running job group {}. Error: {}", e.getClass(),
-                    jobProcesses, e.getMessage());
+            log.error("Exception {} encountered when running meter process types {}. Error: {}", e.getClass(),
+                    meterProcessTypes, e.getMessage());
         }
     }
 

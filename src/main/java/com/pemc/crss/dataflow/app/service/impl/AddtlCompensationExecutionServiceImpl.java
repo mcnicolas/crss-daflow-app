@@ -41,7 +41,6 @@ import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 
@@ -70,9 +69,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     @Autowired
     private AddtlCompParamsRepository addtlCompParamsRepository;
-
-    @Autowired
-    private BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     @Autowired
     private BatchJobAddtlParamsService batchJobAddtlParamsService;
@@ -244,8 +240,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     public void validateAddtlCompDtos(List<AddtlCompensationRunDto> addtlCompensationRunDtos) {
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_CALC) == 0,
-                "There is an existing ".concat(AC_CALC).concat(" job running"));
 
         // get first instance for billing period dates
         AddtlCompensationRunDto addtlCompensationDto = addtlCompensationRunDtos.get(0);
@@ -294,8 +288,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     private void finalizeAC(TaskRunDto taskRunDto) throws URISyntaxException {
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_CALC_GMR_BASE_NAME) == 0,
-                "There is an existing ".concat(AC_CALC_GMR_BASE_NAME).concat(" job running"));
         String startDate = taskRunDto.getStartDate();
         String endDate = taskRunDto.getEndDate();
         String pricingCondition = taskRunDto.getPricingCondition();
@@ -318,10 +310,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
-//        lockJob(AC_CALC_GMR_BASE_NAME);
     }
 
-    // TODO: convert to jdbc
     private void saveAdjRun(TaskRunDto taskRunDto, String jobName, boolean hasAdjusted) {
         LocalDateTime start = null;
         LocalDateTime end = null;
@@ -348,7 +338,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         adjVatRun.setBillingPeriodEnd(end);
         adjVatRun.setOutputReady(false);
 
-        batchJobAdjRunRepository.save(adjVatRun);
+        saveBatchJobAdjRun(adjVatRun);
     }
 
     private String determineJobAndSetProfile(final boolean hasAdjusted, TaskRunDto taskRunDto, List<String> properties) throws URISyntaxException {
@@ -396,8 +386,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     private void generateFilesAc(TaskRunDto taskRunDto) throws URISyntaxException {
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(AC_GEN_FILE) == 0,
-                "There is an existing ".concat(AC_GEN_FILE).concat(" job running"));
+
         String startDate = taskRunDto.getStartDate();
         String endDate = taskRunDto.getEndDate();
         String pricingCondition = taskRunDto.getPricingCondition();
@@ -419,10 +408,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         saveAMSadditionalParams(runId, taskRunDto);
 
         launchJob(ADDTL_COMP_FILE_GEN_TASK_NAME, properties, arguments);
-//        lockJob(AC_GEN_FILE);
     }
 
-    // TODO: convert save to jdbc
     private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
         log.info("Saving additional AC AMS params. AddtlCompensationGenFilesDto: {}", taskRunDto);
         try {
@@ -431,28 +418,27 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             batchJobAddtlParamsInvoiceDate.setType("DATE");
             batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
             batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
-            batchJobAddtlParamsRepository.save(batchJobAddtlParamsInvoiceDate);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
 
             BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
             batchJobAddtlParamsDueDate.setRunId(runId);
             batchJobAddtlParamsDueDate.setType("DATE");
             batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
             batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
-            batchJobAddtlParamsRepository.save(batchJobAddtlParamsDueDate);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsDueDate);
 
             BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
             batchJobAddtlParamsRemarksInv.setRunId(runId);
             batchJobAddtlParamsRemarksInv.setType("STRING");
             batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
             batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
-            batchJobAddtlParamsRepository.save(batchJobAddtlParamsRemarksInv);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
 
         } catch (ParseException e) {
             log.error("Error parsing additional batch job params for AC AMS: {}", e);
         }
     }
 
-    // TODO: convert save to jdbc
     private void saveAddltCompCalcAdditionalParams(final Long runId, final TaskRunDto taskRunDto) {
         log.debug("Saving AC Calc additional params. addtlCompensationDto: {}", taskRunDto);
 
@@ -461,29 +447,28 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         batchJobAddtlParamsBillingId.setType("STRING");
         batchJobAddtlParamsBillingId.setKey(AC_BILLING_ID);
         batchJobAddtlParamsBillingId.setStringVal(taskRunDto.getBillingId());
-        batchJobAddtlParamsRepository.save(batchJobAddtlParamsBillingId);
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsBillingId);
 
         BatchJobAddtlParams batchJobAddtlParamsMtn = new BatchJobAddtlParams();
         batchJobAddtlParamsMtn.setRunId(runId);
         batchJobAddtlParamsMtn.setType("STRING");
         batchJobAddtlParamsMtn.setKey(AC_MTN);
         batchJobAddtlParamsMtn.setStringVal(taskRunDto.getMtn());
-        batchJobAddtlParamsRepository.save(batchJobAddtlParamsMtn);
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsMtn);
 
         BatchJobAddtlParams batchJobAddtlParamPricingCondition = new BatchJobAddtlParams();
         batchJobAddtlParamPricingCondition.setRunId(runId);
         batchJobAddtlParamPricingCondition.setType("STRING");
         batchJobAddtlParamPricingCondition.setKey(AC_PRICING_CONDITION);
         batchJobAddtlParamPricingCondition.setStringVal(taskRunDto.getPricingCondition());
-        batchJobAddtlParamsRepository.save(batchJobAddtlParamPricingCondition);
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamPricingCondition);
 
         BatchJobAddtlParams batchJobAddtlParamApprovedRate = new BatchJobAddtlParams();
         batchJobAddtlParamApprovedRate.setRunId(runId);
         batchJobAddtlParamApprovedRate.setType("DOUBLE");
         batchJobAddtlParamApprovedRate.setKey(AC_APPROVED_RATE);
         batchJobAddtlParamApprovedRate.setDoubleVal(taskRunDto.getApprovedRate().doubleValue());
-        batchJobAddtlParamsRepository.save(batchJobAddtlParamApprovedRate);
-
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamApprovedRate);
     }
 
     private void saveAddtlCompParam(TaskRunDto taskRunDto, String groupId) {
@@ -516,12 +501,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         return settlementJobLockRepository.billingPeriodIsFinalized(startDateTime, endDateTime, processType.name(),
                 StlCalculationType.TRADING_AMOUNTS.name());
-    }
-
-    private void lockJob(String jobName) {
-        TaskRunDto runDto = new TaskRunDto();
-        runDto.setJobName(jobName);
-        lockJob(runDto);
     }
 
     private void checkTimeValidity(String billingEndDate) {

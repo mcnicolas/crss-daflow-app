@@ -10,6 +10,7 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobSkipLog;
@@ -362,6 +363,23 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
 
             dataflowJdbcTemplate.update(insertSql, paramSource);
         }
+    }
+
+    protected void saveBatchJobAdjRun(final BatchJobAdjRun batchJobAdjRun) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("addtlComp", batchJobAdjRun.isAdditionalCompensation())
+                .addValue("jobId", batchJobAdjRun.getJobId())
+                .addValue("groupId", batchJobAdjRun.getGroupId())
+                .addValue("meterProcessType", batchJobAdjRun.getMeterProcessType())
+                .addValue("billingPeriodStart", DateUtil.convertToDate(batchJobAdjRun.getBillingPeriodStart()))
+                .addValue("billingPeriodEnd", DateUtil.convertToDate(batchJobAdjRun.getBillingPeriodEnd()))
+                .addValue("outputReady", batchJobAdjRun.isOutputReady());
+
+        String insertSql = "insert into batch_job_adj_run(id, addtl_comp, job_id, group_id, meter_process_type, "
+                + " billing_period_start, billing_period_end, output_ready) values (nextval('hibernate_sequence'), "
+                + " :addtlComp, :jobId, :groupId, :meterProcessType, :billingPeriodStart, :billingPeriodEnd, :outputReady)";
+
+        dataflowJdbcTemplate.update(insertSql, paramSource);
     }
 
     protected void saveBatchJobAddtlParamsJdbc(final BatchJobAddtlParams addtlParams) {

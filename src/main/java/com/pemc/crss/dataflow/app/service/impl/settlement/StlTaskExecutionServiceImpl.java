@@ -3,11 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl.settlement;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.JobCalculationDto;
-import com.pemc.crss.dataflow.app.dto.SettlementTaskExecutionDto;
-import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
-import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
 import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -37,34 +33,12 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_LR;
-import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_STL;
-import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE;
-import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE_LR;
-import static com.pemc.crss.dataflow.app.support.StlJobStage.GENERATE_IWS;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.ADJUSTED;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.DAILY;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.FINAL;
-import static com.pemc.crss.shared.commons.reference.MeterProcessType.PRELIM;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_DUE_DATE;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_INVOICE_DATE;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_REMARKS_INV;
-import static com.pemc.crss.shared.commons.util.TaskUtil.AMS_REMARKS_MF;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.*;
+import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
+import static com.pemc.crss.shared.commons.util.TaskUtil.*;
 import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settlementJobLock;
 
 @Slf4j
@@ -149,6 +123,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         taskExecutionDto.setParentId(Long.parseLong(parentId));
         taskExecutionDto.setStlReadyGroupId(parseGroupId(stlReadyJob.getBillingPeriod(), stlReadyJob.getProcessType(), parentId));
         taskExecutionDto.setRunDateTime(DateUtil.convertToDate(stlReadyJob.getMaxJobExecStartTime()));
+        taskExecutionDto.setRegionGroup(stlReadyJob.getRegionGroup());
 
         // all queried stlReadyJob instance are filtered for 'COMPLETED' job runs
         taskExecutionDto.setStatus(convertStatus(BatchStatus.COMPLETED, "SETTLEMENT"));
@@ -430,14 +405,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     SortedSet<LocalDate> getRemainingDatesForCalculation(final List<JobCalculationDto> jobDtos,
-                                               final Date billPeriodStart,
-                                               final Date billPeriodEnd) {
+                                                         final Date billPeriodStart,
+                                                         final Date billPeriodEnd) {
 
         SortedSet<LocalDate> remainingCalcDates = createRange(billPeriodStart, billPeriodEnd);
 
         List<JobCalculationDto> filteredJobDtosAsc = jobDtos.stream().filter(jobDto ->
                 Arrays.asList(CALCULATE_STL, GENERATE_IWS).contains(jobDto.getJobStage())
-                && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
+                        && jobDto.getJobExecStatus() == BatchStatus.COMPLETED)
                 .sorted(Comparator.comparing(JobCalculationDto::getRunDate)).collect(Collectors.toList());
 
         for (JobCalculationDto jobDto : filteredJobDtosAsc) {
@@ -607,7 +582,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void determineIfJobsAreLocked(final SettlementTaskExecutionDto taskExecutionDto, final String billingPeriodStr) {
 
         LocalDateTime billPeriodStart = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate());
-        LocalDateTime billPeriodEnd =   DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate());
+        LocalDateTime billPeriodEnd = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate());
 
         final MeterProcessType processType = taskExecutionDto.getProcessType();
 
@@ -716,7 +691,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
-                                     final Date calcEndDate) {
+                             final Date calcEndDate) {
         SortedSet<LocalDate> datesToRemove = createRange(calcStartDate, calcEndDate);
 
         datesToRemove.forEach(date -> {
@@ -727,15 +702,15 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
-                                final Date calcEndDate) {
+                        final Date calcEndDate) {
 
-       SortedSet<LocalDate> datesToAdd = createRange(calcStartDate, calcEndDate);
+        SortedSet<LocalDate> datesToAdd = createRange(calcStartDate, calcEndDate);
 
-       datesToAdd.forEach(date -> {
-           if (!remainingDates.contains(date)) {
-               remainingDates.add(date);
-           }
-       });
+        datesToAdd.forEach(date -> {
+            if (!remainingDates.contains(date)) {
+                remainingDates.add(date);
+            }
+        });
     }
 
     /* findJobInstances methods end */
@@ -750,6 +725,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
         arguments.add(concatKeyValue(PROCESS_TYPE, processType));
+        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup(), "string"));
 
         return arguments;
     }

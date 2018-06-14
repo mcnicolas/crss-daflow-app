@@ -367,13 +367,13 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
 
     protected void saveBatchJobAdjRun(final BatchJobAdjRun batchJobAdjRun) {
         MapSqlParameterSource paramSource = new MapSqlParameterSource()
-                .addValue("addtlComp", batchJobAdjRun.isAdditionalCompensation())
+                .addValue("addtlComp", batchJobAdjRun.isAdditionalCompensation() ? "Y" : "N")
                 .addValue("jobId", batchJobAdjRun.getJobId())
                 .addValue("groupId", batchJobAdjRun.getGroupId())
-                .addValue("meterProcessType", batchJobAdjRun.getMeterProcessType())
+                .addValue("meterProcessType", batchJobAdjRun.getMeterProcessType().name())
                 .addValue("billingPeriodStart", DateUtil.convertToDate(batchJobAdjRun.getBillingPeriodStart()))
                 .addValue("billingPeriodEnd", DateUtil.convertToDate(batchJobAdjRun.getBillingPeriodEnd()))
-                .addValue("outputReady", batchJobAdjRun.isOutputReady());
+                .addValue("outputReady", batchJobAdjRun.isOutputReady() ? "Y" : "N");
 
         String insertSql = "insert into batch_job_adj_run(id, addtl_comp, job_id, group_id, meter_process_type, "
                 + " billing_period_start, billing_period_end, output_ready) values (nextval('hibernate_sequence'), "

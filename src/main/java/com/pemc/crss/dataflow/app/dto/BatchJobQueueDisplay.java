@@ -75,6 +75,8 @@ public class BatchJobQueueDisplay {
                     putIfPresent(paramMap, "End Date", jobProcessThatUseBaseDates.contains(jobProcess) ?
                             taskRunDto.getBaseEndDate() : taskRunDto.getEndDate());
                 }
+                putIfPresent(paramMap, "Pricing Condition", taskRunDto.getPricingCondition());
+
                 break;
             case METERING:
                 if (taskRunDto.getParentJob() != null) {

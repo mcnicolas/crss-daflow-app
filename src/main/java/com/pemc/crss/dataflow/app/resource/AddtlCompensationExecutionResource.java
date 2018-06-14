@@ -104,7 +104,7 @@ public class AddtlCompensationExecutionResource {
     public ResponseEntity generateFiles(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         taskRunDto.setRunId(System.currentTimeMillis());
-        taskRunDto.setJobName(SettlementJobName.CALC_STL);
+        taskRunDto.setJobName(AddtlCompJobName.AC_GEN_FILE);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
 
         log.info("Queueing generate files job for additional compensation. taskRunDto={}", taskRunDto);

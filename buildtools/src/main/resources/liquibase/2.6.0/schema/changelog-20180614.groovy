@@ -1,6 +1,7 @@
 databaseChangeLog {
 
     changeSet(id: '20180614-2', author: 'aviesca') {
+        sql('DROP VIEW IF EXISTS vw_stl_jobs;')
         sql('CREATE VIEW vw_stl_jobs AS\n' +
                 '  SELECT *,\n' +
                 '    CASE\n' +

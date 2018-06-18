@@ -492,7 +492,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         addtlCompParams.setGroupId(groupId);
         addtlCompParams.setStatus("STARTED");
 
-        addtlCompParamsRepository.save(addtlCompParams);
+        saveAddtlCompParamJdbc(addtlCompParams);
     }
 
     private boolean billingPeriodIsFinalized(String startDate, String endDate, MeterProcessType processType) {

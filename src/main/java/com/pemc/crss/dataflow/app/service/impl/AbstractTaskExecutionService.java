@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
@@ -378,6 +379,24 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         String insertSql = "insert into batch_job_adj_run(id, addtl_comp, job_id, group_id, meter_process_type, "
                 + " billing_period_start, billing_period_end, output_ready) values (nextval('hibernate_sequence'), "
                 + " :addtlComp, :jobId, :groupId, :meterProcessType, :billingPeriodStart, :billingPeriodEnd, :outputReady)";
+
+        dataflowJdbcTemplate.update(insertSql, paramSource);
+    }
+
+    protected void saveAddtlCompParamJdbc(AddtlCompParams addtlCompParams) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("billingStartDate", DateUtil.convertToDate(addtlCompParams.getBillingStartDate()))
+                .addValue("billingEndDate", DateUtil.convertToDate(addtlCompParams.getBillingEndDate()))
+                .addValue("pricingCondition", addtlCompParams.getPricingCondition())
+                .addValue("billingId", addtlCompParams.getBillingId())
+                .addValue("mtn", addtlCompParams.getMtn())
+                .addValue("approvedRate", addtlCompParams.getApprovedRate())
+                .addValue("groupId", addtlCompParams.getGroupId())
+                .addValue("status", addtlCompParams.getStatus());
+
+        String insertSql = "insert into addtl_comp_params(id, billing_start_date, billing_end_date, pricing_condition, "
+                + " billing_id, mtn, approved_rate, group_id, status) values (nextval('hibernate_sequence'), "
+                + " :billingStartDate, :billingEndDate, :pricingCondition, :billingId, :mtn, :approvedRate, :groupId, :status)";
 
         dataflowJdbcTemplate.update(insertSql, paramSource);
     }

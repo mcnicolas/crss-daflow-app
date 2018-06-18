@@ -61,22 +61,34 @@ public class BatchJobQueueDisplay {
 
         switch (jobQueue.getModule()) {
             case SETTLEMENT:
-                // file gen jobs use baseStartDate / baseEndDate
-                final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
-                        GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT,
-                        FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF);
-
-                putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
-                if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
-                    putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
+                if (jobQueue.getMeterProcessType() == MeterProcessType.AC) {
+                    paramMap.put("Process Type", MeterProcessType.AC.name());
+                    putIfPresent(paramMap, "Pricing Condition", taskRunDto.getPricingCondition());
+                    if (JobProcess.CALC_AC == jobProcess) {
+                        putIfPresent(paramMap, "Start Date", taskRunDto.getBillingStartDate());
+                        putIfPresent(paramMap, "End Date", taskRunDto.getBillingEndDate());
+                        putIfPresent(paramMap, "Billing ID", taskRunDto.getBillingId());
+                        putIfPresent(paramMap, "MTN", taskRunDto.getMtn());
+                    } else {
+                        putIfPresent(paramMap, "Start Date", taskRunDto.getStartDate());
+                        putIfPresent(paramMap, "End Date", taskRunDto.getEndDate());
+                    }
                 } else {
-                    putIfPresent(paramMap, "Start Date",  jobProcessThatUseBaseDates.contains(jobProcess) ?
-                            taskRunDto.getBaseStartDate() : taskRunDto.getStartDate());
-                    putIfPresent(paramMap, "End Date", jobProcessThatUseBaseDates.contains(jobProcess) ?
-                            taskRunDto.getBaseEndDate() : taskRunDto.getEndDate());
-                }
-                putIfPresent(paramMap, "Pricing Condition", taskRunDto.getPricingCondition());
+                    // file gen jobs use baseStartDate / baseEndDate
+                    final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
+                            GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT,
+                            FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF);
 
+                    putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
+                    if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
+                        putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());
+                    } else {
+                        putIfPresent(paramMap, "Start Date", jobProcessThatUseBaseDates.contains(jobProcess) ?
+                                taskRunDto.getBaseStartDate() : taskRunDto.getStartDate());
+                        putIfPresent(paramMap, "End Date", jobProcessThatUseBaseDates.contains(jobProcess) ?
+                                taskRunDto.getBaseEndDate() : taskRunDto.getEndDate());
+                    }
+                }
                 break;
             case METERING:
                 if (taskRunDto.getParentJob() != null) {

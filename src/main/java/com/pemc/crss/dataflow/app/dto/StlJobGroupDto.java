@@ -88,6 +88,8 @@ public class StlJobGroupDto {
 
     private boolean hasCompletedGenInputWs;
 
+    private String regionGroup;
+
     // helper methods / properties
 
     public String getRunStartDateTimeStr() {

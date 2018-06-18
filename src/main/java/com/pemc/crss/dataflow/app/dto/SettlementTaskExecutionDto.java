@@ -34,4 +34,6 @@ public class SettlementTaskExecutionDto extends StubTaskExecutionDto {
     private MeterProcessType processType;
 
     private String billPeriodStr;
+
+    private String regionGroup;
 }

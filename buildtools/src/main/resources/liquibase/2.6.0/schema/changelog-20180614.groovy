@@ -1,8 +1,8 @@
 databaseChangeLog {
 
     changeSet(id: '20180614-2', author: 'aviesca') {
-        sql('DROP VIEW IF EXISTS vw_stl_jobs;')
-        sql('CREATE VIEW vw_stl_jobs AS\n' +
+        sql('DROP VIEW IF EXISTS dataflow.vw_stl_jobs;')
+        sql('CREATE VIEW dataflow.vw_stl_jobs AS\n' +
                 '  SELECT *,\n' +
                 '    CASE\n' +
                 '    WHEN inner_q.process_type in (\'PRELIM\', \'DAILY\', \'FINAL\') THEN inner_q.billing_period\n' +

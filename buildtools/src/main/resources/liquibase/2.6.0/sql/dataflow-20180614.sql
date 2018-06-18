@@ -10,9 +10,9 @@
 -- Lock Database
 UPDATE dataflow.databasechangeloglock SET LOCKED = TRUE, LOCKEDBY = '172.18.0.1 (172.18.0.1)', LOCKGRANTED = '2018-06-18 07:52:04.052' WHERE ID = 1 AND LOCKED = FALSE;
 
-DROP VIEW IF EXISTS vw_stl_jobs;
+DROP VIEW IF EXISTS dataflow.vw_stl_jobs;
 
-CREATE VIEW vw_stl_jobs AS
+CREATE VIEW dataflow.vw_stl_jobs AS
                   SELECT *,
                     CASE
                     WHEN inner_q.process_type in ('PRELIM', 'DAILY', 'FINAL') THEN inner_q.billing_period

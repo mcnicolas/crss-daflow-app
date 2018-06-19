@@ -204,25 +204,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    /*public void launchGroupAddtlCompensation(AddtlCompensationRunListDto addtlCompensationRunDtos, Principal principal) throws URISyntaxException {
-        if (!CollectionUtils.isEmpty(addtlCompensationRunDtos.getAddtlCompensationRunDtos())) {
-
-            // only get the first instance since all of them have the same start / end / pc
-            AddtlCompensationRunDto addtlCompRunDto = addtlCompensationRunDtos.getAddtlCompensationRunDtos().get(0);
-            final String groupId = buildGroupId(addtlCompRunDto);
-
-            // validate all ac dtos first before running
-            validateAddtlCompDtos(addtlCompensationRunDtos.getAddtlCompensationRunDtos());
-
-            for (AddtlCompensationRunDto addtlCompensationRunDto : addtlCompensationRunDtos.getAddtlCompensationRunDtos()) {
-                addtlCompensationRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-                launchAddtlCompensation(null, groupId);
-            }
-
-            lockJob(AC_CALC);
-        }
-    }*/
-
     private String buildGroupId(TaskRunDto taskRunDto) throws URISyntaxException {
 
         String groupId = (taskRunDto.getBillingStartDate() + taskRunDto.getBillingEndDate() + taskRunDto.getPricingCondition()

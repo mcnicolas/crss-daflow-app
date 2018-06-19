@@ -47,15 +47,6 @@ public class AddtlCompensationExecutionResource {
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageableRequest), HttpStatus.OK);
     }
 
-    /*@Deprecated
-    @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity runJob(@RequestBody AddtlCompensationRunDto addtlCompensationRunDto, Principal principal) throws URISyntaxException {
-        log.debug("Running job request. addtlCompensationRunDto={}", addtlCompensationRunDto);
-        addtlCompensationRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-        ((AddtlCompensationExecutionServiceImpl)taskExecutionService).launchAddtlCompensation(addtlCompensationRunDto);
-        return new ResponseEntity(HttpStatus.OK);
-    }*/
-
     @RequestMapping(value = "/multi", method = RequestMethod.POST)
     public ResponseEntity runGroupJob(@RequestBody AddtlCompensationRunListDto addtlCompensationRunListDto, Principal principal) throws URISyntaxException {
         log.debug("Running job request. addtlCompensationRunDtos={}", addtlCompensationRunListDto);

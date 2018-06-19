@@ -225,6 +225,10 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             // for list by billing period
             arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
+
+            // for region_group
+            arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
+
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));

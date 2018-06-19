@@ -101,6 +101,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String MSP = "msp";
     protected static final String MTNS = "mtns";
     protected static final String SEINS = "seins";
+    protected static final String REGION_GROUP = "regionGroup";
 
     @Autowired
     protected BatchJobSkipLogRepository batchJobSkipLogRepository;

@@ -37,12 +37,12 @@ CREATE VIEW dataflow.vw_stl_jobs AS
                          THEN null
                          ELSE jep.string_val
                          END from dataflow.batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'bp' limit 1) AS billing_period,
-                      (select
+                      coalesce((select
                          CASE
                          WHEN jep.string_val = ''
                          THEN 'ALL'
                          ELSE jep.string_val
-                         END from dataflow.batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'regionGroup' limit 1) AS region_group
+                         END from dataflow.batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = 'regionGroup' limit 1),'ALL') AS region_group
                     FROM dataflow.batch_job_instance ji
                     INNER JOIN dataflow.batch_job_execution je ON ji.JOB_INSTANCE_ID = je.JOB_INSTANCE_ID
                     WHERE ji.job_name LIKE 'stlReady%' ) inner_q;

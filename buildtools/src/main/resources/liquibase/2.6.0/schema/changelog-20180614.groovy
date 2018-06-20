@@ -27,12 +27,12 @@ databaseChangeLog {
                 '         THEN null\n' +
                 '         ELSE jep.string_val\n' +
                 '         END from dataflow.batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = \'bp\' limit 1) AS billing_period,\n' +
-                '      (select\n' +
+                '      coalesce((select\n' +
                 '         CASE\n' +
                 '         WHEN jep.string_val = \'\'\n' +
                 '         THEN \'ALL\'\n' +
                 '         ELSE jep.string_val\n' +
-                '         END from dataflow.batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = \'regionGroup\' limit 1) AS region_group\n' +
+                '         END from dataflow.batch_job_execution_params jep where jep.job_execution_id = je.job_execution_id and jep.key_name = \'regionGroup\' limit 1),\'ALL\') AS region_group\n' +
                 '    FROM dataflow.batch_job_instance ji\n' +
                 '    INNER JOIN dataflow.batch_job_execution je ON ji.JOB_INSTANCE_ID = je.JOB_INSTANCE_ID\n' +
                 '    WHERE ji.job_name LIKE \'stlReady%\' ) inner_q;')

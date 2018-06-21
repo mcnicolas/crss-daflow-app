@@ -14,4 +14,5 @@ databaseChangeLog {
     // sow13 - 2.6.0
     include(file: '2.6.0/schema/changelog-20180614.groovy', relativeToChangelogFile: 'true')
     include(file: '2.6.0/schema/changelog-1528936790096.groovy', relativeToChangelogFile: 'true')
+    include(file: '2.6.0/schema/changelog-1529561667951.groovy', relativeToChangelogFile: 'true')
 }

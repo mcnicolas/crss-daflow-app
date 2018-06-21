@@ -89,6 +89,7 @@ public class BatchJobQueueDisplay {
                                 taskRunDto.getBaseEndDate() : taskRunDto.getEndDate());
                     }
                 }
+                putIfPresent(paramMap,"Region", taskRunDto.getRegionGroup());
                 break;
             case METERING:
                 if (taskRunDto.getParentJob() != null) {
@@ -121,7 +122,7 @@ public class BatchJobQueueDisplay {
                 } else {
                     putIfPresent(paramMap, "MTN", taskRunDto.getMtns());
                 }
-
+                putIfPresent(paramMap,"Region", taskRunDto.getRegionGroup());
                 break;
             default:
                 // do nothing

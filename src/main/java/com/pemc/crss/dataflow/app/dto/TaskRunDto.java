@@ -91,7 +91,8 @@ public class TaskRunDto {
                 Objects.equals(approvedRate, that.approvedRate) &&
                 Objects.equals(billingStartDate, that.billingEndDate) &&
                 Objects.equals(pricingCondition, that.pricingCondition) &&
-                Objects.equals(jobId, that.jobId);
+                Objects.equals(jobId, that.jobId) &&
+                Objects.equals(regionGroup, that.regionGroup);
 
     }
 }

@@ -67,6 +67,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             String parentIdStr = stlReadyJob.getParentId();
 
             final Long parentId = Long.valueOf(parentIdStr);
+            final String regionGroup = stlReadyJob.getRegionGroup();
 
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentIdStr);
             String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();
@@ -83,56 +84,56 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             final MeterProcessType processType = taskExecutionDto.getProcessType();
 
             /* GENERATE INPUT WORKSPACE START */
-            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    GEN_EBRSV_INPUT_WS, processType, parentId);
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    GEN_EBRSV_INPUT_WS, processType, parentId, regionGroup);
 
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* SETTLEMENT CALCULATION START */
-            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    CALC_STL, processType, parentId);
+            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    CALC_STL, processType, parentId, regionGroup);
 
             initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* CALCULATE LINE RENTAL START*/
-            List<JobInstance> calcLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(CALC_LR,
-                    processType, parentId);
+            List<JobInstance> calcLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(CALC_LR,
+                    processType, parentId, regionGroup);
 
             initializeCalculateLr(calcLineRentalJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* CALCULATE GMR START */
-            List<JobInstance> calculateGmrJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    CALC_GMR, processType, parentId);
+            List<JobInstance> calculateGmrJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    CALC_GMR, processType, parentId, regionGroup);
 
             initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
-            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    TAG_TA, processType, parentId);
+            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    TAG_TA, processType, parentId, regionGroup);
 
             initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE LR START */
-            List<JobInstance> taggingLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    TAG_LR, processType, parentId);
+            List<JobInstance> taggingLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    TAG_LR, processType, parentId, regionGroup);
 
             initializeTaggingLineRental(taggingLineRentalJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES ENERGY TA START */
-            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    FILE_TA, processType, parentId);
+            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_TA, processType, parentId, regionGroup);
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES RESERVE TA START */
-            List<JobInstance> genFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    FILE_RSV_TA, processType, parentId);
+            List<JobInstance> genFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_RSV_TA, processType, parentId, regionGroup);
 
             initializeFileGenReserveTa(genFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES LINE RENTAL START */
-            List<JobInstance> genFileLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    FILE_LR, processType, parentId);
+            List<JobInstance> genFileLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_LR, processType, parentId, regionGroup);
 
             initializeFileGenLineRental(genFileLineRentalJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 

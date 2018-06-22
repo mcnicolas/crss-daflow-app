@@ -85,21 +85,26 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 mode, tradingStartDate, tradingEndDate, username}, getJobInstanceExtractor(start, count));
     }
 
-    public List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentId(final String jobNamePrefix,
-                                                                             final List<String> processTypes, final String parentId) {
+    public List<JobInstance> findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(final String jobNamePrefix,
+                                                                                           final List<String> processTypes,
+                                                                                           final String parentId,
+                                                                                           final String regionGroup) {
 
         MapSqlParameterSource querySqlSource = new MapSqlParameterSource()
                 .addValue("jobPrefix", jobNamePrefix + WILD_CARD)
                 .addValue("processTypes", processTypes)
-                .addValue("parentId", Long.valueOf(parentId));
+                .addValue("parentId", Long.valueOf(parentId))
+                .addValue("regionGroup", regionGroup);
 
         String searchSql = "SELECT JI.JOB_INSTANCE_ID, JI.JOB_NAME from BATCH_JOB_INSTANCE JI "
                 + " JOIN BATCH_JOB_EXECUTION JE on JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
                 + " JOIN BATCH_JOB_EXECUTION_PARAMS PTYPE on JE.JOB_EXECUTION_ID = PTYPE.JOB_EXECUTION_ID "
                 + " JOIN BATCH_JOB_EXECUTION_PARAMS PID on JE.JOB_EXECUTION_ID = PID.JOB_EXECUTION_ID "
+                + " JOIN BATCH_JOB_EXECUTION_PARAMS REGION_GROUP on JE.JOB_EXECUTION_ID = REGION_GROUP.JOB_EXECUTION_ID "
                 + " WHERE JI.JOB_NAME like :jobPrefix "
                 + " AND (PID.LONG_VAL = :parentId and PID.KEY_NAME = 'parentJob') "
                 + " AND (PTYPE.STRING_VAL in (:processTypes) and PTYPE.KEY_NAME = 'processType') "
+                + " AND (REGION_GROUP.STRING_VAL = :regionGroup and REGION_GROUP.KEY_NAME = 'regionGroup') "
                 + " ORDER BY JI.JOB_INSTANCE_ID DESC";
 
         return getNamedParameterJdbcTemplate().query(searchSql, querySqlSource, new JobInstanceRowMapper());

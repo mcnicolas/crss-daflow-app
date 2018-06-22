@@ -51,6 +51,7 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             String parentIdStr = stlReadyJob.getParentId();
 
             final Long parentId = Long.valueOf(parentIdStr);
+            final String regionGroup = stlReadyJob.getRegionGroup();
 
             SettlementTaskExecutionDto taskExecutionDto = initializeTaskExecutionDto(stlReadyJob, parentIdStr);
             String stlReadyGroupId = taskExecutionDto.getStlReadyGroupId();
@@ -67,26 +68,26 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
             stlJobGroupDtoMap.put(stlReadyGroupId, initialJobGroupDto);
 
             /* GENERATE INPUT WORKSPACE START */
-            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    GEN_RMF_INPUT_WS, processType, parentId);
+            List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    GEN_RMF_INPUT_WS, processType, parentId, regionGroup);
 
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* SETTLEMENT CALCULATION START */
-            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    CALC_RMF, processType, parentId);
+            List<JobInstance> calculationJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    CALC_RMF, processType, parentId, regionGroup);
 
             initializeStlCalculation(calculationJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
-            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    TAG_RMF, processType, parentId);
+            List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    TAG_RMF, processType, parentId, regionGroup);
 
             initializeTagging(taggingJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES START */
-            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentId(
-                    FILE_RMF, processType, parentId);
+            List<JobInstance> genFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_RMF, processType, parentId, regionGroup);
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 

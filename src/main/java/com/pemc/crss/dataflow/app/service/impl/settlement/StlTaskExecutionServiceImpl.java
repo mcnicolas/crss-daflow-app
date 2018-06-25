@@ -732,9 +732,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return arguments;
     }
 
-    void validateFinalized(final String groupId, final MeterProcessType processType, final StlCalculationType calcType) {
-        LocalDateTime finalizedDate = settlementJobLockRepository.getLockDateByCalculationTypeGroupIdAndProcessType(
-                groupId, calcType, processType);
+    void validateFinalized(final String groupId, final MeterProcessType processType, final StlCalculationType calcType,
+                           final String regionGroup) {
+        LocalDateTime finalizedDate = settlementJobLockRepository.getLockDateByCalculationTypeGroupIdAndProcessTypeAndRegionGroup(
+                groupId, calcType, processType, regionGroup);
 
         if (finalizedDate != null) {
             throw new RuntimeException("Launch job failed. Job was already FINALIZED on " + DateTimeUtil.formatDateTime(finalizedDate));
@@ -748,7 +749,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 
-        validateFinalized(groupId, processType, getStlCalculationType());
+        validateFinalized(groupId, processType, getStlCalculationType(), taskRunDto.getRegionGroup());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
@@ -822,7 +823,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 
-        validateFinalized(groupId, processType, getStlCalculationType());
+        validateFinalized(groupId, processType, getStlCalculationType(), taskRunDto.getRegionGroup());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
@@ -870,7 +871,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 
-        validateFinalized(groupId, processType, getStlCalculationType());
+        validateFinalized(groupId, processType, getStlCalculationType(), taskRunDto.getRegionGroup());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));

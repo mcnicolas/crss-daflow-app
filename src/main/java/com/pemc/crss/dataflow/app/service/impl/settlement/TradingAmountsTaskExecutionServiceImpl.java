@@ -176,8 +176,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                     MeterProcessType lrMeterProcessType = stlJobGroupDto.isHeader() ? processType : MeterProcessType.ADJUSTED;
 
                     LocalDateTime finalizedLrDate = settlementJobLockRepository
-                            .getLockDateByCalculationTypeGroupIdAndProcessType(stlJobGroupDto.getGroupId(),
-                                    StlCalculationType.LINE_RENTAL, lrMeterProcessType);
+                            .getLockDateByCalculationTypeGroupIdAndProcessTypeAndRegionGroup(stlJobGroupDto.getGroupId(),
+                                    StlCalculationType.LINE_RENTAL, lrMeterProcessType, regionGroup);
 
                     stlJobGroupDto.setLockedLr(finalizedLrDate != null);
 
@@ -607,7 +607,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 
-        validateFinalized(groupId, processType, StlCalculationType.LINE_RENTAL);
+        validateFinalized(groupId, processType, StlCalculationType.LINE_RENTAL, taskRunDto.getRegionGroup());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
 
@@ -663,7 +663,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 
-        validateFinalized(groupId, processType, StlCalculationType.LINE_RENTAL);
+        validateFinalized(groupId, processType, StlCalculationType.LINE_RENTAL, taskRunDto.getRegionGroup());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
@@ -740,7 +740,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 
-        validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS);
+        validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS, taskRunDto.getRegionGroup());
 
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));

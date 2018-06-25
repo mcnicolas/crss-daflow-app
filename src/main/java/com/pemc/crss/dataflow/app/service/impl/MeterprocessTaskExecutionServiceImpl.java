@@ -154,6 +154,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 // prevent running if selected mtn is already run within date range or the like
                 existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, taskRunDto.getTradingDate(), null, null);
                 checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
+
+                //Region group
+                if (StringUtils.isNotBlank(taskRunDto.getRegionGroup())) {
+                    checkFinalizeDailyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getTradingDate());
+                }
+
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ)));
             } else {
@@ -172,6 +178,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 // prevent running if selected mtn is already run within date range or the like
                 existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(processType, null, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
+
+                //Region group
+                if (StringUtils.isNotBlank(taskRunDto.getRegionGroup())) {
+                    checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                }
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
@@ -360,6 +371,16 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private void checkFinalizeDailyState(String date) {
         String errMsq = "You already have a process finalized on the same date: " + date + " !";
         Preconditions.checkState(executionParamRepository.countDailyRunAllMtn(date, RUN_STL_READY_JOB_NAME) < 1, errMsq);
+    }
+
+    private void checkFinalizeDailyStateRegionGroup(String regionGroup, String date) {
+        String errMsq = "You already have a settlement-ready process finalized on the same date (" + date + ") and region group (" + regionGroup + ")!";
+        Preconditions.checkState(executionParamRepository.countDailyRunRegionGroup(date, regionGroup, RUN_STL_READY_JOB_NAME) < 1, errMsq);
+    }
+
+    private void checkFinalizeMonthlyStateRegionGroup(String regionGroup, String process, String startDate, String endDate) {
+        String errMsq = "You already have a settlement-ready process finalized on the same billing periond (" + startDate + " - " + endDate + ") and region group (" + regionGroup + ") of processType: " + process + "!";
+        Preconditions.checkState(executionParamRepository.countMonthlyRunRegionGroup(startDate, endDate, regionGroup, process, RUN_STL_READY_JOB_NAME) < 1, errMsq);
     }
 
     private void checkFinalizeProcessTypeState(String process, String startDate, String endDate) {

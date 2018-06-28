@@ -155,6 +155,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
             arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
             arguments.add(concatKeyValue(MSP, StringUtils.isNotEmpty(taskRunDto.getMsp()) ? taskRunDto.getMsp() : StringUtils.EMPTY));
             jobName = "crss-meterprocess-task-mtr";
+            arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
 
             if (StringUtils.isNotEmpty(taskRunDto.getSeins())) {
                 BatchJobAddtlParams mtrSeins = new BatchJobAddtlParams();

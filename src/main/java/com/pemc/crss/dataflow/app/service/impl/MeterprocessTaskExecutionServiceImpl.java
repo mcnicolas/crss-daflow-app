@@ -187,6 +187,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
+                arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
 
                 BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
                 paramsBillingPeriodId.setRunId(runId);

@@ -709,7 +709,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
         arguments.add(concatKeyValue(PROCESS_TYPE, processType));
-        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
+        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup(), "string"));
 
         return arguments;
     }

@@ -27,6 +27,7 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.net.URISyntaxException;
@@ -62,6 +63,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     @Autowired
     ViewSettlementJobRepository viewSettlementJobRepository;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
 
     // Abstract Methods
 
@@ -727,8 +731,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
         arguments.add(concatKeyValue(PROCESS_TYPE, processType));
-        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup(), "string"));
-
+        // arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup(), "string"));
+        redisTemplate.opsForValue().set(String.format("%d-%s", runId, "REGION_GROUP"), taskRunDto.getRegionGroup());
         return arguments;
     }
 

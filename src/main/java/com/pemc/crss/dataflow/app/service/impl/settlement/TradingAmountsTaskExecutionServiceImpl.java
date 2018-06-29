@@ -425,7 +425,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                                                                     final Date billPeriodStart,
                                                                     final Date billPeriodEnd) {
 
-        SortedSet<LocalDate> remainingCalcLrDates = createRange(billPeriodStart, billPeriodEnd);
+        SortedSet<LocalDate> remainingCalcLrDates = DateUtil.createRange(billPeriodStart, billPeriodEnd);
 
         List<JobCalculationDto> filteredJobDtosAsc = jobDtos.stream().filter(jobDto ->
                 Arrays.asList(CALCULATE_LR, GENERATE_IWS).contains(jobDto.getJobStage())

@@ -7,6 +7,7 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
@@ -30,6 +31,7 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
+import java.util.SortedSet;
 
 @Slf4j
 @RestController
@@ -64,16 +66,24 @@ public class TradingAmountsTaskExecutionResource {
             }
         }
 
-        taskRunDto.setRunId(System.currentTimeMillis());
-        taskRunDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
-        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-
         validateAdjustedRun(taskRunDto);
 
-        log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", taskRunDto);
+        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
 
-        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, taskRunDto);
-        queueService.save(jobQueue);
+        dateRangeStr.forEach(dateStr -> {
+            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
+            runDto.setStartDate(dateStr);
+            runDto.setEndDate(dateStr);
+            runDto.setRunId(System.currentTimeMillis());
+            runDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
+            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+            log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", taskRunDto);
+
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, taskRunDto);
+            queueService.save(jobQueue);
+
+        });
 
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -81,16 +91,23 @@ public class TradingAmountsTaskExecutionResource {
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
-        taskRunDto.setRunId(System.currentTimeMillis());
-        taskRunDto.setJobName(SettlementJobName.CALC_STL);
-        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-
         validateAdjustedRun(taskRunDto);
 
-        log.info("Queueing calculateJob for trading amounts. taskRunDto={}", taskRunDto);
+        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
 
-        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, taskRunDto);
-        queueService.save(jobQueue);
+        dateRangeStr.forEach(dateStr -> {
+            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
+            runDto.setStartDate(dateStr);
+            runDto.setEndDate(dateStr);
+            runDto.setRunId(System.currentTimeMillis());
+            runDto.setJobName(SettlementJobName.CALC_STL);
+            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+            log.info("Queueing calculateJob for trading amounts. taskRunDto={}", taskRunDto);
+
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, taskRunDto);
+            queueService.save(jobQueue);
+        });
 
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -98,16 +115,23 @@ public class TradingAmountsTaskExecutionResource {
     @PostMapping("/calculate-lr")
     public ResponseEntity runCalculateLineRentalJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
-        taskRunDto.setRunId(System.currentTimeMillis());
-        taskRunDto.setJobName(SettlementJobName.CALC_LR);
-        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-
         validateAdjustedRun(taskRunDto);
 
-        log.info("Queueing calculateJob for line rental. taskRunDto={}", taskRunDto);
+        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
 
-        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_LR, taskRunDto);
-        queueService.save(jobQueue);
+        dateRangeStr.forEach(dateStr -> {
+            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
+            runDto.setStartDate(dateStr);
+            runDto.setEndDate(dateStr);
+            runDto.setRunId(System.currentTimeMillis());
+            runDto.setJobName(SettlementJobName.CALC_LR);
+            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+            log.info("Queueing calculateJob for line rental. taskRunDto={}", taskRunDto);
+
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_LR, taskRunDto);
+            queueService.save(jobQueue);
+        });
 
         return new ResponseEntity(HttpStatus.OK);
     }

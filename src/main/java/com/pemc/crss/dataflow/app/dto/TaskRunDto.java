@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import lombok.Data;
+import org.springframework.beans.BeanUtils;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -94,5 +95,22 @@ public class TaskRunDto {
                 Objects.equals(jobId, that.jobId) &&
                 Objects.equals(regionGroup, that.regionGroup);
 
+    }
+
+    public static TaskRunDto clone(TaskRunDto other) {
+        if (other == null) {
+            return null;
+        }
+
+        TaskRunDto clone = null;
+
+        try {
+            clone = new TaskRunDto();
+            BeanUtils.copyProperties(other, clone);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return clone;
     }
 }

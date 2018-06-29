@@ -410,7 +410,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                                          final Date billPeriodStart,
                                                          final Date billPeriodEnd) {
 
-        SortedSet<LocalDate> remainingCalcDates = createRange(billPeriodStart, billPeriodEnd);
+        SortedSet<LocalDate> remainingCalcDates = DateUtil.createRange(billPeriodStart, billPeriodEnd);
 
         List<JobCalculationDto> filteredJobDtosAsc = jobDtos.stream().filter(jobDto ->
                 Arrays.asList(CALCULATE_STL, GENERATE_IWS).contains(jobDto.getJobStage())
@@ -437,7 +437,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                                         final Date billPeriodStart,
                                                         final Date billPeriodEnd) {
 
-        SortedSet<LocalDate> remainingGenInputWsDates = createRange(billPeriodStart, billPeriodEnd);
+        SortedSet<LocalDate> remainingGenInputWsDates = DateUtil.createRange(billPeriodStart, billPeriodEnd);
 
         List<JobCalculationDto> filteredGenInputWsDtosAsc = jobDtos.stream()
                 .filter(jobDto ->
@@ -495,14 +495,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         Map<LocalDate, LocalDateTime> stlReadyDateMap = new HashMap<>();
 
-        createRange(billPeriodStart, billPeriodEnd).forEach(tradingDate -> stlReadyDateMap.put(tradingDate, LocalDateTime.MIN));
+        DateUtil.createRange(billPeriodStart, billPeriodEnd).forEach(tradingDate -> stlReadyDateMap.put(tradingDate, LocalDateTime.MIN));
 
         // create map of updated trading dates from stlReady per day
         stlReadyJobs.forEach(stlReadyJob -> {
             Date stlReadyStartDate = DateUtil.convertToDate(stlReadyJob.getStartDate());
             Date stlReadyEndDate = DateUtil.convertToDate(stlReadyJob.getEndDate());
 
-            SortedSet<LocalDate> stlReadyDates = createRange(stlReadyStartDate, stlReadyEndDate);
+            SortedSet<LocalDate> stlReadyDates = DateUtil.createRange(stlReadyStartDate, stlReadyEndDate);
 
             stlReadyDates.forEach(stlReadyDate -> {
                 if (stlReadyDateMap.containsKey(stlReadyDate) && stlReadyJob.getJobExecStartTime()
@@ -524,7 +524,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         Map<LocalDate, LocalDateTime> genInputWsDateMap = new HashMap<>();
 
         // create map of updated trading dates from gen input workspace per day
-        filteredGenInputWsDtosAsc.forEach(genInputWsDto -> createRange(genInputWsDto.getStartDate(), genInputWsDto.getEndDate())
+        filteredGenInputWsDtosAsc.forEach(genInputWsDto -> DateUtil.createRange(genInputWsDto.getStartDate(), genInputWsDto.getEndDate())
                 .forEach(genInputWsDate -> genInputWsDateMap.put(genInputWsDate,
                         DateUtil.convertToLocalDateTime(genInputWsDto.getRunDate()))));
 
@@ -540,24 +540,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         });
 
         return outdatedTradingDates;
-    }
-
-    SortedSet<LocalDate> createRange(final Date start, final Date end) {
-        if (start == null || end == null) {
-            return new TreeSet<>();
-        }
-
-        SortedSet<LocalDate> localDates = new TreeSet<>();
-
-        LocalDate currentDate = DateUtil.convertToLocalDate(start);
-        LocalDate endDate = DateUtil.convertToLocalDate(end);
-
-        while (!currentDate.isAfter(endDate)) {
-            localDates.add(currentDate);
-            currentDate = currentDate.plusDays(1);
-        }
-
-        return localDates;
     }
 
     void updateProgress(JobExecution jobExecution, StlJobGroupDto dto) {
@@ -694,7 +676,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     void removeDateRangeFrom(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
                              final Date calcEndDate) {
-        SortedSet<LocalDate> datesToRemove = createRange(calcStartDate, calcEndDate);
+        SortedSet<LocalDate> datesToRemove = DateUtil.createRange(calcStartDate, calcEndDate);
 
         datesToRemove.forEach(date -> {
             if (remainingDates.contains(date)) {
@@ -706,7 +688,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void addDateRangeTo(final SortedSet<LocalDate> remainingDates, final Date calcStartDate,
                         final Date calcEndDate) {
 
-        SortedSet<LocalDate> datesToAdd = createRange(calcStartDate, calcEndDate);
+        SortedSet<LocalDate> datesToAdd = DateUtil.createRange(calcStartDate, calcEndDate);
 
         datesToAdd.forEach(date -> {
             if (!remainingDates.contains(date)) {

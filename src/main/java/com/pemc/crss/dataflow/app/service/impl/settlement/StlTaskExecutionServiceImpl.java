@@ -44,9 +44,9 @@ import static com.pemc.crss.shared.core.dataflow.entity.QSettlementJobLock.settl
 @Slf4j
 public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
-    static final String SPRING_BATCH_MODULE_STL_CALC = "stl-calc";
+    static final String SPRING_BATCH_MODULE_STL_CALC = "crss-settlement-task-calculation";
 
-    static final String SPRING_BATCH_MODULE_FILE_GEN = "stl-file";
+    static final String SPRING_BATCH_MODULE_FILE_GEN = "crss-settlement-task-invoice-generation";
 
     static final String PARTIAL = "PARTIAL-";
     static final String FULL = "FULL-";

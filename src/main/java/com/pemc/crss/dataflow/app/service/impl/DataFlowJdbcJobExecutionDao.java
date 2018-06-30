@@ -98,10 +98,12 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
 
         String searchSql = "SELECT JI.JOB_INSTANCE_ID, JI.JOB_NAME from BATCH_JOB_INSTANCE JI "
                 + " JOIN BATCH_JOB_EXECUTION JE on JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
+                + " JOIN BATCH_JOB_EXECUTION_PARAMS RUN_ID on JE.JOB_EXECUTION_ID = RUN_ID.JOB_EXECUTION_ID "
                 + " JOIN BATCH_JOB_EXECUTION_PARAMS PTYPE on JE.JOB_EXECUTION_ID = PTYPE.JOB_EXECUTION_ID "
                 + " JOIN BATCH_JOB_EXECUTION_PARAMS PID on JE.JOB_EXECUTION_ID = PID.JOB_EXECUTION_ID "
-                + " JOIN BATCH_JOB_EXECUTION_PARAMS REGION_GROUP on JE.JOB_EXECUTION_ID = REGION_GROUP.JOB_EXECUTION_ID "
+                + " JOIN BATCH_JOB_ADDTL_PARAMS REGION_GROUP on RUN_ID.LONG_VAL = REGION_GROUP.RUN_ID "
                 + " WHERE JI.JOB_NAME like :jobPrefix "
+                + " AND (RUN_ID.KEY_NAME = 'run.id')"
                 + " AND (PID.LONG_VAL = :parentId and PID.KEY_NAME = 'parentJob') "
                 + " AND (PTYPE.STRING_VAL in (:processTypes) and PTYPE.KEY_NAME = 'processType') "
                 + " AND (REGION_GROUP.STRING_VAL = :regionGroup and REGION_GROUP.KEY_NAME = 'regionGroup') "
@@ -212,7 +214,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 + " WHERE jp.key_name = :keyName AND jp.long_val = :runId "
                 + " ORDER BY je.start_time desc";
 
-        List<JobExecutionDto> jobExecutionDtos =  getNamedParameterJdbcTemplate().query(sql, paramSource,
+        List<JobExecutionDto> jobExecutionDtos = getNamedParameterJdbcTemplate().query(sql, paramSource,
                 new BeanPropertyRowMapper<>(JobExecutionDto.class));
 
         if (!jobExecutionDtos.isEmpty()) {

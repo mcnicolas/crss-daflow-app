@@ -1,5 +1,5 @@
 {
-    "id": "/crss/dataflow-app",
+    "id": "/dataflow-app",
     "backoffFactor": 1.15,
     "backoffSeconds": 1,
     "container": {

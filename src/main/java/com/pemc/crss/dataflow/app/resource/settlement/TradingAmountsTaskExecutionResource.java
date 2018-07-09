@@ -115,23 +115,16 @@ public class TradingAmountsTaskExecutionResource {
     @PostMapping("/calculate-lr")
     public ResponseEntity runCalculateLineRentalJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.CALC_LR);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
         validateAdjustedRun(taskRunDto);
 
-        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
+        log.info("Queueing calculateJob for line rental. taskRunDto={}", taskRunDto);
 
-        dateRangeStr.forEach(dateStr -> {
-            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
-            runDto.setStartDate(dateStr);
-            runDto.setEndDate(dateStr);
-            runDto.setRunId(System.currentTimeMillis());
-            runDto.setJobName(SettlementJobName.CALC_LR);
-            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-
-            log.info("Queueing calculateJob for line rental. taskRunDto={}", taskRunDto);
-
-            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_LR, taskRunDto);
-            queueService.save(jobQueue);
-        });
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_LR, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }

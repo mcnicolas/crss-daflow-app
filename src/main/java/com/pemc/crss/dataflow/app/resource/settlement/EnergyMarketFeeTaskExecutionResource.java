@@ -7,7 +7,6 @@ import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
@@ -29,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
-import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -65,23 +63,16 @@ public class EnergyMarketFeeTaskExecutionResource {
             }
         }
 
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
         validateAdjustedRun(taskRunDto);
 
-        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
+        log.info("Queueing runGenInputWorkSpaceJob for emf. taskRunDto={}", taskRunDto);
 
-        dateRangeStr.forEach(dateStr -> {
-            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
-            runDto.setStartDate(dateStr);
-            runDto.setEndDate(dateStr);
-            runDto.setRunId(System.currentTimeMillis());
-            runDto.setJobName(SettlementJobName.GEN_EMF_INPUT_WS);
-            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-
-            log.info("Queueing runGenInputWorkSpaceJob for emf. taskRunDto={}", taskRunDto);
-
-            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_EMF, taskRunDto);
-            queueService.save(jobQueue);
-        });
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_EMF, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -89,23 +80,16 @@ public class EnergyMarketFeeTaskExecutionResource {
     @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.CALC_EMF);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
         validateAdjustedRun(taskRunDto);
 
-        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
+        log.info("Queueing calculateJob for emf. taskRunDto={}", taskRunDto);
 
-        dateRangeStr.forEach(dateStr -> {
-            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
-            runDto.setStartDate(dateStr);
-            runDto.setEndDate(dateStr);
-            runDto.setRunId(System.currentTimeMillis());
-            runDto.setJobName(SettlementJobName.CALC_EMF);
-            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
-
-            log.info("Queueing calculateJob for emf. taskRunDto={}", taskRunDto);
-
-            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_EMF, taskRunDto);
-            queueService.save(jobQueue);
-        });
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_EMF, taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }

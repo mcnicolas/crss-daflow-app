@@ -64,6 +64,9 @@ public class TradingAmountsTaskExecutionResource {
                             + " with the same billing period is already queued");
                 }
             }
+
+            // set groupId at the start instead of setting it during execution.
+            taskRunDto.setGroupId(Long.valueOf(System.currentTimeMillis()).toString());
         }
 
         validateAdjustedRun(taskRunDto);

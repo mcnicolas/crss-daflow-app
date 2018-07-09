@@ -730,7 +730,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
-        final String groupId = taskRunDto.isNewGroup() ? runId.toString() : taskRunDto.getGroupId();
+
+        // isNewGroup && StlCalculationType.TRADING_AMOUNTS groupId is already set during creation of job queue
+        final String groupId = taskRunDto.isNewGroup() && Arrays.asList(StlCalculationType.ENERGY_MARKET_FEE,
+                StlCalculationType.RESERVE_MARKET_FEE).contains(getStlCalculationType())
+                ? runId.toString() : taskRunDto.getGroupId();
+
         final String type = taskRunDto.getMeterProcessType();
         MeterProcessType processType = MeterProcessType.valueOf(type);
 

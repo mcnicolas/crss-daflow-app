@@ -567,24 +567,21 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
         LocalDateTime billPeriodStart = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodStartDate());
         LocalDateTime billPeriodEnd = DateUtil.convertToLocalDateTime(taskExecutionDto.getBillPeriodEndDate());
+        String regionGroup = taskExecutionDto.getRegionGroup();
 
         final MeterProcessType processType = taskExecutionDto.getProcessType();
 
         if (processType == PRELIM) {
             boolean prelimIsLocked = settlementJobLockRepository.billingPeriodIsFinalized(billPeriodStart, billPeriodEnd,
-                    PRELIM.name(), getStlCalculationType().name());
+                    PRELIM.name(), getStlCalculationType().name(), regionGroup);
 
             taskExecutionDto.getParentStlJobGroupDto().setLocked(prelimIsLocked);
 
         } else {
 
             List<SettlementJobLock> stlJobLocks = settlementJobLockRepository
-                    .findByStartDateAndEndDateAndStlCalculationTypeAndProcessTypeIn(billPeriodStart, billPeriodEnd,
-                            getStlCalculationType(), Arrays.asList(FINAL, ADJUSTED));
-
-            ViewSettlementJob latestStlJobFromMetering = viewSettlementJobRepository
-                    .findFirstByProcessTypeInAndAndBillingPeriodAndStatusOrderByJobExecStartTimeDesc(Arrays.asList(ADJUSTED, FINAL),
-                            taskExecutionDto.getBillPeriodStr(), BatchStatus.COMPLETED);
+                    .findByStartDateAndEndDateAndStlCalculationTypeAndRegionGroupAndProcessTypeIn(billPeriodStart, billPeriodEnd,
+                            getStlCalculationType(), regionGroup, Arrays.asList(FINAL, ADJUSTED));
 
             for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
 

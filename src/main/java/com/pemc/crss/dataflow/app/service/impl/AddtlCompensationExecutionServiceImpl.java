@@ -480,7 +480,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         LocalDateTime startDateTime = DateUtil.parseLocalDate(startDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
         LocalDateTime endDateTime = DateUtil.parseLocalDate(endDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
 
-        return settlementJobLockRepository.billingPeriodIsFinalized(startDateTime, endDateTime, processType.name(),
+        return settlementJobLockRepository.billingPeriodIsFinalizedForAc(startDateTime, endDateTime, processType.name(),
                 StlCalculationType.TRADING_AMOUNTS.name());
     }
 

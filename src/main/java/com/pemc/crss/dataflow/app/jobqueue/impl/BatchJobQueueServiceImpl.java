@@ -96,6 +96,23 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     }
 
     @Override
+    public void validateGenIwsAndCalcQueuedJobs(TaskRunDto taskRunDtoToQueue, JobProcess jobProcess) {
+        List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(jobProcess);
+
+        boolean sameJobInProgress = inProgressJobs.stream()
+                .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))
+                .anyMatch(taskRunDto ->
+                    Objects.equals(taskRunDto.getStartDate(), taskRunDtoToQueue.getStartDate()) &&
+                    Objects.equals(taskRunDto.getEndDate(), taskRunDtoToQueue.getEndDate()) &&
+                    Objects.equals(taskRunDto.getMeterProcessType(), taskRunDtoToQueue.getMeterProcessType()));
+
+        if (sameJobInProgress) {
+            throw new RuntimeException(String.format("Cannot queue job. A %s %s job with the same trading date "
+                    + "is already queued.", taskRunDtoToQueue.getMeterProcessType(), jobProcess));
+        }
+    }
+
+    @Override
     public void setMtnParam(final BatchJobQueueDisplay queueDisplay) {
         Long parentJobId = queueDisplay.getMeteringParentId();
 

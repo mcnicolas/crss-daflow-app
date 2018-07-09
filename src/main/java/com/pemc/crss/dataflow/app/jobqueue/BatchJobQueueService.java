@@ -30,6 +30,8 @@ public interface BatchJobQueueService {
 
     void validateAdjustedProcess(final TaskRunDto taskRunDtoToQueue, final JobProcess finalizeJobProcess);
 
+    void validateGenIwsAndCalcQueuedJobs(final TaskRunDto taskRunDtoToQueue, final JobProcess jobProcess);
+
     void setMtnParam(final BatchJobQueueDisplay queueDisplay);
 
     static BatchJobQueue newInst(final Module module, final JobProcess jobProcess, final TaskRunDto taskRunDto) {

@@ -78,9 +78,11 @@ public class TradingAmountsTaskExecutionResource {
             runDto.setJobName(SettlementJobName.GEN_EBRSV_INPUT_WS);
             runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
 
-            log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", taskRunDto);
+            log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", runDto);
 
-            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, taskRunDto);
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, runDto);
+
+            queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.GEN_INPUT_WS_TA);
             queueService.save(jobQueue);
 
         });
@@ -103,9 +105,11 @@ public class TradingAmountsTaskExecutionResource {
             runDto.setJobName(SettlementJobName.CALC_STL);
             runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
 
-            log.info("Queueing calculateJob for trading amounts. taskRunDto={}", taskRunDto);
+            log.info("Queueing calculateJob for trading amounts. taskRunDto={}", runDto);
 
-            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, taskRunDto);
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, runDto);
+
+            queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.CALC_TA);
             queueService.save(jobQueue);
         });
 

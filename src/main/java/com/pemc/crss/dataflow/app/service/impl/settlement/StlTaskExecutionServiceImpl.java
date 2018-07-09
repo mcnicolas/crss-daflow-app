@@ -709,8 +709,14 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         arguments.add(concatKeyValue(GROUP_ID, groupId));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
         arguments.add(concatKeyValue(PROCESS_TYPE, processType));
-        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup(), "string"));
-
+        // arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup(), "string"));
+        BatchJobAddtlParams addtlParams = new BatchJobAddtlParams();
+        addtlParams.setRunId(runId);
+        addtlParams.setKey("regionGroup");
+        addtlParams.setType(String.class.getSimpleName());
+        addtlParams.setStringVal(taskRunDto.getRegionGroup());
+        saveBatchJobAddtlParamsJdbc(addtlParams);
+//        redisTemplate.opsForValue().set(String.format("%d-%s", runId, "REGION_GROUP"), taskRunDto.getRegionGroup());
         return arguments;
     }
 

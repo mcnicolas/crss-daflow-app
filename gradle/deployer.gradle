@@ -1,5 +1,9 @@
 import groovy.json.*
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 import groovyx.net.http.RESTClient
+import org.gradle.api.GradleException
+
 import static groovyx.net.http.ContentType.JSON
 
 
@@ -22,12 +26,10 @@ ext {
     //dockerImageVersion = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()  + "-" + 'git rev-parse --short HEAD'.execute().text.trim()
     // need to uniquely generate version since scdf doesn't force pull image yet.
     dockerImageVersion = project.version + "." + 'git rev-parse --short HEAD'.execute().text.trim();
-    scdfUrl = project.hasProperty('scdfUrl') ? project.getProperty('scdfUrl') : 'http://scdf.pemc.com'
-    descriptorPath = project.hasProperty('descriptorPath') ? project.getProperty('descriptorPath') : 'http://pemc-storage.southeastasia.cloudapp.azure.com/pemc/descriptors'
     appProfile = project.hasProperty('appProfile') ? project.getProperty('appProfile') : 'dev'
     marathonUrl = project.hasProperty('marathonUrl') ? project.getProperty('marathonUrl') : ''
     environmentSet = project.hasProperty('environmentSet') ? project.getProperty('environmentSet') : ''
-    marathonCpus = project.hasProperty('marathonCpus') ? project.getProperty('marathonCpus') : 0.5
+    marathonCpus = project.hasProperty('marathonCpus') ? project.getProperty('marathonCpus') : 0.25
     marathonMem = project.hasProperty('marathonMem') ? project.getProperty('marathonMem') : 1024
 
 }
@@ -42,40 +44,33 @@ task setupDeployer() {
         println dockerPath;
 
         def deployerFile = "$rootDir/buildtools/deployer/${project.name}.json"
-        def outputDir = new File("$project.buildDir/deployer/")
-        outputDir.mkdirs()
-        def outputDeployerFile = new File("$project.buildDir/deployer/${project.name}.json")
-        outputDeployerFile.createNewFile()
 
-        def inputFile = new File(deployerFile)
-        def outputFile = new File("$project.buildDir/deployer/${project.name}.json")
-        def json = new JsonSlurper().parseText(inputFile.text)
+        if (project.hasProperty('v11')) {
+            deployerFile = "$rootDir/buildtools/deployer/${project.name}-v11.json"
+        }
 
-        def isDev2 = "${project.appProfile}".split(",").any({it == "dev2"})
-        def isAzure = "${project.appProfile}".split(",").any({it == "azure"})
-        json.cpus = isDev2 ? json.mem/(3.75*1024) : isAzure ? json.mem/(6.75*1024) : json.cpus
+        new File("$project.buildDir/deployer/").mkdirs()
+        new File("$project.buildDir/deployer/${project.name}.json").createNewFile()
 
+        def json = new JsonSlurper().parseText(new File(deployerFile).text)
         json.container.docker.image = dockerPath
         json.env.SPRING_PROFILES_ACTIVE= "${project.appProfile}"
         json.id = "${project.environmentSet}" + json.id;
-        json.container.docker.portMappings[0].labels.VIP_0 = "${json.id}:8082"
         json.cpus = "${project.marathonCpus}".toDouble()
         json.mem = "${project.marathonMem}".toDouble()
 
         appId = "${json.id}"
 
-        println "${appId}"
-
         def builder = new JsonBuilder(json)
-        outputFile.text = builder.toPrettyString()
+        println builder.toPrettyString()
+        new File("$project.buildDir/deployer/${project.name}.json").text = builder.toPrettyString()
     }
 }
 
 task stopApp(dependsOn: setupDeployer)  {
     doLast {
         // stop process app
-
-        println "Stopping current deployed app: ${appId}"
+        logger.info "Stopping current deployed app: ${appId}"
         def proc = "curl -X DELETE $project.marathonUrl/${appId}".execute()
         println "curl -X DELETE $project.marathonUrl$appId"
         Thread.start { System.err << proc.err }
@@ -84,17 +79,17 @@ task stopApp(dependsOn: setupDeployer)  {
     }
 }
 
-task deployApp(dependsOn: setupDeployer) {
 
+task deployApp(dependsOn: setupDeployer) {
     doFirst {
         if (!project.hasProperty('marathonUrl')) {
             throw new GradleException("Property marathonUrl not supplied. Please supply via -PmarathonUrl=http//ip.marathon/v2")
         }
     }
     doLast {
+
         def definitionFile = "$project.buildDir/deployer/${project.name}.json"
         def marathonDefinition = new groovy.json.JsonSlurper().parse(file(definitionFile))
-
         def marathonClient = new RESTClient("$marathonUrl/$appId?force=true", JSON)
 
         if (project.hasProperty('dcosToken')) {
@@ -108,8 +103,8 @@ task deployApp(dependsOn: setupDeployer) {
         file(metadata).createNewFile()
         file(metadata).text = response
 
-        logger.quiet "Deployed using appId=$marathonDefinition.id and marathonDefinition=" + definitionFile
-        logger.quiet "Marthon details = [deploymentId: $response.deploymentId, version: $response.version]"
+        logger.info "Deployed using appId=$marathonDefinition.id and marathonDefinition=" + definitionFile
+        logger.info "Marathon details = [deploymentId: $response.deploymentId, version: $response.version]"
     }
 }
 

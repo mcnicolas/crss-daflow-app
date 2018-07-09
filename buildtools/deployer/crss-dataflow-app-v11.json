@@ -1,0 +1,53 @@
+{
+    "id": "/dataflow-app",
+    "backoffFactor": 1.15,
+    "backoffSeconds": 1,
+    "container": {
+        "portMappings": [
+            {
+                "containerPort": 8082,
+                "hostPort": 0,
+                "labels": {
+                    "VIP_0": "/crss/dataflow-app:8082"
+                },
+                "protocol": "tcp",
+                "servicePort": 10114
+            }
+        ],
+        "type": "DOCKER",
+        "volumes": [],
+        "docker": {
+            "image": "registry.marathon.l4lb.thisdcos.directory:5000/crss-dataflow-app:2.6.0.BUILD-SNAPSHOT.875723f",
+            "forcePullImage": false,
+            "privileged": false,
+            "parameters": []
+        }
+    },
+    "cpus": 0.5,
+    "disk": 0,
+    "env": {
+        "SPRING_PROFILES_ACTIVE": "dev2,skipSSLA"
+    },
+    "instances": 1,
+    "maxLaunchDelaySeconds": 3600,
+    "mem": 2048,
+    "gpus": 0,
+    "networks": [
+        {
+            "mode": "container/bridge"
+        }
+    ],
+    "requirePorts": false,
+    "upgradeStrategy": {
+        "maximumOverCapacity": 1,
+        "minimumHealthCapacity": 1
+    },
+    "killSelection": "YOUNGEST_FIRST",
+    "unreachableStrategy": {
+        "inactiveAfterSeconds": 0,
+        "expungeAfterSeconds": 0
+    },
+    "healthChecks": [],
+    "fetch": [],
+    "constraints": []
+}

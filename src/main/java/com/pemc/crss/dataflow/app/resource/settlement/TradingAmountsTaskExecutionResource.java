@@ -31,7 +31,6 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
-import java.util.SortedSet;
 
 @Slf4j
 @RestController
@@ -84,6 +83,8 @@ public class TradingAmountsTaskExecutionResource {
             log.info("Queueing runGenInputWorkSpaceJob for trading amounts. taskRunDto={}", runDto);
 
             BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, runDto);
+            jobQueue.setTradingDate(DateUtil.parseLocalDate(dateStr).atStartOfDay());
+            jobQueue.setGroupId(taskRunDto.getGroupId());
 
             queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.GEN_INPUT_WS_TA);
             queueService.save(jobQueue);
@@ -111,6 +112,8 @@ public class TradingAmountsTaskExecutionResource {
             log.info("Queueing calculateJob for trading amounts. taskRunDto={}", runDto);
 
             BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, runDto);
+            jobQueue.setTradingDate(DateUtil.parseLocalDate(dateStr).atStartOfDay());
+            jobQueue.setGroupId(taskRunDto.getGroupId());
 
             queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.CALC_TA);
             queueService.save(jobQueue);

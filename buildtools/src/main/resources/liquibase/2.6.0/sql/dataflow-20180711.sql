@@ -21,7 +21,8 @@ CREATE VIEW dataflow.VW_STL_DAILY_STATUS AS
    FROM dataflow.batch_job_queue q 
    WHERE q.run_id IN 
        (SELECT max(inner_q.run_id) FROM dataflow.batch_job_queue inner_q 
-        WHERE inner_q.job_process in ('GEN_INPUT_WS_TA','CALC_TA') 
+        WHERE inner_q.job_process in ('GEN_INPUT_WS_TA','CALC_TA')
+        AND inner_q.trading_date is not null
         GROUP BY inner_q.trading_date, inner_q.group_id, 
            inner_q.meter_process_type);
 

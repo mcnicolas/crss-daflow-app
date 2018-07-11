@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.dto;
 
 import com.pemc.crss.shared.core.dataflow.entity.ViewStlDailyStatus;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
+import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,10 @@ public class StlDailyStatusDisplay {
 
     public LocalDateTime getJobExecEnd() {
         return dailyStatus.getJobExecEnd();
+    }
+
+    public LocalDateTime getTradingDate() {
+        return dailyStatus.getTradingDate();
     }
 
     public JobProcess jobProcess() {
@@ -67,5 +72,10 @@ public class StlDailyStatusDisplay {
             default:
                 return null;
         }
+    }
+
+    public boolean isCompletedGenIws() {
+        return dailyStatus.getStatus() == QueueStatus.COMPLETED
+                && dailyStatus.getJobProcess() == JobProcess.GEN_INPUT_WS_TA;
     }
 }

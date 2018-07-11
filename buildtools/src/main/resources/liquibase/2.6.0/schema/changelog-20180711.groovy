@@ -12,6 +12,6 @@ databaseChangeLog {
             +   '       (SELECT max(inner_q.run_id) FROM dataflow.batch_job_queue inner_q \n'
             +   '        WHERE inner_q.job_process in (\'GEN_INPUT_WS_TA\',\'CALC_TA\') \n'
             +   '        GROUP BY inner_q.trading_date, inner_q.group_id, \n'
-            +   '           inner_q.meter_process_type, inner_q.job_process); ')
+            +   '           inner_q.meter_process_type); ')
     }
 }

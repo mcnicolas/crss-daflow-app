@@ -44,8 +44,8 @@ public class StlDailyStatusDisplay {
     public String getStatus() {
         switch (dailyStatus.getStatus()) {
             case ON_QUEUE:
-                return "Queued";
             case STARTING:
+                return "Queued";
             case STARTED:
                 return "In Progress";
             case COMPLETED:

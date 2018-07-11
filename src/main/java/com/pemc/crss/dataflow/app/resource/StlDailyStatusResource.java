@@ -35,6 +35,7 @@ public class StlDailyStatusResource {
         String billPeriodEndStr = pageRequest.getMapParams().getOrDefault("billPeriodEnd", null);
         String processType = pageRequest.getMapParams().getOrDefault("processType", null);
         String groupId = pageRequest.getMapParams().getOrDefault("groupId", null);
+        String regionGroup = pageRequest.getMapParams().getOrDefault("regionGroup", null);
         Pageable pageable = pageRequest.getPageable();
 
         LocalDateTime billPeriodStart = DateUtil.parseStringDateToLocalDateTime(billPeriodStartStr, DateUtil.DEFAULT_DATE_FORMAT);
@@ -42,7 +43,7 @@ public class StlDailyStatusResource {
         MeterProcessType meterProcessType = MeterProcessType.get(processType);
 
         Page<ViewStlDailyStatus> dailyStatusPage = stlDailyStatusService.getByBillingPeriod(billPeriodStart, billPeriodEnd,
-                groupId, meterProcessType, pageable);
+                groupId, regionGroup, meterProcessType, pageable);
 
         List<StlDailyStatusDisplay> result = dailyStatusPage.getContent().stream().map(StlDailyStatusDisplay::new)
                 .collect(Collectors.toList());

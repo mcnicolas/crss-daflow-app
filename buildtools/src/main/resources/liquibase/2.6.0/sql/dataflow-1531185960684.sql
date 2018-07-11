@@ -12,6 +12,7 @@ UPDATE dataflow.databasechangeloglock SET LOCKED = TRUE, LOCKEDBY = '192.168.242
 
 -- Changeset src/main/resources/liquibase/2.6.0/schema/changelog-1531185960684.groovy::1531185962837-1::dmendoza (generated)
 ALTER TABLE dataflow.batch_job_queue ADD group_id VARCHAR(255);
+ALTER TABLE dataflow.batch_job_queue ADD region_group VARCHAR(255);
 
 INSERT INTO dataflow.databasechangelog (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, DESCRIPTION, COMMENTS, EXECTYPE, CONTEXTS, LABELS, LIQUIBASE, DEPLOYMENT_ID) VALUES ('1531185962837-1', 'dmendoza (generated)', 'src/main/resources/liquibase/2.6.0/schema/changelog-1531185960684.groovy', NOW(), 35, '7:bbae0e06e17a3df2ce293aa7ac58c004', 'addColumn tableName=batch_job_queue', '', 'EXECUTED', NULL, NULL, '3.5.3', '1186153541');
 

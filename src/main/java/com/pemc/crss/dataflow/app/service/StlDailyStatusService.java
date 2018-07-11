@@ -11,5 +11,6 @@ import java.time.LocalDateTime;
 public interface StlDailyStatusService {
 
     Page<ViewStlDailyStatus> getByBillingPeriod(LocalDateTime billPeriodStart, LocalDateTime billPeriodEnd,
-                                                String groupId, MeterProcessType processType, Pageable pageable);
+                                                String groupId, String regionGroup, MeterProcessType processType,
+                                                Pageable pageable);
 }

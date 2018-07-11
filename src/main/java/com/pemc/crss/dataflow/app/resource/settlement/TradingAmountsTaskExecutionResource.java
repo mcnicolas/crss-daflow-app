@@ -85,6 +85,7 @@ public class TradingAmountsTaskExecutionResource {
             BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_TA, runDto);
             jobQueue.setTradingDate(DateUtil.parseLocalDate(dateStr).atStartOfDay());
             jobQueue.setGroupId(taskRunDto.getGroupId());
+            jobQueue.setRegionGroup(taskRunDto.getRegionGroup());
 
             queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.GEN_INPUT_WS_TA);
             queueService.save(jobQueue);
@@ -114,6 +115,7 @@ public class TradingAmountsTaskExecutionResource {
             BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_TA, runDto);
             jobQueue.setTradingDate(DateUtil.parseLocalDate(dateStr).atStartOfDay());
             jobQueue.setGroupId(taskRunDto.getGroupId());
+            jobQueue.setRegionGroup(taskRunDto.getRegionGroup());
 
             queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.CALC_TA);
             queueService.save(jobQueue);

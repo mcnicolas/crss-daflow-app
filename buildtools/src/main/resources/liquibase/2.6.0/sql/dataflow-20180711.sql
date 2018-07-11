@@ -17,13 +17,13 @@ CREATE VIEW dataflow.VW_STL_DAILY_STATUS AS
    SELECT 
        q.id, q.run_id, q.job_process, q.status, q.details, 
        q.job_execution_id, q.job_exec_start, q.job_exec_end, 
-       q.meter_process_type, q.group_id, q.trading_date 
+       q.meter_process_type, q.group_id, q.region_group, q.trading_date
    FROM dataflow.batch_job_queue q 
    WHERE q.run_id IN 
        (SELECT max(inner_q.run_id) FROM dataflow.batch_job_queue inner_q 
         WHERE inner_q.job_process in ('GEN_INPUT_WS_TA','CALC_TA')
         AND inner_q.trading_date is not null
-        GROUP BY inner_q.trading_date, inner_q.group_id, 
+        GROUP BY inner_q.trading_date, inner_q.group_id, inner_q.region_group,
            inner_q.meter_process_type);
 
 INSERT INTO dataflow.databasechangelog (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, DESCRIPTION, COMMENTS, EXECTYPE, CONTEXTS, LABELS, LIQUIBASE, DEPLOYMENT_ID) VALUES ('20180711-1', 'dmendoza', 'src/main/resources/liquibase/2.6.0/schema/changelog-20180711.groovy', NOW(), 37, '7:51cb87079d6b111b690acd5d79758d51', 'sql; sql', '', 'EXECUTED', NULL, NULL, '3.5.3', '1277208075');

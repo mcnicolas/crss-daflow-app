@@ -23,15 +23,14 @@ public class StlDailyStatusServiceImpl implements StlDailyStatusService {
     private ViewStlDailyStatusRepository viewStlDailyStatusRepository;
 
     @Override
-    public Page<ViewStlDailyStatus> getByBillingPeriod(LocalDateTime billPeriodStart,
-                                                       LocalDateTime billPeriodEnd,
-                                                       String groupId,
-                                                       MeterProcessType processType,
-                                                       Pageable pageable) {
+    public Page<ViewStlDailyStatus> getByBillingPeriod(LocalDateTime billPeriodStart, LocalDateTime billPeriodEnd,
+                                                       String groupId, String regionGroup,
+                                                       MeterProcessType processType, Pageable pageable) {
 
         BooleanBuilder predicate = new BooleanBuilder()
             .and(viewStlDailyStatus.groupId.eq(groupId))
             .and(viewStlDailyStatus.meterProcessType.eq(processType))
+            .and(viewStlDailyStatus.regionGroup.eq(regionGroup))
             .and(viewStlDailyStatus.tradingDate.between(billPeriodStart, billPeriodEnd));
 
         return viewStlDailyStatusRepository.findAll(predicate, pageable);

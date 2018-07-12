@@ -187,7 +187,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, processType));
-                arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
 
                 BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
                 paramsBillingPeriodId.setRunId(runId);
@@ -237,6 +236,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             // for list by billing period
             arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
 
+            arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));

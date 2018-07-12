@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.entity.ViewStlDailyStatus;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
@@ -33,6 +34,18 @@ public class StlDailyStatusDisplay {
 
     public JobProcess jobProcess() {
         return dailyStatus.getJobProcess();
+    }
+
+    public String getGroupId() {
+        return dailyStatus.getGroupId();
+    }
+
+    public String getRegionGroup() {
+        return dailyStatus.getRegionGroup();
+    }
+
+    public MeterProcessType getProcessType() {
+        return dailyStatus.getMeterProcessType();
     }
 
     public String getJobProcessLabel() {

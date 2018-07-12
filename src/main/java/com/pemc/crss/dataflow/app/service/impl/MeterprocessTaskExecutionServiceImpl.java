@@ -217,7 +217,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 paramsBillingPeriodName.setStringVal(taskRunDto.getBillingPeriodName());
                 saveBatchJobAddtlParamsJdbc(paramsBillingPeriodName);
 
-
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ)));
             }
 
@@ -237,9 +236,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
             // for list by billing period
             arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
-
-            // for region_group
-            arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
 
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {

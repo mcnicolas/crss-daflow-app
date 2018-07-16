@@ -112,6 +112,11 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
                 } else {
                     queueDisplay.getParamMap().put("MTN", "ALL");
                 }
+
+                String region = parameters.getString("regionGroup");
+                if (StringUtils.isNotEmpty(region)) {
+                    queueDisplay.getParamMap().put("Region", region);
+                }
             }
         } catch (Exception e) {
             log.warn("Unable to set mtn param due to {}", e.getMessage());

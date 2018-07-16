@@ -11,10 +11,12 @@ import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +34,11 @@ import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTING;
 @Slf4j
 @Service
 public class SchedulerServiceImpl implements SchedulerService {
+
+    private static final String JOB_EXECUTION_TIMEOUT_CONFIG = "scheduler.job-execution-timeout-minutes";
+
+    @Autowired
+    private Environment env;
 
     @Autowired
     private BatchJobQueueRepository queueRepository;
@@ -65,6 +72,9 @@ public class SchedulerServiceImpl implements SchedulerService {
 
     @Value("${scheduler.launch-timeout-seconds}")
     private Long launchTimeoutSeconds;
+
+    @Value("${scheduler.job-execution-timeout-minutes.defaul}")
+    private Long defaultJobExecutionTimeout;
 
     @Autowired
     private NamedParameterJdbcTemplate dataflowJdbcTemplate;
@@ -205,23 +215,47 @@ public class SchedulerServiceImpl implements SchedulerService {
     }
 
     private void checkIfJobIsFinished(final BatchJobQueue job) {
-        JobExecutionDto jobExecution = dataFlowJdbcJobExecutionDao.findJobExecutionByJobExecutionId(job.getJobExecutionId());
+        Long jobExecutionId = job.getJobExecutionId();
+        JobExecutionDto jobExecution = dataFlowJdbcJobExecutionDao.findJobExecutionByJobExecutionId(jobExecutionId);
 
-        switch (jobExecution.getBatchStatus()) {
-            case COMPLETED:
-                log.info("Job {} is COMPLETED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
-                job.setStatus(COMPLETED);
-                job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
-                break;
-            case FAILED:
-                log.info("Job {} FAILED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
-                job.setStatus(FAILED_RUN);
-                job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
-                break;
-            default:
-                // do nothing. job is probably still running
+        String jobExecTimeoutMinutesStr = env.getProperty(JOB_EXECUTION_TIMEOUT_CONFIG + "." + job.getJobProcess().getEnvKey());
+
+        Long jobExecTimeoutMinutes = jobExecTimeoutMinutesStr != null ? Long.valueOf(jobExecTimeoutMinutesStr) : defaultJobExecutionTimeout;
+
+        if (job.getJobExecStart() != null && LocalDateTime.now().isAfter(job.getJobExecStart().plusMinutes(jobExecTimeoutMinutes))) {
+            log.error("Job {} with job_execution_id {} has exceeded timeout limit. Failing Job.", job.getJobName(), jobExecutionId);
+            job.setStatus(FAILED_RUN);
+            job.setDetails("Job has exceeded timeout limit. Please check mesos logs");
+
+
+            List<Long> unfinishedStepExecutionIds = dataFlowJdbcJobExecutionDao.findUnfinishedStepExecutionIdsByJobExecutionId(jobExecutionId);
+
+            if (!CollectionUtils.isEmpty(unfinishedStepExecutionIds)) {
+                log.info("Manually Updating unfinished step execution ids ({}) to FAILED status.", unfinishedStepExecutionIds);
+                // after failing unfinished step executions, parent job would detect failed child job and would terminate itself after
+                // Killing the parent job manually will not be necessary.
+                dataFlowJdbcJobExecutionDao.failUnfinishedStepExecutionsByJobExecutionId(jobExecutionId);
+            } else {
+                log.warn("No unfinished step executions. Manually Updating Job Execution with id ({}) to FAILED status."
+                        + " Job might need to be manually killed via Chronos API.", jobExecutionId);
+                dataFlowJdbcJobExecutionDao.failUnfinishedJobExecutionByJobExecutionId(jobExecutionId);
+            }
+        } else {
+            switch (jobExecution.getBatchStatus()) {
+                case COMPLETED:
+                    log.info("Job {} is COMPLETED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
+                    job.setStatus(COMPLETED);
+                    job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
+                    break;
+                case FAILED:
+                    log.info("Job {} FAILED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
+                    job.setStatus(FAILED_RUN);
+                    job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
+                    break;
+                default:
+                    // do nothing. job is probably still running
+            }
         }
-
     }
 
 

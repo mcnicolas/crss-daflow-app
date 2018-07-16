@@ -202,6 +202,36 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         return getNamedParameterJdbcTemplate().queryForObject(sql, paramSource, new BeanPropertyRowMapper<>(JobExecutionDto.class));
     }
 
+    public List<Long> findUnfinishedStepExecutionIdsByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId);
+
+        String sql = "SELECT se.step_execution_id FROM batch_step_execution se where se.job_execution_id = :jobExecutionId"
+                + " and end_time is null";
+
+        return getNamedParameterJdbcTemplate().queryForList(sql, paramSource, Long.class);
+    }
+
+    public void failUnfinishedStepExecutionsByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId);
+
+        String updateSql = "UPDATE batch_step_execution SET status = 'FAILED', exit_code = 'FAILED', end_time = now() "
+                + " WHERE job_execution_id = :jobExecutionId and end_time IS NULL";
+
+        getNamedParameterJdbcTemplate().update(updateSql, paramSource);
+    }
+
+    public void failUnfinishedJobExecutionByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId);
+
+        String updateSql = "UPDATE batch_job_execution SET status = 'FAILED', exit_code = 'FAILED', end_time = now() "
+                + " WHERE job_execution_id = :jobExecutionId and end_time IS NULL";
+
+        getNamedParameterJdbcTemplate().update(updateSql, paramSource);
+    }
+
     public JobExecutionDto findJobExecutionByRunId(final Long runId) {
 
         MapSqlParameterSource paramSource = new MapSqlParameterSource()

@@ -149,7 +149,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String currentRunningMtns = taskRunDto.getMtns();
 
             if (taskRunDto.getMeterProcessType() == null || PROCESS_TYPE_DAILY.equals(taskRunDto.getMeterProcessType())) {
-                checkFinalizeDailyState(taskRunDto.getTradingDate());
                 checkFinalizedStlState(taskRunDto.getTradingDate(), null, PROCESS_TYPE_DAILY);
                 // prevent running if selected mtn is already run within date range or the like
                 existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, taskRunDto.getTradingDate(), null, null);
@@ -158,6 +157,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 if (StringUtils.isNotBlank(taskRunDto.getRegionGroup()) || !ALL.equalsIgnoreCase(taskRunDto.getRegionGroup())) {
                     checkFinalizeDailyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getTradingDate());
                 } else {
+                    checkFinalizeDailyState(taskRunDto.getTradingDate());
                     checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                 }
 

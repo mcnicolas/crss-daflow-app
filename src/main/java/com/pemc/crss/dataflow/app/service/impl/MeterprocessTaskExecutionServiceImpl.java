@@ -247,7 +247,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             boolean isDaily = processType == null || Objects.equals(processType, MeterProcessType.DAILY.name());
             if (isDaily) {
                 if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                    if (StringUtils.isNotBlank(jobParameters.getString(REGION_GROUP)) || !ALL.equalsIgnoreCase(jobParameters.getString(REGION_GROUP))) {
+                        checkFinalizeDailyStateRegionGroup(jobParameters.getString(REGION_GROUP), dateFormat.format(jobParameters.getDate(DATE)));
+                    } else {
+                        checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                    }
                 }
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {

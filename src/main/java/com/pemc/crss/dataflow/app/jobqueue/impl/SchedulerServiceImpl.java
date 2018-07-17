@@ -73,7 +73,7 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Value("${scheduler.launch-timeout-seconds}")
     private Long launchTimeoutSeconds;
 
-    @Value("${scheduler.job-execution-timeout-minutes.defaul}")
+    @Value("${scheduler.job-execution-timeout-minutes.default}")
     private Long defaultJobExecutionTimeout;
 
     @Autowired
@@ -235,11 +235,12 @@ public class SchedulerServiceImpl implements SchedulerService {
                 // after failing unfinished step executions, parent job would detect failed child job and would terminate itself after
                 // Killing the parent job manually will not be necessary.
                 dataFlowJdbcJobExecutionDao.failUnfinishedStepExecutionsByJobExecutionId(jobExecutionId);
-            } else {
-                log.warn("No unfinished step executions. Manually Updating Job Execution with id ({}) to FAILED status."
-                        + " Job might need to be manually killed via Chronos API.", jobExecutionId);
-                dataFlowJdbcJobExecutionDao.failUnfinishedJobExecutionByJobExecutionId(jobExecutionId);
             }
+
+            log.info("Manually Updating Job Execution with id ({}) to FAILED status. Job might need to be manually"
+                    + " killed via Chronos API.", jobExecutionId);
+            dataFlowJdbcJobExecutionDao.failUnfinishedJobExecutionByJobExecutionId(jobExecutionId);
+
         } else {
             switch (jobExecution.getBatchStatus()) {
                 case COMPLETED:

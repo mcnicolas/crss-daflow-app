@@ -264,7 +264,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(PROCESS_TYPE, jobParameters.getString(PROCESS_TYPE)));
             }
-            arguments.add(concatKeyValue(REGION_GROUP, jobParameters.getString(REGION_GROUP)));
             arguments.add(concatKeyValue(PARENT_JOB, taskRunDto.getParentJob(), PARAMS_TYPE_LONG));
             if (RUN_RCOA_JOB_NAME.equals(taskRunDto.getJobName())) {
                 arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_RCOA));

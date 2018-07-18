@@ -46,6 +46,8 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
     private static final String COUNT_JOBS_WITH_NAME = "SELECT COUNT(*) from %PREFIX%JOB_INSTANCE A join %PREFIX%JOB_EXECUTION B on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID join %PREFIX%JOB_EXECUTION_PARAMS C on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS F on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID where JOB_NAME like ? and B.STATUS like ? and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') and (F.STRING_VAL like ? and F.KEY_NAME = 'username')";
     private static final String FIND_CUSTOM_JOB_EXECUTION = "SELECT A.JOB_EXECUTION_ID, A.START_TIME, A.END_TIME, A.STATUS, A.EXIT_CODE, A.EXIT_MESSAGE, A.CREATE_TIME, A.LAST_UPDATED, A.VERSION, A.JOB_CONFIGURATION_LOCATION from %PREFIX%JOB_EXECUTION A join %PREFIX%JOB_EXECUTION_PARAMS B on A.JOB_EXECUTION_ID = B.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS C on A.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS D on A.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID join %PREFIX%JOB_EXECUTION_PARAMS E on A.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID where A.JOB_INSTANCE_ID = ? and A.STATUS like ? and TO_CHAR(A.START_TIME, 'yyyy-mm-dd') like ? and (B.STRING_VAL like ? and B.KEY_NAME = 'mode') and (TO_CHAR(C.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and C.KEY_NAME = 'startDate') and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'endDate') and (E.STRING_VAL like ? and E.KEY_NAME = 'username') order by JOB_EXECUTION_ID desc";
 
+    private static final String FAILED_EXIT_MESSAGE = "Manually failed by dataflow-app job queue service due to timeout exceeded";
+
     public DataFlowJdbcJobExecutionDao() {
     }
 
@@ -200,6 +202,38 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 + " FROM batch_job_execution je where je.job_execution_id = :jobExecutionId";
 
         return getNamedParameterJdbcTemplate().queryForObject(sql, paramSource, new BeanPropertyRowMapper<>(JobExecutionDto.class));
+    }
+
+    public List<Long> findUnfinishedStepExecutionIdsByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId);
+
+        String sql = "SELECT se.step_execution_id FROM batch_step_execution se where se.job_execution_id = :jobExecutionId"
+                + " and end_time is null";
+
+        return getNamedParameterJdbcTemplate().queryForList(sql, paramSource, Long.class);
+    }
+
+    public void failUnfinishedStepExecutionsByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId)
+                .addValue("exitMessage", FAILED_EXIT_MESSAGE);
+
+        String updateSql = "UPDATE batch_step_execution SET status = 'FAILED', exit_code = 'FAILED', end_time = now(), "
+                + " exit_message = :exitMessage WHERE job_execution_id = :jobExecutionId and end_time IS NULL";
+
+        getNamedParameterJdbcTemplate().update(updateSql, paramSource);
+    }
+
+    public void failUnfinishedJobExecutionByJobExecutionId(final Long jobExecutionId) {
+        MapSqlParameterSource paramSource = new MapSqlParameterSource()
+                .addValue("jobExecutionId", jobExecutionId)
+                .addValue("exitMessage", FAILED_EXIT_MESSAGE);
+
+        String updateSql = "UPDATE batch_job_execution SET status = 'FAILED', exit_code = 'FAILED', end_time = now(), "
+                + " exit_message = :exitMessage WHERE job_execution_id = :jobExecutionId and end_time IS NULL";
+
+        getNamedParameterJdbcTemplate().update(updateSql, paramSource);
     }
 
     public JobExecutionDto findJobExecutionByRunId(final Long runId) {

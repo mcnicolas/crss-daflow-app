@@ -70,7 +70,16 @@ public class TradingAmountsTaskExecutionResource {
 
         validateAdjustedRun(taskRunDto);
 
-        List<String> dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
+        List<String> dateRangeStr;
+
+        switch (MeterProcessType.valueOf(taskRunDto.getMeterProcessType())) {
+            case DAILY:
+                dateRangeStr = DateUtil.createRangeString(taskRunDto.getTradingDate(), taskRunDto.getTradingDate(),
+                        null);
+                break;
+            default:
+                dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
+        }
 
         dateRangeStr.forEach(dateStr -> {
             TaskRunDto runDto = TaskRunDto.clone(taskRunDto);

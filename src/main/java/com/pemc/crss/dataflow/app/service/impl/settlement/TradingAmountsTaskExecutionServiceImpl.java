@@ -101,6 +101,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             initializeCalculateLr(calcLineRentalJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
+            /* GENERATE MONTHLY SUMMARY START */
+            List<JobInstance> genMonthlySummaryJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    GEN_MONTHLY_SUMMARY_TA, processType, parentId, regionGroup);
+
+            initializeGenMonthlySummary(genMonthlySummaryJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
             /* CALCULATE GMR START */
             List<JobInstance> calculateGmrJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
                     CALC_GMR, processType, parentId, regionGroup);
@@ -238,6 +244,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case CALC_LR:
                 launchCalculateLineRentalJob(taskRunDto);
+                break;
+            case GEN_MONTHLY_SUMMARY_TA:
+                launchGenMonthlySummaryJob(taskRunDto);
                 break;
             case CALC_GMR:
                 launchCalculateGmrJob(taskRunDto);
@@ -487,6 +496,57 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     // Line Rental job instances end
 
+
+    // Generate Monthly Summary is exclusive for Trading Amounts
+    private void initializeGenMonthlySummary(final List<JobInstance> genMonthlySummaryJobInstances,
+                                             final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                             final SettlementTaskExecutionDto taskExecutionDto,
+                                             final String stlReadyGroupId) {
+
+        Set<String> genMonthlySummaryNames = Sets.newHashSet();
+        Map<String, List<JobCalculationDto>> genMonthlySummaryJobCalculationDtoMap = getJobCalculationMap(genMonthlySummaryJobInstances,
+                // using empty map since gen monthly summary steps consists of tasklets only
+                StlJobStage.GEN_MONTHLY_SUMMARY, new HashMap<>());
+
+        for (JobInstance genMonthlySummaryJobInstance : genMonthlySummaryJobInstances) {
+            String genMonthlySummaryJobName = genMonthlySummaryJobInstance.getJobName();
+            if (genMonthlySummaryNames.contains(genMonthlySummaryJobName)) {
+                continue;
+            }
+
+            JobExecution genMonthlySummaryJobExecution = getJobExecutionFromJobInstance(genMonthlySummaryJobInstance);
+
+            JobParameters genMonthlySummaryJobParameters = genMonthlySummaryJobExecution.getJobParameters();
+            String groupId = genMonthlySummaryJobParameters.getString(GROUP_ID);
+            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            BatchStatus currentStatus = genMonthlySummaryJobExecution.getStatus();
+
+            // add gen monthly summary calculations for view calculations
+            Optional.ofNullable(genMonthlySummaryJobCalculationDtoMap.get(genMonthlySummaryJobName)).ifPresent(
+                    jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
+            );
+
+            stlJobGroupDto.setGenMonthlySummaryStatus(currentStatus);
+            stlJobGroupDto.setGroupId(groupId);
+            stlJobGroupDto.setGenMonthlySummaryRunDate(genMonthlySummaryJobExecution.getStartTime());
+
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(genMonthlySummaryJobExecution.getStartTime())) {
+                updateProgress(genMonthlySummaryJobExecution, stlJobGroupDto);
+            }
+
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            if (stlReadyGroupId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+            genMonthlySummaryNames.add(genMonthlySummaryJobName);
+        }
+
+    }
+
     // Calculate GMR is exclusive for Trading Amounts
     private void initializeCalculateGmr(final List<JobInstance> calculateGmrJobInstances,
                                         final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
@@ -494,7 +554,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                                         final String stlReadyGroupId) {
 
         Set<String> calcGmrNames = Sets.newHashSet();
-        Map<String, List<JobCalculationDto>> gmrJobCalculationDtoMap = getCalcGmrJobCalculationMap(calculateGmrJobInstances);
+        Map<String, List<JobCalculationDto>> gmrJobCalculationDtoMap = getJobCalculationMap(calculateGmrJobInstances,
+                StlJobStage.CALCULATE_GMR, STL_GMR_CALC_STEP_WITH_SKIP_LOGS);
 
         for (JobInstance calcGmrStlJobInstance : calculateGmrJobInstances) {
             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
@@ -578,22 +639,23 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         }
     }
 
-    private Map<String, List<JobCalculationDto>> getCalcGmrJobCalculationMap(List<JobInstance> calcGmrStlJobInstances) {
+    private Map<String, List<JobCalculationDto>> getJobCalculationMap(List<JobInstance> jobInstances, StlJobStage stlJobStage,
+                                                                      Map<String, String> stepWithLabelMap) {
         Map<String, List<JobCalculationDto>> jobCalculationDtoMap = new HashMap<>();
 
         // add distinct jobNames for multiple same parentId-groupId job instances
-        calcGmrStlJobInstances.stream().map(JobInstance::getJobName).distinct().forEach(calcJobInstanceName ->
+        jobInstances.stream().map(JobInstance::getJobName).distinct().forEach(calcJobInstanceName ->
                 jobCalculationDtoMap.put(calcJobInstanceName, new ArrayList<>()));
 
-        calcGmrStlJobInstances.forEach(calcGmrInstance -> getJobExecutions(calcGmrInstance).forEach(jobExecution -> {
-            JobParameters calcGmrJobParameters = jobExecution.getJobParameters();
-            Date calcGmrStartDate = calcGmrJobParameters.getDate(START_DATE);
-            Date calcGmrEndDate = calcGmrJobParameters.getDate(END_DATE);
-            JobCalculationDto gmrCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
-                    calcGmrStartDate, calcGmrEndDate, convertStatus(jobExecution.getStatus(), StlJobStage.CALCULATE_GMR.getLabel()),
-                    StlJobStage.CALCULATE_GMR, jobExecution.getStatus());
-            gmrCalcDto.setTaskSummaryList(showSummaryWithLabel(jobExecution, STL_GMR_CALC_STEP_WITH_SKIP_LOGS));
-            jobCalculationDtoMap.get(calcGmrInstance.getJobName()).add(gmrCalcDto);
+        jobInstances.forEach(jobInstance -> getJobExecutions(jobInstance).forEach(jobExecution -> {
+            JobParameters jobParameters = jobExecution.getJobParameters();
+            Date startDate = jobParameters.getDate(START_DATE);
+            Date endDate = jobParameters.getDate(END_DATE);
+            JobCalculationDto jobCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
+                    startDate, endDate, convertStatus(jobExecution.getStatus(), stlJobStage.getLabel()),
+                    stlJobStage, jobExecution.getStatus());
+            jobCalcDto.setTaskSummaryList(showSummaryWithLabel(jobExecution, stepWithLabelMap));
+            jobCalculationDtoMap.get(jobInstance.getJobName()).add(jobCalcDto);
         }));
 
         return jobCalculationDtoMap;
@@ -729,8 +791,45 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
-
     // Launch Line Rental Jobs end
+
+    // Generate Monthly Summary is exclusive for TA
+    private void launchGenMonthlySummaryJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS, taskRunDto.getRegionGroup());
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (processType) {
+            case PRELIM:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.TA_MONTHLY_SUMMARY_PRELIM)));
+                break;
+            case FINAL:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.TA_MONTHLY_SUMMARY_FINAL)));
+                break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.TA_MONTHLY_SUMMARY_ADJUSTED)));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        log.info("Running generate monthly summary job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+    }
 
     // Calculate GMR is exclusive for TTA
     private void launchCalculateGmrJob(final TaskRunDto taskRunDto) throws URISyntaxException {

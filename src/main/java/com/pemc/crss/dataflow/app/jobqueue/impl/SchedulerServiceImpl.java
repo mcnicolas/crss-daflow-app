@@ -194,6 +194,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case GEN_INPUT_WS_TA:
                 case CALC_TA:
                 case CALC_LR:
+                case GEN_MONTHLY_SUMMARY_TA:
                 case CALC_GMR_VAT:
                 case FINALIZE_TA:
                 case FINALIZE_LR:

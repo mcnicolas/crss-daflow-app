@@ -24,6 +24,7 @@ import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE_LR;
 @Data
 public class StlJobGroupDto {
 
+    private BatchStatus genMonthlySummaryStatus;
     private BatchStatus gmrVatMFeeCalculationStatus;
     private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
@@ -85,6 +86,8 @@ public class StlJobGroupDto {
     private Date maxPartialCalcLrRunDate;
 
     private Date gmrCalcRunDate;
+
+    private Date genMonthlySummaryRunDate;
 
     private boolean hasCompletedGenInputWs;
 

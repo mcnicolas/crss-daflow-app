@@ -23,13 +23,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
-import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.COMPLETED;
-import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.FAILED_EXECUTION;
-import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.FAILED_RUN;
-import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTED;
-import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.STARTING;
+import static com.pemc.crss.shared.core.dataflow.reference.QueueStatus.*;
 
 @Slf4j
 @Service
@@ -79,6 +76,9 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Autowired
     private NamedParameterJdbcTemplate dataflowJdbcTemplate;
 
+    @Value("${scheduler.parallel-stl-monthly-job}")
+    private Long parallelStlMonthlyJob;
+
     @Scheduled(fixedDelayString = "${scheduler.interval-milliseconds}")
     @Override
     public void execute() {
@@ -113,21 +113,10 @@ public class SchedulerServiceImpl implements SchedulerService {
                         // do nothing
                 }
 
-                String sql = "UPDATE batch_job_queue SET status = :status, details = :details,"
-                        + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd, "
-                        + " starting_date = :startingDate WHERE id = :id";
-
-                MapSqlParameterSource updateSource = new MapSqlParameterSource()
-                        .addValue("status", nextJob.getStatus().name())
-                        .addValue("details", nextJob.getDetails())
-                        .addValue("jobExecutionId", nextJob.getJobExecutionId())
-                        .addValue("jobExecStart", DateUtil.convertToDate(nextJob.getJobExecStart()))
-                        .addValue("jobExecEnd", DateUtil.convertToDate(nextJob.getJobExecEnd()))
-                        .addValue("startingDate", DateUtil.convertToDate(nextJob.getStartingDate()))
-                        .addValue("id", nextJob.getId());
-
-                dataflowJdbcTemplate.update(sql, updateSource);
-
+                updateJobStatus(nextJob);
+                if (STARTING.equals(nextJob.getStatus()) || STARTED.equals(nextJob.getStatus())) {
+                    executeParallelRuns(nextJob);
+                }
             } else {
                 log.info("No Jobs to run at the moment.");
             }
@@ -135,6 +124,55 @@ public class SchedulerServiceImpl implements SchedulerService {
             log.error("Exception {} encountered when running meter process types {}. Error: {}", e.getClass(),
                     meterProcessTypes, e.getMessage());
         }
+    }
+
+    private void executeParallelRuns(BatchJobQueue nextJob) {
+        switch (nextJob.getJobProcess()) {
+            case CALC_TA:
+            case GEN_INPUT_WS_TA:
+                int runningCount = queueRepository.countAllByStatusInAndJobProcessAndMeterProcessTypeAndGroupIdAndRegionGroup(
+                        Arrays.asList(STARTING, STARTED),
+                        nextJob.getJobProcess(),
+                        nextJob.getMeterProcessType(),
+                        nextJob.getGroupId(),
+                        nextJob.getRegionGroup()
+                );
+
+                if (runningCount < parallelStlMonthlyJob) {
+                    BatchJobQueue nextNextJob =
+                            queueRepository.findFirstByStatusAndJobProcessAndMeterProcessTypeAndGroupIdAndRegionGroupOrderByRunIdAsc(
+                                    ON_QUEUE,
+                                    nextJob.getJobProcess(),
+                                    nextJob.getMeterProcessType(),
+                                    nextJob.getGroupId(),
+                                    nextJob.getRegionGroup()
+                            );
+
+                    runNextQueuedJob(nextNextJob);
+                    updateJobStatus(nextNextJob);
+                }
+                break;
+            default:
+                // do nothing
+        }
+    }
+
+    private void updateJobStatus(BatchJobQueue nextJob) {
+
+        String sql = "UPDATE batch_job_queue SET status = :status, details = :details,"
+                + " job_execution_id = :jobExecutionId, job_exec_start = :jobExecStart, job_exec_end = :jobExecEnd, "
+                + " starting_date = :startingDate WHERE id = :id";
+
+        MapSqlParameterSource updateSource = new MapSqlParameterSource()
+                .addValue("status", nextJob.getStatus().name())
+                .addValue("details", nextJob.getDetails())
+                .addValue("jobExecutionId", nextJob.getJobExecutionId())
+                .addValue("jobExecStart", DateUtil.convertToDate(nextJob.getJobExecStart()))
+                .addValue("jobExecEnd", DateUtil.convertToDate(nextJob.getJobExecEnd()))
+                .addValue("startingDate", DateUtil.convertToDate(nextJob.getStartingDate()))
+                .addValue("id", nextJob.getId());
+
+        dataflowJdbcTemplate.update(sql, updateSource);
     }
 
     private void runNextQueuedJob(final BatchJobQueue job) {

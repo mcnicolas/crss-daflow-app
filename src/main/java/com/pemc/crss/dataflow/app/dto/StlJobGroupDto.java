@@ -91,6 +91,8 @@ public class StlJobGroupDto {
 
     private boolean hasCompletedGenInputWs;
 
+    private boolean hasCompletedCalc;
+
     private String regionGroup;
 
     // helper methods / properties

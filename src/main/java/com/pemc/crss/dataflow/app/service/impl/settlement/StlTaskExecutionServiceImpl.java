@@ -306,6 +306,11 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             stlJobGroupDto.setMaxPartialCalcRunDate(maxPartialCalcDate);
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
+            // for showing generate monthly summary
+            if (currentBatchStatus == BatchStatus.COMPLETED) {
+                stlJobGroupDto.setHasCompletedCalc(true);
+            }
+
             if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
                 taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);

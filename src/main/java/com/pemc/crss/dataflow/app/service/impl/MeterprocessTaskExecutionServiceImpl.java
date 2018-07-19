@@ -155,7 +155,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
                 //Region group
                 if (isAllRegions(taskRunDto.getRegionGroup())) {
-                    //checkFinalizeDailyState(taskRunDto.getTradingDate());
                     checkFinalizeDailyStateAnyRegion(taskRunDto.getTradingDate());
                 } else {
                     checkFinalizeDailyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getTradingDate());

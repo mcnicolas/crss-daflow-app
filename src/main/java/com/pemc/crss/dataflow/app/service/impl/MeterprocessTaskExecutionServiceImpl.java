@@ -301,7 +301,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(STL_NOT_READY_USERNAME, taskRunDto.getCurrentUser()));
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
-                Long parentJobRunId = jobParameters.getLong(RUN_ID);
                 // compare two string fields and check if the current running is already included in the existing, if true, prevent from running, else, run
                 String existingFinalRunAggregatedMtnWithinRange = EMPTY;
                 String currentRunningMtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parentJobRunId, MTNS);

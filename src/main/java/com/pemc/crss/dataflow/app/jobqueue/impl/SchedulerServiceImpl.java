@@ -9,6 +9,7 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
+import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -82,42 +83,36 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Scheduled(fixedDelayString = "${scheduler.interval-milliseconds}")
     @Override
     public void execute() {
-        // Add additional methods here
-        executeGroup(DAILY_AND_AC);
-        executeGroup(MONTHLY);
+        executeDaily(DAILY_AND_AC);
+        executeMonthly(MONTHLY);
     }
 
-    private void executeGroup(List<MeterProcessType> meterProcessTypes) {
+    private void executeDaily(List<MeterProcessType> meterProcessTypes) {
         try {
             BatchJobQueue nextJob = queueRepository.findFirstByStatusInAndMeterProcessTypeInOrderByRunIdAsc(
                     IN_PROGRESS_STATUS, meterProcessTypes);
 
             if (nextJob != null) {
-                switch (nextJob.getStatus()) {
-                    case ON_QUEUE:
-                        log.info("Running next Job in Queue. RunId: {}. Process: {}, JobName: {}",
-                                nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                        runNextQueuedJob(nextJob);
-                        break;
-                    case STARTING:
-                        log.info("Checking Job if Started: RunId: {}. Process: {}. JobName: {}",
-                                nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                        checkIfJobStarted(nextJob);
-                        break;
-                    case STARTED:
-                        log.info("Checking Job if Finished: RunId: {}. Process: {}. JobName: {}",
-                                nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
-                        checkIfJobIsFinished(nextJob);
-                        break;
-                    default:
-                        // do nothing
-                }
+                handleNextJob(nextJob);
+            } else {
+                log.info("No Jobs to run at the moment.");
+            }
+        } catch (Exception e) {
+            log.error("Exception {} encountered when running meter process types {}. Error: {}", e.getClass(),
+                    meterProcessTypes, e.getMessage());
+        }
+    }
 
-                updateJobStatus(nextJob);
-                if (STARTING.equals(nextJob.getStatus())
-                        || STARTED.equals(nextJob.getStatus())
-                        || COMPLETED.equals(nextJob.getStatus())) {
+    private void executeMonthly(List<MeterProcessType> meterProcessTypes) {
+        try {
+            BatchJobQueue nextJob = queueRepository.findFirstByStatusInAndMeterProcessTypeInOrderByRunIdAsc(
+                    IN_PROGRESS_STATUS, meterProcessTypes);
+
+            if (nextJob != null) {
+                if (Arrays.asList(JobProcess.GEN_INPUT_WS_TA, JobProcess.CALC_TA).contains(nextJob.getJobProcess())) {
                     executeParallelRuns(nextJob);
+                } else {
+                    handleNextJob(nextJob);
                 }
             } else {
                 log.info("No Jobs to run at the moment.");
@@ -128,34 +123,55 @@ public class SchedulerServiceImpl implements SchedulerService {
         }
     }
 
-    private void executeParallelRuns(BatchJobQueue nextJob) {
-        switch (nextJob.getJobProcess()) {
-            case CALC_TA:
-            case GEN_INPUT_WS_TA:
-                int runningCount = queueRepository.countAllByStatusInAndJobProcessAndMeterProcessTypeAndGroupIdAndRegionGroup(
-                        Arrays.asList(STARTING, STARTED),
-                        nextJob.getJobProcess(),
-                        nextJob.getMeterProcessType(),
-                        nextJob.getGroupId(),
-                        nextJob.getRegionGroup()
-                );
-
-                if (runningCount < parallelStlMonthlyJob) {
-                    BatchJobQueue nextNextJob =
-                            queueRepository.findFirstByStatusAndJobProcessAndMeterProcessTypeAndGroupIdAndRegionGroupOrderByRunIdAsc(
-                                    ON_QUEUE,
-                                    nextJob.getJobProcess(),
-                                    nextJob.getMeterProcessType(),
-                                    nextJob.getGroupId(),
-                                    nextJob.getRegionGroup()
-                            );
-
-                    runNextQueuedJob(nextNextJob);
-                    updateJobStatus(nextNextJob);
-                }
+    private void handleNextJob(BatchJobQueue nextJob) {
+        switch (nextJob.getStatus()) {
+            case ON_QUEUE:
+                log.info("Running next Job in Queue. RunId: {}. Process: {}, JobName: {}",
+                        nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                runNextQueuedJob(nextJob);
+                break;
+            case STARTING:
+                log.info("Checking Job if Started: RunId: {}. Process: {}. JobName: {}",
+                        nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                checkIfJobStarted(nextJob);
+                break;
+            case STARTED:
+                log.info("Checking Job if Finished: RunId: {}. Process: {}. JobName: {}",
+                        nextJob.getRunId(), nextJob.getJobProcess(), nextJob.getJobName());
+                checkIfJobIsFinished(nextJob);
                 break;
             default:
                 // do nothing
+        }
+        updateJobStatus(nextJob);
+    }
+
+
+    private void executeParallelRuns(BatchJobQueue nextJob) {
+        List<BatchJobQueue> currentlyRunningJobs = queueRepository
+                .findByStatusInAndJobProcessAndMeterProcessTypeAndGroupIdAndRegionGroup(Arrays.asList(STARTING, STARTED),
+                        nextJob.getJobProcess(),
+                        nextJob.getMeterProcessType(),
+                        nextJob.getGroupId(),
+                        nextJob.getRegionGroup());
+
+        for (BatchJobQueue currentlyRunningJob : currentlyRunningJobs) {
+            handleNextJob(currentlyRunningJob);
+        }
+
+        if (currentlyRunningJobs.size() < parallelStlMonthlyJob) {
+            BatchJobQueue nextQueuedJob =
+                    queueRepository.findFirstByStatusAndJobProcessAndMeterProcessTypeAndGroupIdAndRegionGroupOrderByRunIdAsc(
+                            ON_QUEUE,
+                            nextJob.getJobProcess(),
+                            nextJob.getMeterProcessType(),
+                            nextJob.getGroupId(),
+                            nextJob.getRegionGroup()
+                    );
+
+            if (nextQueuedJob != null) {
+                handleNextJob(nextQueuedJob);
+            }
         }
     }
 

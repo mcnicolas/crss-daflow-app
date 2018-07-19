@@ -398,8 +398,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private void checkFinalizeDailyStateAnyRegion(String date, Long parentJob) {
         String errMsq = "You already have another process on an specific Region Group finalized on the same date: " + date + " !";
-        Preconditions.checkState(!(executionParamRepository.countDailyRunAllMtn(date, RUN_STL_READY_JOB_NAME) > 1 &&
-                executionParamRepository.countDailyRunAllMtnAnyRegion(date, RUN_WESM_JOB_NAME, parentJob) > 1) , errMsq);
+        Preconditions.checkState(executionParamRepository.countDailyRunAllMtn(date, RUN_STL_READY_JOB_NAME) < 1 &&
+                executionParamRepository.countDailyRunAllMtnAnyRegion(date, RUN_WESM_JOB_NAME, parentJob) < 1, errMsq);
     }
 
     private void checkFinalizeDailyStateRegionGroup(String regionGroup, String date) {
@@ -419,8 +419,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private void checkFinalizeMonthlyStateAnyRegion(String process, String startDate, String endDate, Long parentJob) {
         String errMsq = "You already have a " + process + " on an specific Region Group finalized on the same billing period!";
-        Preconditions.checkState(!(executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, process, RUN_STL_READY_JOB_NAME) > 1 &&
-                executionParamRepository.countMonthlyRunAllMtnAnyRegion(startDate, endDate, process, RUN_WESM_JOB_NAME, parentJob) > 1) , errMsq);
+        Preconditions.checkState(executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1 &&
+                executionParamRepository.countMonthlyRunAllMtnAnyRegion(startDate, endDate, process, RUN_WESM_JOB_NAME, parentJob) < 1 , errMsq);
     }
 
     private void checkFinalizedAdjustmentState(Long parentRunId, String process, String startDate, String endDate) {

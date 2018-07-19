@@ -114,7 +114,9 @@ public class SchedulerServiceImpl implements SchedulerService {
                 }
 
                 updateJobStatus(nextJob);
-                if (STARTING.equals(nextJob.getStatus()) || STARTED.equals(nextJob.getStatus())) {
+                if (STARTING.equals(nextJob.getStatus())
+                        || STARTED.equals(nextJob.getStatus())
+                        || COMPLETED.equals(nextJob.getStatus())) {
                     executeParallelRuns(nextJob);
                 }
             } else {

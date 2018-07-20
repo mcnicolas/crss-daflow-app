@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_GMR;
 import static com.pemc.crss.dataflow.app.support.StlJobStage.CALCULATE_LR;
 import static com.pemc.crss.dataflow.app.support.StlJobStage.FINALIZE_LR;
+import static com.pemc.crss.dataflow.app.support.StlJobStage.GEN_MONTHLY_SUMMARY;
 
 @Data
 public class StlJobGroupDto {
@@ -134,6 +135,19 @@ public class StlJobGroupDto {
 
         return !sortedCalcDtosWithoutLr.isEmpty()
                 && Objects.equals(sortedCalcDtosWithoutLr.get(0).getJobStage(), CALCULATE_GMR);
+    }
+
+    public boolean isGenMonthlySummaryIsLatestJob() {
+        List<StlJobStage> lineRentalJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
+
+        List<JobCalculationDto> sortedCalcDtosWithoutLr = !jobCalculationDtos.isEmpty() ?
+                jobCalculationDtos.stream()
+                        .filter(jobDto -> !lineRentalJobStages.contains(jobDto.getJobStage()))
+                        .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
+                        .collect(Collectors.toList()) : new ArrayList<>();
+
+        return !sortedCalcDtosWithoutLr.isEmpty()
+                && Objects.equals(sortedCalcDtosWithoutLr.get(0).getJobStage(), GEN_MONTHLY_SUMMARY);
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

@@ -26,6 +26,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_ENERGY
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_EMF;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_FILES_RMF;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_LR_FILES;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_MONTHLY_SUMMARY_TA;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_RESERVE_FILES;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.RUN_WESM;
 
@@ -77,7 +78,7 @@ public class BatchJobQueueDisplay {
                     // file gen jobs use baseStartDate / baseEndDate
                     final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
                             GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT,
-                            FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF);
+                            FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF, GEN_MONTHLY_SUMMARY_TA);
 
                     putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                     if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {

@@ -158,6 +158,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     checkFinalizeDailyStateAnyRegion(taskRunDto.getTradingDate());
                 } else {
                     checkFinalizeDailyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getTradingDate());
+                    checkFinalizeDailyStateAllRegions(taskRunDto.getTradingDate());
                 }
 
                 arguments.add(concatKeyValue(DATE, taskRunDto.getTradingDate(), PARAMS_TYPE_DATE));
@@ -183,6 +184,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
                 } else {
                     checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    checkFinalizeMonthlyStateAllRegions(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 }
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
@@ -243,25 +245,30 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
             JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
             String processType = jobParameters.getString(PROCESS_TYPE);
+            String regionGroup = jobParameters.getString(REGION_GROUP);
             boolean isDaily = processType == null || Objects.equals(processType, MeterProcessType.DAILY.name());
             Long parentJobRunId = jobParameters.getLong(RUN_ID);
             if (isDaily) {
                 if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (isAllRegions(jobParameters.getString(REGION_GROUP))) {
+                    if (isAllRegions(regionGroup)) {
                         //checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                         checkFinalizeDailyStateAnyRegion(dateFormat.format(jobParameters.getDate(DATE)));
                     } else {
                         checkFinalizeDailyStateRegionGroup(jobParameters.getString(REGION_GROUP), dateFormat.format(jobParameters.getDate(DATE)));
+                        checkFinalizeDailyStateAllRegions(dateFormat.format(jobParameters.getDate(DATE)));
                     }
                 }
                 arguments.add(concatKeyValue(DATE, dateFormat.format(jobParameters.getDate(DATE)), PARAMS_TYPE_DATE));
             } else {
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)
                         && !RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), dateFormat.format(jobParameters.getDate(START_DATE)),dateFormat.format(jobParameters.getDate(END_DATE)));
-
-                    /*checkFinalizeProcessTypeState(processType, dateFormat.format(jobParameters.getDate(START_DATE)),
-                            dateFormat.format(jobParameters.getDate(END_DATE)));*/
+                    if (isAllRegions(regionGroup)) {
+                        //checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
+                        checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
+                    } else {
+                        checkFinalizeMonthlyStateRegionGroup(regionGroup, processType,  dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
+                        checkFinalizeMonthlyStateAllRegions(processType,  dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
+                    }
                 }
                 arguments.add(concatKeyValue(START_DATE, dateFormat.format(jobParameters.getDate(START_DATE)), PARAMS_TYPE_DATE));
                 arguments.add(concatKeyValue(END_DATE, dateFormat.format(jobParameters.getDate(END_DATE)), PARAMS_TYPE_DATE));
@@ -305,12 +312,13 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 String currentRunningMtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parentJobRunId, MTNS);
                 List<String> mtnAlreadyFinalized = new ArrayList<>();
                 if (isDaily) {
-                    if (isAllRegions(taskRunDto.getRegionGroup())) {
+                    if (isAllRegions(regionGroup)) {
                         //prevent running if any region is finalized.
                         //checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                         checkFinalizeDailyStateAnyRegion(dateFormat.format(jobParameters.getDate(DATE)));
                     } else {
-                        checkFinalizeDailyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getTradingDate());
+                        checkFinalizeDailyStateRegionGroup(regionGroup, dateFormat.format(jobParameters.getDate(DATE)));
+                        checkFinalizeDailyStateAllRegions(dateFormat.format(jobParameters.getDate(DATE)));
                     }
                     // prevent running if selected mtn is already run within date range or the like
                     existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, dateFormat.format(jobParameters.getDate(DATE)), null, null);
@@ -321,11 +329,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(MeterProcessType.PRELIM.name(), null, dateFormat.format(jobParameters.getDate(START_DATE)),dateFormat.format(jobParameters.getDate(END_DATE)));
                     checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
 
-                    if (isAllRegions(taskRunDto.getRegionGroup())) {
+                    if (isAllRegions(regionGroup)) {
                         //checkFinalizeProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                         checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), dateFormat.format(jobParameters.getDate(START_DATE)),dateFormat.format(jobParameters.getDate(END_DATE)));
                     } else {
-                        checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                        checkFinalizeMonthlyStateRegionGroup(regionGroup, taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                        checkFinalizeMonthlyStateAllRegions(taskRunDto.getMeterProcessType(),  dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                     }
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_PRELIM)));
                 } else if (MeterProcessType.FINAL.name().equals(taskRunDto.getMeterProcessType())) {
@@ -336,7 +345,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         //checkFinalizeProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                         checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), dateFormat.format(jobParameters.getDate(START_DATE)),dateFormat.format(jobParameters.getDate(END_DATE)));
                     } else {
-                        checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                        checkFinalizeMonthlyStateRegionGroup(regionGroup, taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                        checkFinalizeMonthlyStateAllRegions(taskRunDto.getMeterProcessType(),  dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                     }
                     checkProcessTypeState(MeterProcessType.PRELIM.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
@@ -401,6 +411,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 executionParamRepository.countDailyRunAllMtnAnyRegion(date, RUN_WESM_JOB_NAME) < 1, errMsq);
     }
 
+    private void checkFinalizeDailyStateAllRegions(String date) {
+        String errMsq = "You already have another process finalized on all regions on the same date: " + date + " !";
+        Preconditions.checkState(executionParamRepository.countDailyRunAllMtnAllRegion(date, RUN_STL_READY_JOB_NAME) < 1, errMsq);
+    }
+
     private void checkFinalizeDailyStateRegionGroup(String regionGroup, String date) {
         String errMsq = "You already have a settlement-ready process finalized on the same date (" + date + ") and region group (" + regionGroup + ")!";
         Preconditions.checkState(executionParamRepository.countDailyRunRegionGroup(date, regionGroup, RUN_STL_READY_JOB_NAME) < 1, errMsq);
@@ -420,6 +435,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         String errMsq = "You already have a " + process + " on any or all regions finalized on the same billing period!";
         Preconditions.checkState(executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1 &&
                 executionParamRepository.countMonthlyRunAllMtnAnyRegion(startDate, endDate, process, RUN_WESM_JOB_NAME) < 1 , errMsq);
+    }
+
+    private void checkFinalizeMonthlyStateAllRegions(String process, String startDate, String endDate) {
+        String errMsq = "You already have a " + process + " on all regions finalized on the same billing period!";
+        Preconditions.checkState(executionParamRepository.countMonthlyRunAllMtnAllRegion(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < 1, errMsq);
     }
 
     private void checkFinalizedAdjustmentState(Long parentRunId, String process, String startDate, String endDate) {

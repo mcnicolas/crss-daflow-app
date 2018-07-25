@@ -172,7 +172,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 }
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
                     //checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
-                    checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getStartDate());
+                    checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 }
 
                 // prevent running if selected mtn is already run within date range or the like

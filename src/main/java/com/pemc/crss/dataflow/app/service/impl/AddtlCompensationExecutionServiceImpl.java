@@ -278,7 +278,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         List<String> properties = Lists.newArrayList();
         List<String> arguments = Lists.newArrayList();
 
-        final Long runId = System.currentTimeMillis();
+        final Long runId = taskRunDto.getRunId();
         arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
         arguments.add(concatKeyValue(GROUP_ID, taskRunDto.getGroupId()));
         arguments.add(concatKeyValue(START_DATE, startDate, "date"));

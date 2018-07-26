@@ -296,7 +296,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     }
 
     protected String concatKeyValue(String key, String value, String dataType) {
-        return key.concat(dataType != null ? "(".concat(dataType).concat(")") : "").concat("=").concat(value);
+        return key.concat(dataType != null ? "(".concat(dataType).concat(")") : "").concat("=").concat(value != null ? value : "");
     }
 
     protected String concatKeyValue(String key, String value) {

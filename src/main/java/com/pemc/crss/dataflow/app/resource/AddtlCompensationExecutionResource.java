@@ -76,11 +76,26 @@ public class AddtlCompensationExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/calc-gmr-vat", method = RequestMethod.POST)
+    public ResponseEntity calculateGmrVat(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(AddtlCompJobName.AC_CALC_GMR_BASE_NAME);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing calculate gmr/vat job for additional compensation. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_GMR_VAT_AC, taskRunDto);
+        batchJobQueueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/finalize", method = RequestMethod.POST)
     public ResponseEntity finalize(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         taskRunDto.setRunId(System.currentTimeMillis());
-        taskRunDto.setJobName(AddtlCompJobName.AC_CALC_GMR_BASE_NAME);
+        taskRunDto.setJobName(AddtlCompJobName.AC_FINALIZE);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
 
         log.info("Queueing finalize job for additional compensation. taskRunDto={}", taskRunDto);

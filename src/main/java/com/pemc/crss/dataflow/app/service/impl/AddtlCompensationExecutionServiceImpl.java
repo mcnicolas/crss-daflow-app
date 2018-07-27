@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
+import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     private static final List<String> AC_CALC_STEP_LIST = Arrays.asList(StlAddtlCompStepUtil.CALC_ADDTL_COMP_STEP,
             StlAddtlCompStepUtil.CALC_ADDTL_COMP_ALLOC_STEP, StlAddtlCompStepUtil.CALC_ADDTL_COMP_VAT_STEP,
             StlAddtlCompStepUtil.CALC_ADDTL_COMP_VAT_ALLOC_STEP);
-    private static final List<String> AC_FINALIZE_STEP_LIST = Collections.singletonList(StlAddtlCompStepUtil.CALC_ADDTL_COMP_GMR_STEP);
+    private static final List<String> AC_CALC_GMR_VAT_STEP_LIST = Collections.singletonList(StlAddtlCompStepUtil.CALC_ADDTL_COMP_GMR_STEP);
+    //TODO: add finalize ac steps
+    private static final List<String> AC_FINALIZE_STEP_LIST = Collections.emptyList();
 
     private static final long ADDTL_COMP_MONTH_VALIDITY = 24;
 
@@ -122,11 +125,25 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                         distinctAddtlCompDto.getSuccessfullAcRuns().add(addtlCompensationExecDetailsDto.getRunId());
                                     }
 
+                                    Optional.ofNullable(getLatestCalcGmrVatAcJob(groupId)).ifPresent(calcGmrVatJobExec -> {
+                                        BatchStatus jobStatus = calcGmrVatJobExec.getStatus();
+                                        distinctAddtlCompDto.setCalcGmrVatStatus(jobStatus);
+                                        distinctAddtlCompDto.setCalcGmrVatAcRunSummary(
+                                                showSummary(calcGmrVatJobExec, AC_CALC_GMR_VAT_STEP_LIST));
+                                        distinctAddtlCompDto.setCalcGmrVatRunningSteps(getProgress(calcGmrVatJobExec));
+                                        distinctAddtlCompDto.setCurrentStatus(convertStatus(jobStatus, "CALCULATE-GMR"));
+                                    });
+
                                     Optional.ofNullable(getLatestFinalizeAcJob(groupId)).ifPresent(finalizeJobExec -> {
-                                        distinctAddtlCompDto.setTaggingStatus(finalizeJobExec.getStatus());
+                                        BatchStatus jobStatus = finalizeJobExec.getStatus();
+                                        distinctAddtlCompDto.setTaggingStatus(jobStatus);
                                         distinctAddtlCompDto.setFinalizeAcRunSummary(
                                                 showSummary(finalizeJobExec, AC_FINALIZE_STEP_LIST));
                                         distinctAddtlCompDto.setFinalizeRunningSteps(getProgress(finalizeJobExec));
+                                        distinctAddtlCompDto.setCurrentStatus(convertStatus(jobStatus, "FINALIZE"));
+                                        if (jobStatus == BatchStatus.COMPLETED) {
+                                            distinctAddtlCompDto.setLocked(true);
+                                        }
                                     });
 
                                     distinctAddtlCompDto.setGroupId(groupId);
@@ -194,7 +211,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 launchAddtlCompensation(taskRunDto);
                 break;
             case AddtlCompJobName.AC_CALC_GMR_BASE_NAME:
-                finalizeAC(taskRunDto);
+                calcGmrVatAc(taskRunDto);
+                break;
+            case AddtlCompJobName.AC_FINALIZE:
+                finalizeAc(taskRunDto);
                 break;
             case AddtlCompJobName.AC_GEN_FILE:
                 generateFilesAc(taskRunDto);
@@ -262,13 +282,13 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                hasAdjusted ? "monthlyAdjustedAddtlCompCalculation" : "monthlyFinalAddtlCompCalculation")));
+                hasAdjusted ? AddtlCompJobProfile.AC_CALC_ADJ_PROFILE : AddtlCompJobProfile.AC_CALC_FINAL_PROFILE)));
 
         log.debug("Running job name={}, properties={}, arguments={}", AC_CALC, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
-    private void finalizeAC(TaskRunDto taskRunDto) throws URISyntaxException {
+    private void calcGmrVatAc(TaskRunDto taskRunDto) throws URISyntaxException {
         String startDate = taskRunDto.getStartDate();
         String endDate = taskRunDto.getEndDate();
         String pricingCondition = taskRunDto.getPricingCondition();
@@ -291,6 +311,31 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
+    }
+
+    private void finalizeAc(TaskRunDto taskRunDto) throws URISyntaxException {
+        String startDate = taskRunDto.getStartDate();
+        String endDate = taskRunDto.getEndDate();
+        String pricingCondition = taskRunDto.getPricingCondition();
+
+        List<String> properties = Lists.newArrayList();
+        List<String> arguments = Lists.newArrayList();
+
+        final Long runId = taskRunDto.getRunId();
+        arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, taskRunDto.getGroupId()));
+        arguments.add(concatKeyValue(START_DATE, startDate, "date"));
+        arguments.add(concatKeyValue(END_DATE, endDate, "date"));
+        arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AddtlCompJobProfile.AC_FINALIZE_PROFILE)));
+
+        log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
+        launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
+
+        // TOOD: remove this once finalize ac in stl side is done
+        throw new RuntimeException("finalize ac is not yet implemented");
     }
 
     private void saveAdjRun(TaskRunDto taskRunDto, String jobName, boolean hasAdjusted) {
@@ -319,7 +364,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         adjVatRun.setBillingPeriodEnd(end);
         adjVatRun.setOutputReady(false);
 
-        saveBatchJobAdjRun(adjVatRun);
+        if (batchJobAdjRunRepository.countByGroupIdAndBillingPeriodStartAndBillingPeriodEnd(adjVatRun.getGroupId(),
+                start, end) < 1) {
+            saveBatchJobAdjRun(adjVatRun);
+        }
     }
 
     private String determineJobAndSetProfile(final boolean hasAdjusted, TaskRunDto taskRunDto, List<String> properties) throws URISyntaxException {
@@ -518,8 +566,19 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                         mtn, start, end, pc));
     }
 
-    private JobExecution getLatestFinalizeAcJob(String groupId) {
+    private JobExecution getLatestCalcGmrVatAcJob(String groupId) {
         List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(AC_CALC_GMR_BASE_NAME.concat("*-").concat(groupId), 0, 1);
+        if (!taggingJobInstances.isEmpty()) {
+            List<JobExecution> finalizeJobExecs = getJobExecutions(taggingJobInstances.get(0));
+            if (!finalizeJobExecs.isEmpty()) {
+                return finalizeJobExecs.get(0);
+            }
+        }
+        return null;
+    }
+
+    private JobExecution getLatestFinalizeAcJob(String groupId) {
+        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(AC_FINALIZE.concat("*-").concat(groupId), 0, 1);
         if (!taggingJobInstances.isEmpty()) {
             List<JobExecution> finalizeJobExecs = getJobExecutions(taggingJobInstances.get(0));
             if (!finalizeJobExecs.isEmpty()) {

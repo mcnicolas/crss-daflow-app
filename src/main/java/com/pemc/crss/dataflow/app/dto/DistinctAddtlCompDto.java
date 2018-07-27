@@ -13,14 +13,19 @@ public class DistinctAddtlCompDto {
     private String pricingCondition;
     private Long jobId;
     private String groupId;
+    private BatchStatus calcGmrVatStatus;
     private BatchStatus taggingStatus;
     private BatchStatus genFileStatus;
+    private String currentStatus;
     private String genFileFolderName;
     private String genFileEndTime;
+    private List<TaskSummaryDto> calcGmrVatAcRunSummary = new ArrayList<>();
     private List<TaskSummaryDto> finalizeAcRunSummary = new ArrayList<>();
+    private List<String> calcGmrVatRunningSteps = new ArrayList<>();
     private List<String> finalizeRunningSteps = new ArrayList<>();
     private List<String> generateFileRunningSteps = new ArrayList<>();
     private List<Long> successfullAcRuns = new ArrayList<>();
+    private boolean locked = false;
 
     public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition, String groupId) {
         this.startDate = startDate;
@@ -69,6 +74,14 @@ public class DistinctAddtlCompDto {
         this.groupId = groupId;
     }
 
+    public BatchStatus getCalcGmrVatStatus() {
+        return calcGmrVatStatus;
+    }
+
+    public void setCalcGmrVatStatus(BatchStatus calcGmrVatStatus) {
+        this.calcGmrVatStatus = calcGmrVatStatus;
+    }
+
     public BatchStatus getTaggingStatus() {
         return taggingStatus;
     }
@@ -90,6 +103,14 @@ public class DistinctAddtlCompDto {
         this.genFileStatus = genFileStatus;
     }
 
+    public String getCurrentStatus() {
+        return currentStatus;
+    }
+
+    public void setCurrentStatus(String currentStatus) {
+        this.currentStatus = currentStatus;
+    }
+
     public String getGenFileFolderName() {
         return genFileFolderName;
     }
@@ -106,12 +127,28 @@ public class DistinctAddtlCompDto {
         this.genFileEndTime = genFileEndTime;
     }
 
+    public List<TaskSummaryDto> getCalcGmrVatAcRunSummary() {
+        return calcGmrVatAcRunSummary;
+    }
+
+    public void setCalcGmrVatAcRunSummary(List<TaskSummaryDto> calcGmrVatAcRunSummary) {
+        this.calcGmrVatAcRunSummary = calcGmrVatAcRunSummary;
+    }
+
     public List<TaskSummaryDto> getFinalizeAcRunSummary() {
         return finalizeAcRunSummary;
     }
 
     public void setFinalizeAcRunSummary(List<TaskSummaryDto> finalizeAcRunSummary) {
         this.finalizeAcRunSummary = finalizeAcRunSummary;
+    }
+
+    public List<String> getCalcGmrVatRunningSteps() {
+        return calcGmrVatRunningSteps;
+    }
+
+    public void setCalcGmrVatRunningSteps(List<String> calcGmrVatRunningSteps) {
+        this.calcGmrVatRunningSteps = calcGmrVatRunningSteps;
     }
 
     public List<String> getFinalizeRunningSteps() {
@@ -136,5 +173,13 @@ public class DistinctAddtlCompDto {
 
     public void setSuccessfullAcRuns(List<Long> successfullAcRuns) {
         this.successfullAcRuns = successfullAcRuns;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 }

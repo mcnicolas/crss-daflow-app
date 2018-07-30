@@ -882,10 +882,12 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             case FINAL:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getFinalTaggingProfile())));
+                saveFinalizeAMSadditionalParams(runId, taskRunDto);
                 break;
             case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getAdjustedTaggingProfile())));
+                saveFinalizeAMSadditionalParams(runId, taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
@@ -1021,6 +1023,34 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     // do nothing
             }
 
+        } catch (ParseException e) {
+            log.error("Error parsing additional batch job params for AMS: {}", e);
+        }
+    }
+
+    void saveFinalizeAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+        log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        try {
+            BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsInvoiceDate.setRunId(runId);
+            batchJobAddtlParamsInvoiceDate.setType("DATE");
+            batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
+            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsInvoiceDate()));
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsDueDate.setRunId(runId);
+            batchJobAddtlParamsDueDate.setType("DATE");
+            batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
+            batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAmsDueDate()));
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsDueDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+            batchJobAddtlParamsRemarksInv.setRunId(runId);
+            batchJobAddtlParamsRemarksInv.setType("STRING");
+            batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+            batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
         } catch (ParseException e) {
             log.error("Error parsing additional batch job params for AMS: {}", e);
         }

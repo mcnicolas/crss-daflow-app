@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service.impl;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.shared.commons.reference.PricingCondition;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile;
@@ -213,7 +214,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             case AddtlCompJobName.AC_CALC_GMR_BASE_NAME:
                 calcGmrVatAc(taskRunDto);
                 break;
-            case AddtlCompJobName.AC_FINALIZE:
+            case AddtlCompJobName.AC_FINALIZE_BASE_NAME:
                 finalizeAc(taskRunDto);
                 break;
             case AddtlCompJobName.AC_GEN_FILE:
@@ -329,13 +330,25 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
 
-        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AddtlCompJobProfile.AC_FINALIZE_PROFILE)));
+        PricingCondition pc = PricingCondition.valueOf(pricingCondition);
+        String finalizeProfile;
+
+        switch (pc) {
+            case AP:
+            case SEC:
+                finalizeProfile = AddtlCompJobProfile.AC_FINALIZE_PROFILE_AP_SEC;
+                break;
+            case  MRU:
+                finalizeProfile = AddtlCompJobProfile.AC_FINALIZE_PROFILE_MRU;
+                break;
+            default:
+                throw new RuntimeException("Unsupported Pricing Condition: " + pc);
+        }
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(finalizeProfile)));
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
-
-        // TOOD: remove this once finalize ac in stl side is done
-        throw new RuntimeException("finalize ac is not yet implemented");
     }
 
     private void saveAdjRun(TaskRunDto taskRunDto, String jobName, boolean hasAdjusted) {
@@ -578,7 +591,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     private JobExecution getLatestFinalizeAcJob(String groupId) {
-        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(AC_FINALIZE.concat("*-").concat(groupId), 0, 1);
+        List<JobInstance> taggingJobInstances = jobExplorer.findJobInstancesByJobName(AC_FINALIZE_BASE_NAME.concat("*-").concat(groupId), 0, 1);
         if (!taggingJobInstances.isEmpty()) {
             List<JobExecution> finalizeJobExecs = getJobExecutions(taggingJobInstances.get(0));
             if (!finalizeJobExecs.isEmpty()) {

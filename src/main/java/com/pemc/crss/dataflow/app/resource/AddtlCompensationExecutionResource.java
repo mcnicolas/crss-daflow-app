@@ -95,7 +95,7 @@ public class AddtlCompensationExecutionResource {
     public ResponseEntity finalize(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         taskRunDto.setRunId(System.currentTimeMillis());
-        taskRunDto.setJobName(AddtlCompJobName.AC_FINALIZE);
+        taskRunDto.setJobName(AddtlCompJobName.AC_FINALIZE_BASE_NAME);
         taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
 
         log.info("Queueing finalize job for additional compensation. taskRunDto={}", taskRunDto);

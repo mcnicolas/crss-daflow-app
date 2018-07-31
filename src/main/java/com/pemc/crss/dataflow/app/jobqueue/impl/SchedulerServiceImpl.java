@@ -233,6 +233,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                     reserveMarketFeeTaskExecutionService.launchJob(taskDto);
                     break;
                 case CALC_AC:
+                case CALC_GMR_VAT_AC:
                 case FINALIZE_AC:
                 case GEN_FILES_AC:
                     addtlCompensationExecutionService.launchJob(taskDto);

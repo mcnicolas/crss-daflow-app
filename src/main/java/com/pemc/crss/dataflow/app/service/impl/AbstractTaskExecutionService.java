@@ -378,8 +378,8 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
                 .addValue("billingPeriodEnd", DateUtil.convertToDate(batchJobAdjRun.getBillingPeriodEnd()))
                 .addValue("outputReady", batchJobAdjRun.isOutputReady() ? "Y" : "N");
 
-        String insertSql = "insert into batch_job_adj_run(id, addtl_comp, job_id, group_id, meter_process_type, "
-                + " billing_period_start, billing_period_end, output_ready) values (nextval('hibernate_sequence'), "
+        String insertSql = "insert into batch_job_adj_run(id, created_datetime, addtl_comp, job_id, group_id, meter_process_type, "
+                + " billing_period_start, billing_period_end, output_ready) values (nextval('hibernate_sequence'), now(), "
                 + " :addtlComp, :jobId, :groupId, :meterProcessType, :billingPeriodStart, :billingPeriodEnd, :outputReady)";
 
         dataflowJdbcTemplate.update(insertSql, paramSource);

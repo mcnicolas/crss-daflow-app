@@ -58,7 +58,8 @@ public interface BatchJobQueueService {
                 jobQueue.setMeterProcessType(meterProcessType);
                 break;
             case SETTLEMENT:
-                if (Arrays.asList(JobProcess.CALC_AC, JobProcess.FINALIZE_AC, JobProcess.GEN_FILES_AC).contains(jobProcess)) {
+                if (Arrays.asList(JobProcess.CALC_AC, JobProcess.CALC_GMR_VAT_AC, JobProcess.FINALIZE_AC, JobProcess.GEN_FILES_AC)
+                        .contains(jobProcess)) {
                     jobQueue.setMeterProcessType(MeterProcessType.AC);
                 } else {
                     jobQueue.setMeterProcessType(MeterProcessType.get(taskRunDto.getMeterProcessType()));

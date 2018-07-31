@@ -5,6 +5,7 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.entity.ViewStlDailyStatus;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
+import org.apache.commons.lang.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -77,11 +78,14 @@ public class StlDailyStatusDisplay {
     }
 
     public String getErrorDetails() {
+        String errorDetails = dailyStatus.getDetails();
         switch (dailyStatus.getStatus()) {
             case FAILED_EXECUTION:
-                return dailyStatus.getDetails(); // failed execution always has details.
+                return errorDetails; // failed execution always has details.
             case FAILED_RUN: // error logs can only be checked by searching for the job in mesos logs. good luck.
-                return "Job failed during run.";
+                return StringUtils.isNotEmpty(errorDetails)
+                        ? errorDetails
+                        : "Job failed during run. Please refer to mesos logs.";
             default:
                 return null;
         }

@@ -104,11 +104,13 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
                 .anyMatch(taskRunDto ->
                     Objects.equals(taskRunDto.getStartDate(), taskRunDtoToQueue.getStartDate()) &&
                     Objects.equals(taskRunDto.getEndDate(), taskRunDtoToQueue.getEndDate()) &&
-                    Objects.equals(taskRunDto.getMeterProcessType(), taskRunDtoToQueue.getMeterProcessType()));
+                    Objects.equals(taskRunDto.getMeterProcessType(), taskRunDtoToQueue.getMeterProcessType()) &&
+                    Objects.equals(taskRunDto.getRegionGroup(), taskRunDtoToQueue.getRegionGroup())
+                );
 
         if (sameJobInProgress) {
-            throw new RuntimeException(String.format("Cannot queue job. A %s %s job with the same trading date "
-                    + "is already queued.", taskRunDtoToQueue.getMeterProcessType(), jobProcess));
+            throw new RuntimeException(String.format("Cannot queue job. A %s %s job with the same trading date,"
+                    + " process type and region_group is already queued.", taskRunDtoToQueue.getMeterProcessType(), jobProcess));
         }
     }
 

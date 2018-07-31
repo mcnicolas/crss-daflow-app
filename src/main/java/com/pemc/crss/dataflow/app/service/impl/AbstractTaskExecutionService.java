@@ -102,6 +102,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String MTNS = "mtns";
     protected static final String SEINS = "seins";
     protected static final String REGION_GROUP = "regionGroup";
+    protected static final String REGION = "region";
     protected static final String ALL = "ALL";
 
     @Autowired

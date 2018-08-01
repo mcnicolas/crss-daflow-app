@@ -482,7 +482,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 batchJobAddtlParamsMru.setType("LONG");
                 batchJobAddtlParamsMru.setKey(AMS_MRU_INSTALLMENT);
                 batchJobAddtlParamsMru.setLongVal(taskRunDto.getAmsMruInstallment());
-                saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
+                saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsMru);
             }
 
         } catch (ParseException e) {

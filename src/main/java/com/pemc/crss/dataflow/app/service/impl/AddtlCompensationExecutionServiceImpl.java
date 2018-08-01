@@ -347,6 +347,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(finalizeProfile)));
 
+        saveAMSadditionalParams(runId, taskRunDto, pc);
+
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
@@ -447,12 +449,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_GEN_FILE_PROFILE)));
 
-        saveAMSadditionalParams(runId, taskRunDto);
-
         launchJob(ADDTL_COMP_FILE_GEN_TASK_NAME, properties, arguments);
     }
 
-    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto, final PricingCondition pc) {
         log.info("Saving additional AC AMS params. AddtlCompensationGenFilesDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
@@ -475,6 +475,15 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
             batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
             saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
+
+            if (pc == PricingCondition.MRU) {
+                BatchJobAddtlParams batchJobAddtlParamsMru = new BatchJobAddtlParams();
+                batchJobAddtlParamsMru.setRunId(runId);
+                batchJobAddtlParamsMru.setType("LONG");
+                batchJobAddtlParamsMru.setKey(AMS_MRU_INSTALLMENT);
+                batchJobAddtlParamsMru.setLongVal(taskRunDto.getAmsMruInstallment());
+                saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
+            }
 
         } catch (ParseException e) {
             log.error("Error parsing additional batch job params for AC AMS: {}", e);

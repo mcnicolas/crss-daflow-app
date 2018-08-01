@@ -33,6 +33,7 @@ public class TaskRunDto {
     private String amsDueDate;
     private String amsRemarksInv;
     private String amsRemarksMf;
+    private Long amsMruInstallment;
 
     // BILLING PERIOD INFOS
     private Long billingPeriodId;

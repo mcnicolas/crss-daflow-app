@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Objects;
 
 @Data
@@ -61,6 +62,8 @@ public class TaskRunDto {
     private String billingEndDate;
     private String pricingCondition;
     private String jobId;
+
+    private List<MruInstallmentParam> mruInstallmentParams;
 
     @Override
     public boolean equals(Object o) {

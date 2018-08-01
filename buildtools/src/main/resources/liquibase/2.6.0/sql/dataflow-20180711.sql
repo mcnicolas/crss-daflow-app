@@ -1,3 +1,5 @@
+-- execute using postgres user
+
 -- *********************************************************************
 -- Update Database Script
 -- *********************************************************************
@@ -26,6 +28,8 @@ CREATE VIEW dataflow.VW_STL_DAILY_STATUS AS
         AND inner_q.status != 'CANCELLED'
         GROUP BY inner_q.trading_date, inner_q.group_id, inner_q.region_group,
            inner_q.meter_process_type);
+
+ALTER table dataflow.VW_STL_DAILY_STATUS OWNER TO crss_dataflow;
 
 INSERT INTO dataflow.databasechangelog (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, DESCRIPTION, COMMENTS, EXECTYPE, CONTEXTS, LABELS, LIQUIBASE, DEPLOYMENT_ID) VALUES ('20180711-1', 'dmendoza', 'src/main/resources/liquibase/2.6.0/schema/changelog-20180711.groovy', NOW(), 37, '7:51cb87079d6b111b690acd5d79758d51', 'sql; sql', '', 'EXECUTED', NULL, NULL, '3.5.3', '1277208075');
 

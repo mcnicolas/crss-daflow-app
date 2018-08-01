@@ -1,3 +1,5 @@
+-- execute using postgres user
+
 -- *********************************************************************
 -- Update Database Script
 -- *********************************************************************
@@ -46,6 +48,8 @@ CREATE VIEW dataflow.vw_stl_jobs AS
                     FROM dataflow.batch_job_instance ji
                     INNER JOIN dataflow.batch_job_execution je ON ji.JOB_INSTANCE_ID = je.JOB_INSTANCE_ID
                     WHERE ji.job_name LIKE 'stlReady%' ) inner_q;
+
+ALTER table dataflow.vw_stl_jobs OWNER TO crss_dataflow;
 
 -- Release Database Lock
 UPDATE dataflow.databasechangeloglock SET LOCKED = FALSE, LOCKEDBY = NULL, LOCKGRANTED = NULL WHERE ID = 1;

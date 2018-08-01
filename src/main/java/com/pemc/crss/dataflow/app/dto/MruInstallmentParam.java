@@ -8,4 +8,5 @@ public class MruInstallmentParam {
     private Integer installmentNum;
     private String invoiceDate;
     private String dueDate;
+    private String remarks;
 }

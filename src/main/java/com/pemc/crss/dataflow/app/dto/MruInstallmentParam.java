@@ -6,7 +6,7 @@ import lombok.Data;
 public class MruInstallmentParam {
 
     private Integer installmentNum;
-    private String invoiceDate;
-    private String dueDate;
+    private String invoiceDate; // Save in YYY-MM-DD format
+    private String dueDate; // Save in YYY-MM-DD format
     private String remarks;
 }

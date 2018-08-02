@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.shared.commons.reference.PricingCondition;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
+import com.pemc.crss.shared.commons.util.TaskUtil;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
@@ -15,14 +16,11 @@ import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
@@ -350,17 +348,17 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             case AP:
             case SEC:
                 finalizeProfile = AddtlCompJobProfile.AC_FINALIZE_PROFILE_AP_SEC;
+                saveAMSadditionalParamsApSec(runId, taskRunDto);
                 break;
             case  MRU:
                 finalizeProfile = AddtlCompJobProfile.AC_FINALIZE_PROFILE_MRU;
+                saveAMSadditionalParamsMru(runId, taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Unsupported Pricing Condition: " + pc);
         }
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(finalizeProfile)));
-
-        saveAMSadditionalParams(runId, taskRunDto, pc);
 
         log.debug("Running job name={}, properties={}, arguments={}", ADDTL_COMP_TASK_NAME, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
@@ -465,7 +463,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchJob(ADDTL_COMP_FILE_GEN_TASK_NAME, properties, arguments);
     }
 
-    private void saveAMSadditionalParams(final Long runId, final TaskRunDto taskRunDto, final PricingCondition pc) {
+    private void saveAMSadditionalParamsApSec(final Long runId, final TaskRunDto taskRunDto) {
         log.info("Saving additional AC AMS params. AddtlCompensationGenFilesDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
@@ -489,18 +487,63 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             batchJobAddtlParamsRemarksInv.setStringVal(taskRunDto.getAmsRemarksInv());
             saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
 
-            if (pc == PricingCondition.MRU) {
-                BatchJobAddtlParams batchJobAddtlParamsMru = new BatchJobAddtlParams();
-                batchJobAddtlParamsMru.setRunId(runId);
-                batchJobAddtlParamsMru.setType("LONG");
-                batchJobAddtlParamsMru.setKey(AMS_MRU_INSTALLMENT);
-                batchJobAddtlParamsMru.setLongVal(taskRunDto.getAmsMruInstallment());
-                saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsMru);
-            }
-
         } catch (ParseException e) {
             log.error("Error parsing additional batch job params for AC AMS: {}", e);
         }
+    }
+
+    private void saveAMSadditionalParamsMru(final Long runId, final TaskRunDto taskRunDto) {
+        log.info("Saving additional AC AMS params. AddtlCompensationGenFilesDto: {}", taskRunDto);
+
+        if (CollectionUtils.isEmpty(taskRunDto.getMruInstallmentParams())) {
+            throw new RuntimeException("Empty Mru Installment Data!");
+        }
+
+        BatchJobAddtlParams batchJobAddtlParamsMru = new BatchJobAddtlParams();
+        batchJobAddtlParamsMru.setRunId(runId);
+        batchJobAddtlParamsMru.setType("LONG");
+        batchJobAddtlParamsMru.setKey(AMS_MRU_INSTALLMENT);
+        batchJobAddtlParamsMru.setLongVal(taskRunDto.getAmsMruInstallment());
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsMru);
+
+        List<MruInstallmentParam> mruInstallmentParams = taskRunDto.getMruInstallmentParams().stream()
+                .sorted(Comparator.comparing(MruInstallmentParam::getInstallmentNum)).collect(Collectors.toList());
+
+        String concatInvoiceDates = mruInstallmentParams.stream().map(MruInstallmentParam::getInvoiceDate)
+                .collect(Collectors.joining(TaskUtil.MRU_PARAM_DELIMITER));
+
+        BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+        batchJobAddtlParamsInvoiceDate.setRunId(runId);
+        batchJobAddtlParamsInvoiceDate.setType("DATE");
+        batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
+        batchJobAddtlParamsInvoiceDate.setStringVal(concatInvoiceDates);
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
+
+        String concatDueDates = mruInstallmentParams.stream().map(MruInstallmentParam::getDueDate)
+                .collect(Collectors.joining(TaskUtil.MRU_PARAM_DELIMITER));
+
+        BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+        batchJobAddtlParamsDueDate.setRunId(runId);
+        batchJobAddtlParamsDueDate.setType("DATE");
+        batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
+        batchJobAddtlParamsDueDate.setStringVal(concatDueDates);
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsDueDate);
+
+
+        if (mruInstallmentParams.stream().anyMatch(mruParam -> StringUtils.isNotEmpty(mruParam.getRemarks())
+                && mruParam.getRemarks().contains(TaskUtil.MRU_PARAM_DELIMITER))) {
+            throw new RuntimeException("MRU Remarks should not contain pipe (\"|\") characters.");
+        }
+
+        String concatRemarks = mruInstallmentParams.stream().map(mruParam ->
+                StringUtils.isNotEmpty(mruParam.getRemarks()) ? mruParam.getRemarks() : "")
+                .collect(Collectors.joining(TaskUtil.MRU_PARAM_DELIMITER));
+        BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
+        batchJobAddtlParamsRemarksInv.setRunId(runId);
+        batchJobAddtlParamsRemarksInv.setType("STRING");
+        batchJobAddtlParamsRemarksInv.setKey(AMS_REMARKS_INV);
+        batchJobAddtlParamsRemarksInv.setStringVal(concatRemarks);
+        saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarksInv);
     }
 
     private void saveAddltCompCalcAdditionalParams(final Long runId, final TaskRunDto taskRunDto) {

@@ -28,6 +28,7 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -80,6 +81,15 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Autowired
     private SettlementJobLockRepository settlementJobLockRepository;
 
+    @Value("${cfg.ams.remarks-max-length}")
+    private Long maxRemarksLength;
+
+    @Value("${cfg.ams.invoice-date-restrict-days}")
+    private Long amsInvoiceDateRestrictDays;
+
+    @Value("${cfg.ams.due-date-restrict-days}")
+    private Long amsDueDateRestrictDays;
+
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
         return null;
@@ -94,6 +104,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest.getMapParams())
                 .stream()
                 .map(distinctAddtlCompDto -> {
+                    distinctAddtlCompDto.setMaxAmsRemarksLength(maxRemarksLength);
+                    distinctAddtlCompDto.setAmsInvoiceDateRestrictDays(amsInvoiceDateRestrictDays);
+                    distinctAddtlCompDto.setAmsDueDateRestrictDays(amsDueDateRestrictDays);
                     AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
                     addtlCompensationExecutionDto.setDistinctAddtlCompDto(distinctAddtlCompDto);
                     List<AddtlCompensationExecDetailsDto> addtlCompensationExecDetailsDtos = Lists.newArrayList();

@@ -26,6 +26,9 @@ public class DistinctAddtlCompDto {
     private List<String> generateFileRunningSteps = new ArrayList<>();
     private List<Long> successfullAcRuns = new ArrayList<>();
     private boolean locked = false;
+    private Long maxAmsRemarksLength;
+    private Long amsInvoiceDateRestrictDays;
+    private Long amsDueDateRestrictDays;
 
     public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition, String groupId) {
         this.startDate = startDate;
@@ -181,5 +184,29 @@ public class DistinctAddtlCompDto {
 
     public void setLocked(boolean locked) {
         this.locked = locked;
+    }
+
+    public Long getMaxAmsRemarksLength() {
+        return maxAmsRemarksLength;
+    }
+
+    public void setMaxAmsRemarksLength(Long maxAmsRemarksLength) {
+        this.maxAmsRemarksLength = maxAmsRemarksLength;
+    }
+
+    public Long getAmsInvoiceDateRestrictDays() {
+        return amsInvoiceDateRestrictDays;
+    }
+
+    public void setAmsInvoiceDateRestrictDays(Long amsInvoiceDateRestrictDays) {
+        this.amsInvoiceDateRestrictDays = amsInvoiceDateRestrictDays;
+    }
+
+    public Long getAmsDueDateRestrictDays() {
+        return amsDueDateRestrictDays;
+    }
+
+    public void setAmsDueDateRestrictDays(Long amsDueDateRestrictDays) {
+        this.amsDueDateRestrictDays = amsDueDateRestrictDays;
     }
 }

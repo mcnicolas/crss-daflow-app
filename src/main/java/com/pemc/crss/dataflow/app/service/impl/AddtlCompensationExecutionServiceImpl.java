@@ -514,7 +514,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
         batchJobAddtlParamsInvoiceDate.setRunId(runId);
-        batchJobAddtlParamsInvoiceDate.setType("DATE");
+        batchJobAddtlParamsInvoiceDate.setType("STRING");
         batchJobAddtlParamsInvoiceDate.setKey(AMS_INVOICE_DATE);
         batchJobAddtlParamsInvoiceDate.setStringVal(concatInvoiceDates);
         saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
@@ -524,11 +524,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
         batchJobAddtlParamsDueDate.setRunId(runId);
-        batchJobAddtlParamsDueDate.setType("DATE");
+        batchJobAddtlParamsDueDate.setType("STRING");
         batchJobAddtlParamsDueDate.setKey(AMS_DUE_DATE);
         batchJobAddtlParamsDueDate.setStringVal(concatDueDates);
         saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsDueDate);
-
 
         if (mruInstallmentParams.stream().anyMatch(mruParam -> StringUtils.isNotEmpty(mruParam.getRemarks())
                 && mruParam.getRemarks().contains(TaskUtil.MRU_PARAM_DELIMITER))) {

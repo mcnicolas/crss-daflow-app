@@ -123,7 +123,8 @@ public class BatchJobQueueDisplay {
                 } else {
                     putIfPresent(paramMap, "MTN", taskRunDto.getMtns());
                 }
-                putIfPresent(paramMap,"Region", taskRunDto.getRegionGroup());
+                putIfPresent(paramMap,"Region Group", taskRunDto.getRegionGroup());
+                putIfPresent(paramMap,"Region", taskRunDto.getRegion());
                 break;
             default:
                 // do nothing

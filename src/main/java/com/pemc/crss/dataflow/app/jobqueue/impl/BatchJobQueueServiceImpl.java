@@ -25,10 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -74,13 +71,13 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     }
 
     @Override
-    public List<BatchJobQueue> findQueuedAndInProgressJobs(final JobProcess jobProcess) {
-        return queueRepository.findByJobProcessAndStatusIn(jobProcess, IN_PROGRESS_STATUSES);
+    public List<BatchJobQueue> findQueuedAndInProgressJobs(final List<JobProcess> jobProcesses) {
+        return queueRepository.findByJobProcessInAndStatusIn(jobProcesses, IN_PROGRESS_STATUSES);
     }
 
     @Override
     public void validateAdjustedProcess(final TaskRunDto taskRunDtoToQueue, JobProcess finalizeJobProcess) {
-        List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(finalizeJobProcess);
+        List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(Collections.singletonList(finalizeJobProcess));
 
         boolean finalizeJobInProgress = inProgressJobs.stream()
                 .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))
@@ -96,8 +93,9 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     }
 
     @Override
-    public void validateGenIwsAndCalcQueuedJobs(TaskRunDto taskRunDtoToQueue, JobProcess jobProcess) {
-        List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(jobProcess);
+    public void validateGenIwsAndCalcQueuedJobs(TaskRunDto taskRunDtoToQueue) {
+        List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(Arrays.asList(JobProcess.GEN_INPUT_WS_TA,
+                JobProcess.CALC_TA));
 
         boolean sameJobInProgress = inProgressJobs.stream()
                 .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))
@@ -109,8 +107,10 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
                 );
 
         if (sameJobInProgress) {
-            throw new RuntimeException(String.format("Cannot queue job. A %s %s job with the same trading date,"
-                    + " process type and region_group is already queued.", taskRunDtoToQueue.getMeterProcessType(), jobProcess));
+            throw new RuntimeException(String.format("Cannot queue job. Another job with the same trading date (%s),"
+                    + " process type (%s) and region_group (%s) is already queued or is currently running.",
+                    taskRunDtoToQueue.getTradingDate(), taskRunDtoToQueue.getMeterProcessType(),
+                    taskRunDtoToQueue.getRegionGroup()));
         }
     }
 

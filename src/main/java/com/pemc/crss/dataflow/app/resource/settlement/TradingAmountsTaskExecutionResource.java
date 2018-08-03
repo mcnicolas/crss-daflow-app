@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -56,7 +57,8 @@ public class TradingAmountsTaskExecutionResource {
     public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         if (taskRunDto.isNewGroup()) {
-            for (BatchJobQueue runAdjJob : queueService.findQueuedAndInProgressJobs(JobProcess.GEN_INPUT_WS_TA)) {
+            for (BatchJobQueue runAdjJob : queueService.findQueuedAndInProgressJobs(
+                    Collections.singletonList(JobProcess.GEN_INPUT_WS_TA))) {
                 TaskRunDto runAdjTaskDto = ModelMapper.toModel(runAdjJob.getTaskObj(), TaskRunDto.class);
                 if (runAdjTaskDto.isNewGroup() && Objects.equals(taskRunDto.getParentJob(), runAdjTaskDto.getParentJob())) {
                     throw new RuntimeException("Cannot queue run adjustment job. Another run adjustment job"
@@ -96,7 +98,7 @@ public class TradingAmountsTaskExecutionResource {
             jobQueue.setGroupId(taskRunDto.getGroupId());
             jobQueue.setRegionGroup(taskRunDto.getRegionGroup());
 
-            queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.GEN_INPUT_WS_TA);
+            queueService.validateGenIwsAndCalcQueuedJobs(runDto);
             queueService.save(jobQueue);
 
         });
@@ -136,7 +138,7 @@ public class TradingAmountsTaskExecutionResource {
             jobQueue.setGroupId(taskRunDto.getGroupId());
             jobQueue.setRegionGroup(taskRunDto.getRegionGroup());
 
-            queueService.validateGenIwsAndCalcQueuedJobs(runDto, JobProcess.CALC_TA);
+            queueService.validateGenIwsAndCalcQueuedJobs(runDto);
             queueService.save(jobQueue);
         });
 

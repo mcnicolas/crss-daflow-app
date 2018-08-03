@@ -26,11 +26,11 @@ public interface BatchJobQueueService {
 
     Page<BatchJobQueue> getAllWithStatus(QueueStatus status, Pageable pageable);
 
-    List<BatchJobQueue> findQueuedAndInProgressJobs(JobProcess jobProcess);
+    List<BatchJobQueue> findQueuedAndInProgressJobs(List<JobProcess> jobProcesses);
 
     void validateAdjustedProcess(final TaskRunDto taskRunDtoToQueue, final JobProcess finalizeJobProcess);
 
-    void validateGenIwsAndCalcQueuedJobs(final TaskRunDto taskRunDtoToQueue, final JobProcess jobProcess);
+    void validateGenIwsAndCalcQueuedJobs(final TaskRunDto taskRunDtoToQueue);
 
     void setMtnParam(final BatchJobQueueDisplay queueDisplay);
 

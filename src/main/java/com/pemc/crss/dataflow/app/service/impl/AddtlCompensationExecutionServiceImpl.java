@@ -88,6 +88,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Value("${cfg.ams.due-date-restrict-days}")
     private Long amsDueDateRestrictDays;
 
+    @Value("${cfg.ams.addtl-comp-max-number-installment}")
+    private Long addtlCompMaxNoInstallments;
+
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable, String type, String status, String mode, String runStartDate, String tradingStartDate, String tradingEndDate, String username) {
         return null;
@@ -105,6 +108,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                     distinctAddtlCompDto.setMaxAmsRemarksLength(maxRemarksLength);
                     distinctAddtlCompDto.setAmsInvoiceDateRestrictDays(amsInvoiceDateRestrictDays);
                     distinctAddtlCompDto.setAmsDueDateRestrictDays(amsDueDateRestrictDays);
+                    distinctAddtlCompDto.setAddtlCompMaxNoInstallments(addtlCompMaxNoInstallments);
                     AddtlCompensationExecutionDto addtlCompensationExecutionDto = new AddtlCompensationExecutionDto();
                     addtlCompensationExecutionDto.setDistinctAddtlCompDto(distinctAddtlCompDto);
                     List<AddtlCompensationExecDetailsDto> addtlCompensationExecDetailsDtos = Lists.newArrayList();

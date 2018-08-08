@@ -29,6 +29,7 @@ public class DistinctAddtlCompDto {
     private Long maxAmsRemarksLength;
     private Long amsInvoiceDateRestrictDays;
     private Long amsDueDateRestrictDays;
+    private Long addtlCompMaxNoInstallments;
 
     public DistinctAddtlCompDto(Date startDate, Date endDate, String pricingCondition, String groupId) {
         this.startDate = startDate;
@@ -208,5 +209,13 @@ public class DistinctAddtlCompDto {
 
     public void setAmsDueDateRestrictDays(Long amsDueDateRestrictDays) {
         this.amsDueDateRestrictDays = amsDueDateRestrictDays;
+    }
+
+    public Long getAddtlCompMaxNoInstallments() {
+        return addtlCompMaxNoInstallments;
+    }
+
+    public void setAddtlCompMaxNoInstallments(Long addtlCompMaxNoInstallments) {
+        this.addtlCompMaxNoInstallments = addtlCompMaxNoInstallments;
     }
 }

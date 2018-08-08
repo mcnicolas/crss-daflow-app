@@ -239,13 +239,13 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             // for list by billing period
             arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
 
-            arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
+            arguments.add(concatKeyValue(RG, taskRunDto.getRegionGroup()));
             jobName = "crss-meterprocess-task-mqcomputation";
         } else if (taskRunDto.getParentJob() != null) {
             JobInstance jobInstance = jobExplorer.getJobInstance(Long.valueOf(taskRunDto.getParentJob()));
             JobParameters jobParameters = getJobExecutions(jobInstance).get(0).getJobParameters();
             String processType = jobParameters.getString(PROCESS_TYPE);
-            String regionGroup = jobParameters.getString(REGION_GROUP);
+            String regionGroup = jobParameters.getString(RG);
             boolean isDaily = processType == null || Objects.equals(processType, MeterProcessType.DAILY.name());
             Long parentJobRunId = jobParameters.getLong(RUN_ID);
             if (isDaily) {
@@ -254,7 +254,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         //checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                         checkFinalizeDailyStateAnyRegion(dateFormat.format(jobParameters.getDate(DATE)));
                     } else {
-                        checkFinalizeDailyStateRegionGroup(jobParameters.getString(REGION_GROUP), dateFormat.format(jobParameters.getDate(DATE)));
+                        checkFinalizeDailyStateRegionGroup(jobParameters.getString(RG), dateFormat.format(jobParameters.getDate(DATE)));
                         checkFinalizeDailyStateAllRegions(dateFormat.format(jobParameters.getDate(DATE)));
                     }
                 }

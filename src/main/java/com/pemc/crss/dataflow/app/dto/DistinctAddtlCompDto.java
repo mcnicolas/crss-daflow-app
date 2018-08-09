@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.dto;
 
 import org.springframework.batch.core.BatchStatus;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -14,6 +15,8 @@ public class DistinctAddtlCompDto {
     private Long jobId;
     private String groupId;
     private BatchStatus calcGmrVatStatus;
+    private LocalDateTime calcGmrStartDate;
+    private LocalDateTime calcGmrEndDate;
     private BatchStatus taggingStatus;
     private BatchStatus genFileStatus;
     private String currentStatus;
@@ -84,6 +87,22 @@ public class DistinctAddtlCompDto {
 
     public void setCalcGmrVatStatus(BatchStatus calcGmrVatStatus) {
         this.calcGmrVatStatus = calcGmrVatStatus;
+    }
+
+    public LocalDateTime getCalcGmrStartDate() {
+        return calcGmrStartDate;
+    }
+
+    public void setCalcGmrStartDate(LocalDateTime calcGmrStartDate) {
+        this.calcGmrStartDate = calcGmrStartDate;
+    }
+
+    public LocalDateTime getCalcGmrEndDate() {
+        return calcGmrEndDate;
+    }
+
+    public void setCalcGmrEndDate(LocalDateTime calcGmrEndDate) {
+        this.calcGmrEndDate = calcGmrEndDate;
     }
 
     public BatchStatus getTaggingStatus() {

@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -11,6 +12,8 @@ public class AddtlCompensationExecDetailsDto {
     private String mtn;
     private BigDecimal approvedRate;
     private String status;
+    private LocalDateTime runStartDate;
+    private LocalDateTime runEndDate;
     private List<TaskSummaryDto> taskSummaryList = new ArrayList<>();
 
     // progress bar and status
@@ -54,6 +57,22 @@ public class AddtlCompensationExecDetailsDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getRunStartDate() {
+        return runStartDate;
+    }
+
+    public void setRunStartDate(LocalDateTime runStartDate) {
+        this.runStartDate = runStartDate;
+    }
+
+    public LocalDateTime getRunEndDate() {
+        return runEndDate;
+    }
+
+    public void setRunEndDate(LocalDateTime runEndDate) {
+        this.runEndDate = runEndDate;
     }
 
     public List<TaskSummaryDto> getTaskSummaryList() {

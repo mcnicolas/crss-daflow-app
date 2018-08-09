@@ -135,6 +135,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
                                     addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_CALC_STEP_LIST));
                                     addtlCompensationExecDetailsDto.setRunningSteps(getProgress(jobExecution));
+                                    addtlCompensationExecDetailsDto.setRunStartDate(DateUtil.convertToLocalDateTime(jobExecution.getStartTime()));
+                                    addtlCompensationExecDetailsDto.setRunEndDate(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
 
                                     // add run id for completed ac runs
                                     if (Objects.equals(addtlCompensationExecDetailsDto.getStatus(), BatchStatus.COMPLETED.toString())) {
@@ -147,6 +149,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                         distinctAddtlCompDto.setCalcGmrVatAcRunSummary(
                                                 showSummary(calcGmrVatJobExec, AC_CALC_GMR_VAT_STEP_LIST));
                                         distinctAddtlCompDto.setCalcGmrVatRunningSteps(getProgress(calcGmrVatJobExec));
+                                        distinctAddtlCompDto.setCalcGmrStartDate(DateUtil.convertToLocalDateTime(calcGmrVatJobExec.getStartTime()));
+                                        distinctAddtlCompDto.setCalcGmrEndDate(DateUtil.convertToLocalDateTime(calcGmrVatJobExec.getEndTime()));
                                         distinctAddtlCompDto.setCurrentStatus(convertStatus(jobStatus, "CALCULATE-GMR"));
                                     });
 

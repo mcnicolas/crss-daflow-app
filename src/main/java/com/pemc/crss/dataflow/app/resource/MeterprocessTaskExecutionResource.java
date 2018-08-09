@@ -76,8 +76,6 @@ public class MeterprocessTaskExecutionResource {
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
         String currentUser = SecurityUtil.getCurrentUser(principal);
-
-        taskRunDto.setRunId(System.currentTimeMillis());
         taskRunDto.setCurrentUser(currentUser);
         LOG.debug("Queueing job request. taskRunDto={}", taskRunDto);
 
@@ -85,10 +83,10 @@ public class MeterprocessTaskExecutionResource {
             setJobParams(taskRunDto);
         }
 
-
         Arrays.stream(taskRunDto.getRegionGroup().split(",")).forEach(
                 s -> {
                     TaskRunDto dto = taskRunDto.clone(taskRunDto);
+                    dto.setRunId(System.currentTimeMillis());
                     dto.setRegionGroup(s);
                     BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
                             determineMeterJobProcessByJobName(dto.getJobName()), dto);

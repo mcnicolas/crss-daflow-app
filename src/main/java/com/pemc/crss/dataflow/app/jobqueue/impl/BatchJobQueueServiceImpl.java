@@ -101,7 +101,8 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
                 .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))
                 .anyMatch(taskRunDto ->
                     Objects.equals(taskRunDto.getGroupId(), taskRunDtoToQueue.getGroupId()) &&
-                    Objects.equals(taskRunDto.getTradingDate(), taskRunDtoToQueue.getTradingDate()) &&
+                    Objects.equals(taskRunDto.getStartDate(), taskRunDtoToQueue.getStartDate()) &&
+                    Objects.equals(taskRunDto.getEndDate(), taskRunDtoToQueue.getEndDate()) &&
                     Objects.equals(taskRunDto.getMeterProcessType(), taskRunDtoToQueue.getMeterProcessType()) &&
                     Objects.equals(taskRunDto.getRegionGroup(), taskRunDtoToQueue.getRegionGroup())
                 );
@@ -109,7 +110,7 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
         if (sameJobInProgress) {
             throw new RuntimeException(String.format("Cannot queue job. Another job with the same group_id (%s),"
                     + " trading date (%s), process type (%s) and region_group (%s) is already queued or is currently running.",
-                    taskRunDtoToQueue.getGroupId(), taskRunDtoToQueue.getTradingDate(),
+                    taskRunDtoToQueue.getGroupId(), taskRunDtoToQueue.getEndDate(),
                     taskRunDtoToQueue.getMeterProcessType(), taskRunDtoToQueue.getRegionGroup()));
         }
     }

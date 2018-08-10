@@ -83,15 +83,22 @@ public class MeterprocessTaskExecutionResource {
             setJobParams(taskRunDto);
         }
 
-        Arrays.stream(taskRunDto.getRegionGroup().split(",")).forEach(
-                s -> {
-                    TaskRunDto dto = taskRunDto.clone(taskRunDto);
-                    dto.setRunId(System.currentTimeMillis());
-                    dto.setRegionGroup(s);
-                    BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
-                            determineMeterJobProcessByJobName(dto.getJobName()), dto);
-                    queueService.save(jobQueue);
-                });
+        if ("computeWesmMq".equalsIgnoreCase(taskRunDto.getJobName())) {
+            Arrays.stream(taskRunDto.getRegionGroup().split(",")).forEach(
+                    s -> {
+                        TaskRunDto dto = taskRunDto.clone(taskRunDto);
+                        dto.setRunId(System.currentTimeMillis());
+                        dto.setRegionGroup(s);
+                        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
+                                determineMeterJobProcessByJobName(dto.getJobName()), dto);
+                        queueService.save(jobQueue);
+                    });
+        } else {
+            taskRunDto.setRunId(System.currentTimeMillis());
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
+                    determineMeterJobProcessByJobName(taskRunDto.getJobName()), taskRunDto);
+            queueService.save(jobQueue);
+        }
 
         return new ResponseEntity(HttpStatus.OK);
     }

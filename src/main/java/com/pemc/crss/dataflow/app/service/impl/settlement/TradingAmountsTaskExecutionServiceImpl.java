@@ -170,7 +170,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 if (!isDaily && stlJobGroupDto.isHeader()) {
 
                     List<ViewSettlementJob> viewSettlementJobs = stlReadyJobQueryService
-                            .getStlReadyJobsByParentIdAndProcessType(processType, parentIdStr);
+                            .getStlReadyJobsByParentIdAndProcessTypeAndRegionGroup(processType, parentIdStr, regionGroup);
 
                     stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
                             viewSettlementJobs, billPeriodStart, billPeriodEnd));

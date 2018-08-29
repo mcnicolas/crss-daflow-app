@@ -14,5 +14,7 @@ public interface StlReadyJobQueryService {
 
     Page<DistinctStlReadyJob> findDistinctStlReadyJobsForTradingAmounts(final PageableRequest pageableRequest);
 
-    List<ViewSettlementJob> getStlReadyJobsByParentIdAndProcessType(final MeterProcessType processType, final String parentId);
+    List<ViewSettlementJob> getStlReadyJobsByParentIdAndProcessTypeAndRegionGroup(final MeterProcessType processType,
+                                                                                  final String parentId,
+                                                                                  final String regionGroup);
 }

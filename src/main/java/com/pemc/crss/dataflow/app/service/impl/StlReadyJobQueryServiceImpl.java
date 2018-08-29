@@ -105,9 +105,12 @@ public class StlReadyJobQueryServiceImpl implements StlReadyJobQueryService {
     }
 
     @Override
-    public List<ViewSettlementJob> getStlReadyJobsByParentIdAndProcessType(final MeterProcessType processType,
-                                                                           final String parentId) {
-        return viewSettlementJobRepository.getStlReadyJobsByParentIdAndProcessType(processType, parentId);
+    public List<ViewSettlementJob> getStlReadyJobsByParentIdAndProcessTypeAndRegionGroup(final MeterProcessType processType,
+                                                                                         final String parentId,
+                                                                                         final String regionGroup) {
+
+        return viewSettlementJobRepository.getStlReadyJobsByParentIdAndProcessTypeAndRegionGroup(processType, parentId,
+                regionGroup);
     }
 
     private StlQueryProcessType resolveProcessType(final Map<String, String> mapParams) {

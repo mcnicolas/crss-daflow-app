@@ -170,19 +170,21 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                             MeterProcessType.PRELIM.name() : MeterProcessType.FINAL.name();
                     checkProcessTypeState(processBefore, taskRunDto.getStartDate(), taskRunDto.getEndDate(), RUN_WESM_JOB_NAME);
                 }
+                if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
+                    //checkFinalizeProcessTypeState(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                }
 
                 // prevent running if selected mtn is already run within date range or the like
                 existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(processType, null, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
 
                 //Region group
-                if (!MeterProcessType.ADJUSTED.name().equals(processType)) {
-                    if (isAllRegions(taskRunDto.getRegionGroup())) {
-                        checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
-                    } else {
-                        checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
-                        checkFinalizeMonthlyStateAllRegions(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
-                    }
+                if (isAllRegions(taskRunDto.getRegionGroup())) {
+                    checkFinalizedStlState(taskRunDto.getStartDate(), taskRunDto.getEndDate(), processType);
+                } else {
+                    checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
+                    checkFinalizeMonthlyStateAllRegions(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                 }
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));

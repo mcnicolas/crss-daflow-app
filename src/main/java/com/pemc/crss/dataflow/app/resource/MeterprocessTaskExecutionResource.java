@@ -25,11 +25,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
-import java.util.Arrays;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
@@ -85,15 +88,9 @@ public class MeterprocessTaskExecutionResource {
             setJobParams(taskRunDto);
         }
 
-
-        Arrays.stream(taskRunDto.getRegionGroup().split(",")).forEach(
-                s -> {
-                    TaskRunDto dto = taskRunDto.clone(taskRunDto);
-                    dto.setRegionGroup(s);
-                    BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
-                            determineMeterJobProcessByJobName(dto.getJobName()), dto);
-                    queueService.save(jobQueue);
-                });
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.METERING,
+                determineMeterJobProcessByJobName(taskRunDto.getJobName()), taskRunDto);
+        queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
     }

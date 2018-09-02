@@ -339,7 +339,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     // prevent running if selected mtn is already run within date range or the like
                     existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(MeterProcessType.FINAL.name(), null, dateFormat.format(jobParameters.getDate(START_DATE)),dateFormat.format(jobParameters.getDate(END_DATE)));
                     checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
-                    if (isAllRegions(taskRunDto.getRegionGroup())) {
+                    if (isAllRegions(regionGroup)) {
                         //checkFinalizeProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                         checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), dateFormat.format(jobParameters.getDate(START_DATE)),dateFormat.format(jobParameters.getDate(END_DATE)));
                     } else {

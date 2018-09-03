@@ -199,7 +199,7 @@ public class MeterprocessTaskExecutionResource {
                 if (StringUtils.isEmpty(regionGroup) || "ALL".equalsIgnoreCase(regionGroup)) {
                     result = executionParamRepository.countDailyRunAllMtn(date, "stlReady");
                 } else {
-                    result = executionParamRepository.countDailyRunAllMtnRegionGroup(date, regionGroup, "stlReady");
+                    result = executionParamRepository.countDailyRunAllMtnRegionGroup(date, "stlReady", regionGroup);
                 }
             } else {
                 if (StringUtils.isEmpty(regionGroup) || "ALL".equalsIgnoreCase(regionGroup)) {
@@ -207,7 +207,7 @@ public class MeterprocessTaskExecutionResource {
                             executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, processType, "stlReady") : 0;
                 } else {
                     result = StringUtils.isNotEmpty(startDate) && StringUtils.isNotEmpty(endDate) ?
-                            executionParamRepository.countMonthlyRunAllMtnRegionGroup(startDate, endDate, processType, regionGroup, "stlReady") : 0;
+                            executionParamRepository.countMonthlyRunAllMtnRegionGroup(startDate, endDate, processType, "stlReady", regionGroup) : 0;
                 }
             }
         } else {

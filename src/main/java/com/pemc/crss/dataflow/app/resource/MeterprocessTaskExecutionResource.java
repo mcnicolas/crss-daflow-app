@@ -161,9 +161,10 @@ public class MeterprocessTaskExecutionResource {
     public ResponseEntity<Integer> countFinalRunAllMtn(@RequestParam(required = false) String processType,
                                                        @RequestParam(required = false) String date,
                                                        @RequestParam(required = false) String startDate,
-                                                       @RequestParam(required = false) String endDate) {
+                                                       @RequestParam(required = false) String endDate,
+                                                       @RequestParam(required = false) String regionGroup) {
         LOG.debug("Counting final stl ready with processtype={}, date={}, startDate={}, endDate={}.", processType, date, startDate, endDate);
-        return new ResponseEntity<>(countAllMtnFinalStlReadyRun(processType, date, startDate, endDate), HttpStatus.OK);
+        return new ResponseEntity<>(countAllMtnFinalStlReadyRun(processType, date, startDate, endDate, regionGroup), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/get-aggr-mtn-final-stl-ready", method = RequestMethod.GET)
@@ -191,13 +192,23 @@ public class MeterprocessTaskExecutionResource {
         }
     }
 
-    private Integer countAllMtnFinalStlReadyRun(String processType, String date, String startDate, String endDate) {
+    private Integer countAllMtnFinalStlReadyRun(String processType, String date, String startDate, String endDate, String regionGroup) {
         Integer result;
         if (StringUtils.isNotEmpty(processType)) {
             if ("DAILY".equalsIgnoreCase(processType) && StringUtils.isNotEmpty(date)) {
-                result = executionParamRepository.countDailyRunAllMtn(date, "stlReady");
+                if (StringUtils.isEmpty(regionGroup) || "ALL".equalsIgnoreCase(regionGroup)) {
+                    result = executionParamRepository.countDailyRunAllMtn(date, "stlReady");
+                } else {
+                    result = executionParamRepository.countDailyRunAllMtnRegionGroup(date, regionGroup, "stlReady");
+                }
             } else {
-                result = StringUtils.isNotEmpty(startDate) && StringUtils.isNotEmpty(endDate) ? executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, processType, "stlReady") : 0;
+                if (StringUtils.isEmpty(regionGroup) || "ALL".equalsIgnoreCase(regionGroup)) {
+                    result = StringUtils.isNotEmpty(startDate) && StringUtils.isNotEmpty(endDate) ?
+                            executionParamRepository.countMonthlyRunAllMtn(startDate, endDate, processType, "stlReady") : 0;
+                } else {
+                    result = StringUtils.isNotEmpty(startDate) && StringUtils.isNotEmpty(endDate) ?
+                            executionParamRepository.countMonthlyRunAllMtnRegionGroup(startDate, endDate, processType, regionGroup, "stlReady") : 0;
+                }
             }
         } else {
             result = 0;

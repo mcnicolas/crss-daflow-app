@@ -251,9 +251,16 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String regionGroup = jobParameters.getString(RG);
             boolean isDaily = processType == null || Objects.equals(processType, MeterProcessType.DAILY.name());
             Long parentJobRunId = jobParameters.getLong(RUN_ID);
+
+            String existingFinalRunAggregatedMtnWithinRange = EMPTY;
+            String currentRunningMtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parentJobRunId, MTNS);
+            List<String> mtnAlreadyFinalized = new ArrayList<>();
+
             if (isDaily) {
                 if (!RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (isAllRegions(regionGroup)) {
+                    if (StringUtils.isNotEmpty(currentRunningMtns)) {
+                        checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
+                    } else if (isAllRegions(regionGroup)) {
                         //checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                         checkFinalizeDailyStateAnyRegion(dateFormat.format(jobParameters.getDate(DATE)));
                     } else {
@@ -265,7 +272,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             } else {
                 if (!MeterProcessType.ADJUSTED.name().equals(processType)
                         && !RUN_MQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
-                    if (isAllRegions(regionGroup)) {
+                    if (StringUtils.isNotEmpty(currentRunningMtns)) {
+                        checkSelectedMtnsFinalizeStlReady(existingFinalRunAggregatedMtnWithinRange, currentRunningMtns, mtnAlreadyFinalized);
+                    } else if (isAllRegions(regionGroup)) {
                         //checkFinalizeDailyState(dateFormat.format(jobParameters.getDate(DATE)));
                         checkFinalizeMonthlyStateAnyRegion(taskRunDto.getMeterProcessType(), dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
                     } else {
@@ -311,9 +320,6 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 jobName = "crss-meterprocess-task-stlready";
             } else if (RUN_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
                 // compare two string fields and check if the current running is already included in the existing, if true, prevent from running, else, run
-                String existingFinalRunAggregatedMtnWithinRange = EMPTY;
-                String currentRunningMtns = batchJobAddtlParamsService.getBatchJobAddtlParamsStringVal(parentJobRunId, MTNS);
-                List<String> mtnAlreadyFinalized = new ArrayList<>();
                 if (isDaily) {
                     // prevent running if selected mtn is already run within date range or the like
                     existingFinalRunAggregatedMtnWithinRange = getAggregatedSelectedMtnFinalStlReadyRunWithinRange(PROCESS_TYPE_DAILY, dateFormat.format(jobParameters.getDate(DATE)), null, null);

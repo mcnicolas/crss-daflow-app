@@ -273,16 +273,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         Preconditions.checkState((hasAdjusted || hasFinal),
                 "GMR should be finalized for billing period [".concat(startDate).concat(" to ").concat(endDate).concat("]"));
 
-        List<String> notFinalizedPrevAcGroupIds = batchJobAdjRunRepository.findNotFinalizedAcRunByBillingPeriod(
-                DateUtil.parseLocalDate(startDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay(),
-                DateUtil.parseLocalDate(endDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay());
-
-        if (!notFinalizedPrevAcGroupIds.isEmpty()) {
-            // were expecting only one result from the query
-            throw new RuntimeException("Additional Compensation run with group id %s should be finalized first before"
-                    + " filing a new claim with the same billing period." + notFinalizedPrevAcGroupIds.get(0));
-        }
-
         checkTimeValidity(endDate);
 
         for (AddtlCompensationRunDto runDto : addtlCompensationRunDtos) {

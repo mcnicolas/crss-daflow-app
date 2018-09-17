@@ -369,8 +369,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 } else if (MeterProcessType.ADJUSTED.name().equals(taskRunDto.getMeterProcessType())) {
                     checkProcessTypeState(MeterProcessType.FINAL.name(), dateFormat.format(jobParameters.getDate(START_DATE)),
                             dateFormat.format(jobParameters.getDate(END_DATE)), RUN_STL_READY_JOB_NAME);
-                    checkFinalizedAdjustmentState(jobParameters.getLong(RUN_ID), MeterProcessType.ADJUSTED.name(),
-                            dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)));
+                    checkFinalizedAdjustmentStateRegionGroup(jobParameters.getLong(RUN_ID), MeterProcessType.ADJUSTED.name(),
+                            dateFormat.format(jobParameters.getDate(START_DATE)), dateFormat.format(jobParameters.getDate(END_DATE)), regionGroup);
                     properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_STL_READY_MONTHLY_ADJUSTED)));
                 }
                 arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
@@ -460,6 +460,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private void checkFinalizedAdjustmentState(Long parentRunId, String process, String startDate, String endDate) {
         String errMsq = "A finalized run with a later date already exist!";
         Preconditions.checkState(executionParamRepository.findLatestWesmRunIdMonthly(startDate, endDate, process, RUN_STL_READY_JOB_NAME) < parentRunId, errMsq);
+    }
+
+    private void checkFinalizedAdjustmentStateRegionGroup(Long parentRunId, String process, String startDate, String endDate, String regionGroup) {
+        String errMsq = "A finalized run with a later date already exist!";
+        Preconditions.checkState(executionParamRepository.findLatestWesmRunIdMonthlyRegionGroup(startDate, endDate, process, RUN_STL_READY_JOB_NAME, regionGroup) < parentRunId, errMsq);
     }
 
     private List<TaskExecutionDto> getTaskExecutionDtos(int count, Pageable pageable) {

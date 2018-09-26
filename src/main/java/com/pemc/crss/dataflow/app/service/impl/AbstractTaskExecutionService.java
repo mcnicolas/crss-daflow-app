@@ -52,6 +52,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -315,25 +316,28 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected void calculateProgress(JobExecution jobExecution, BaseTaskExecutionDto taskExecutionDto) {
         TaskProgressDto progressDto = null;
         if (!jobExecution.getStepExecutions().isEmpty()) {
-            StepExecution runningStep = jobExecution.getStepExecutions().parallelStream()
+            Optional<StepExecution> stepOpt = jobExecution.getStepExecutions().parallelStream()
                     .filter(stepExecution -> stepExecution.getStatus().isRunning())
                     .filter(stepExecution -> stepExecution.getStepName().endsWith("Step"))
-                    .findFirst().get();
-            LOGGER.debug("RUNNING STEP NAME: {}, ID: {}", runningStep.getStepName(), runningStep.getId());
-            if (runningStep.getStepName().equals("processGapStep")) {
-                progressDto = processStepProgress(runningStep, "Generate gap records");
-            } else if (runningStep.getStepName().equals("computeMqStep")) {
-                progressDto = processStepProgress(runningStep, "Generate raw mq data");
-            } else if (runningStep.getStepName().equals("applySSLAStep")) {
-                progressDto = processStepProgress(runningStep, "Applying SSLA Computation");
-            } else if (runningStep.getStepName().equals("generateReportStep")) {
-                progressDto = processStepProgress(runningStep, "Generate Report");
-            } else if (runningStep.getStepName().equals("processStlReadyStep")) {
-                progressDto = processStepProgress(runningStep, "Process GESQ");
-            } else if (runningStep.getStepName().equals("finalStlReadyStep")) {
-                progressDto = processStepProgress(runningStep, "Finalize STL Ready");
-            } else if (runningStep.getStepName().equals("generateMtrStep")) {
-                progressDto = processStepProgress(runningStep, "Generate MTR");
+                    .findFirst();
+            if (stepOpt.isPresent()) {
+                StepExecution runningStep = stepOpt.get();
+                LOGGER.debug("RUNNING STEP NAME: {}, ID: {}", runningStep.getStepName(), runningStep.getId());
+                if (runningStep.getStepName().equals("processGapStep")) {
+                    progressDto = processStepProgress(runningStep, "Generate gap records");
+                } else if (runningStep.getStepName().equals("computeMqStep")) {
+                    progressDto = processStepProgress(runningStep, "Generate raw mq data");
+                } else if (runningStep.getStepName().equals("applySSLAStep")) {
+                    progressDto = processStepProgress(runningStep, "Applying SSLA Computation");
+                } else if (runningStep.getStepName().equals("generateReportStep")) {
+                    progressDto = processStepProgress(runningStep, "Generate Report");
+                } else if (runningStep.getStepName().equals("processStlReadyStep")) {
+                    progressDto = processStepProgress(runningStep, "Process GESQ");
+                } else if (runningStep.getStepName().equals("finalStlReadyStep")) {
+                    progressDto = processStepProgress(runningStep, "Finalize STL Ready");
+                } else if (runningStep.getStepName().equals("generateMtrStep")) {
+                    progressDto = processStepProgress(runningStep, "Generate MTR");
+                }
             }
         }
         taskExecutionDto.setProgress(progressDto);

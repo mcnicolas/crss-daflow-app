@@ -37,6 +37,8 @@ public class BatchJobQueueDisplay {
 
     private Long id;
     private LocalDateTime queueDate;
+    private LocalDateTime jobExecStart;
+    private LocalDateTime jobExecEnd;
     private Module module;
     private JobProcess jobProcess;
     private QueueStatus status;
@@ -54,6 +56,8 @@ public class BatchJobQueueDisplay {
         this.user = batchJobQueue.getUsername();
         this.paramMap = buildRunDetails(batchJobQueue);
         this.details = batchJobQueue.getDetails();
+        this.jobExecStart = batchJobQueue.getJobExecStart();
+        this.jobExecEnd = batchJobQueue.getJobExecEnd();
     }
 
     private Map<String, String> buildRunDetails(final BatchJobQueue jobQueue) {

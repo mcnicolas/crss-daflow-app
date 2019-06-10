@@ -57,7 +57,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     public Page<? extends StubTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
 
-        long startTime = System.nanoTime();
         Page<DistinctStlReadyJob> stlReadyJobs = stlReadyJobQueryService.findDistinctStlReadyJobsForTradingAmounts(pageableRequest);
         List<DistinctStlReadyJob> distinctStlReadyJobs = stlReadyJobs.getContent();
 
@@ -217,8 +216,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             taskExecutionDtos.add(taskExecutionDto);
         }
-        long duration = (System.nanoTime() - startTime) / 1000;
-        log.info("findJobInstances :: time elapsed={} ms", duration);
+
         return new PageImpl<>(taskExecutionDtos, pageableRequest.getPageable(), stlReadyJobs.getTotalElements());
     }
 

@@ -265,6 +265,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case FILE_TA:
                 launchGenerateFileJob(taskRunDto);
+                break;
             case FILE_BILL_STATEMENT_TA:
                 launchGenerateBillStatementFileJob(taskRunDto);
                 break;

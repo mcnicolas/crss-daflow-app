@@ -248,7 +248,7 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @PostMapping("/generate-bill-statement-energy")
+    @PostMapping("/generate-bill-statement-file-energy")
     public ResponseEntity runGenerateStatementFileJobEnergy(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         taskRunDto.setRunId(System.currentTimeMillis());

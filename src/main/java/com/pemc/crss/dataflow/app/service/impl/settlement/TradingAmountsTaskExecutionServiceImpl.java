@@ -131,6 +131,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
+            /* GEN BILL STATEMENT FILES ENERGY TA START */
+            List<JobInstance> genStatementFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_BILL_STATEMENT_TA, processType, parentId, regionGroup);
+
+            initializeEnergyBillStatementFileGen(genStatementFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
             /* GEN FILES RESERVE TA START */
             List<JobInstance> genFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
                     FILE_RSV_TA, processType, parentId, regionGroup);
@@ -259,6 +265,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case FILE_TA:
                 launchGenerateFileJob(taskRunDto);
+            case FILE_BILL_STATEMENT_TA:
+                launchGenerateBillStatementFileJob(taskRunDto);
                 break;
             case FILE_RSV_TA:
                 launchGenerateFileReserveTaJob(taskRunDto);
@@ -1053,6 +1061,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     String getPrelimGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_PRELIM;
+    }
+
+    @Override
+    String getPrelimGenBillStatementProfile() {
+        return SettlementJobProfile.GEN_STATEMENT_FILE_PRELIM;
     }
 
     @Override

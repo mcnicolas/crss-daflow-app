@@ -99,6 +99,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     abstract String getPrelimGenFileProfile();
 
+    abstract String getPrelimGenBillStatementProfile();
+
     abstract String getFinalGenFileProfile();
 
     abstract String getAdjustedGenFileProfile();
@@ -401,6 +403,51 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             Optional.ofNullable(generationJobExecution.getExecutionContext()
                     .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
                     stlJobGroupDto.setInvoiceGenFolder((String) val));
+
+            if (stlReadyGroupId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+            generationNames.add(generationStlJobName);
+        }
+    }
+    void initializeEnergyBillStatementFileGen(final List<JobInstance> fileGenJobInstances,
+                                              final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                              final SettlementTaskExecutionDto taskExecutionDto,
+                                              final String stlReadyGroupId) {
+
+        Set<String> generationNames = Sets.newHashSet();
+
+        for (JobInstance genFileJobInstance : fileGenJobInstances) {
+
+            String generationStlJobName = genFileJobInstance.getJobName();
+            if (generationNames.contains(generationStlJobName)) {
+                continue;
+            }
+
+            JobExecution generationJobExecution = getJobExecutionFromJobInstance(genFileJobInstance);
+            JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+            String groupId = generationJobParameters.getString(GROUP_ID);
+
+            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            BatchStatus currentStatus = generationJobExecution.getStatus();
+            stlJobGroupDto.setEnergyBillStatementGenerationStatus(currentStatus);
+            stlJobGroupDto.setGroupId(groupId);
+            stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
+            stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
+            stlJobGroupDto.setRunEndDateTimeFileEnergyBillStatementTa(generationJobExecution.getEndTime());
+
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(generationJobExecution.getStartTime())) {
+                updateProgress(generationJobExecution, stlJobGroupDto);
+            }
+
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            Optional.ofNullable(generationJobExecution.getExecutionContext()
+                    .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
+                    stlJobGroupDto.setEnergyBillStatementGenFolder((String) val));
 
             if (stlReadyGroupId.equals(groupId)) {
                 stlJobGroupDto.setHeader(true);
@@ -931,6 +978,26 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
 
         log.info("Running generate file job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
+        lockJobJdbc(taskRunDto);
+    }
+
+    void launchGenerateBillStatementFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(getPrelimGenBillStatementProfile())));
+
+        log.info("Running generate bill statement files job name={}, properties={}, arguments={}",
+                taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJobJdbc(taskRunDto);

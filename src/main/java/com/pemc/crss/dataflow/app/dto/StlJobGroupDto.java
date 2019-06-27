@@ -30,6 +30,7 @@ public class StlJobGroupDto {
     private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
     private BatchStatus invoiceGenerationRsvTaStatus;
+    private BatchStatus energyBillStatementGenerationStatus;
     private String status;
 
     private String lineRentalTopStatus;
@@ -41,6 +42,7 @@ public class StlJobGroupDto {
     private Date runStartDateTime;
     private Date runEndDateTime;
     private Date runEndDateTimeFileRsvTa;
+    private Date runEndDateTimeFileEnergyBillStatementTa;
     private Date runEndDateTimeFileLr;
     private Long runId;
 
@@ -51,6 +53,7 @@ public class StlJobGroupDto {
 
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
+    private String energyBillStatementGenFolder;
     private String invoiceGenFolderRsvTa;
     private String invoiceGenFolderLr;
 
@@ -106,6 +109,11 @@ public class StlJobGroupDto {
     public String getRunEndDateTimeStr() {
         return runEndDateTime != null
                 ? DateUtil.convertToString(runEndDateTime, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
+    public String getRunEndDateTimeFileEnergyBillStatementTa() {
+        return runEndDateTimeFileEnergyBillStatementTa != null
+                ? DateUtil.convertToString(runEndDateTimeFileEnergyBillStatementTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
     public String getRunEndDateTimeFileRsvTaStr() {

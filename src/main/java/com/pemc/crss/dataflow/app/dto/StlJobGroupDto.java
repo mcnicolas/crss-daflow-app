@@ -31,6 +31,7 @@ public class StlJobGroupDto {
     private BatchStatus invoiceGenerationStatus;
     private BatchStatus invoiceGenerationRsvTaStatus;
     private BatchStatus energyBillStatementGenerationStatus;
+    private BatchStatus reserveBillStatementGenerationTaStatus;
     private String status;
 
     private String lineRentalTopStatus;
@@ -43,6 +44,7 @@ public class StlJobGroupDto {
     private Date runEndDateTime;
     private Date runEndDateTimeFileRsvTa;
     private Date runEndDateTimeFileEnergyBillStatementTa;
+    private Date runEndDateTimeFileReserveBillStatementTa;
     private Date runEndDateTimeFileLr;
     private Long runId;
 
@@ -54,6 +56,7 @@ public class StlJobGroupDto {
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
     private String energyBillStatementGenFolder;
+    private String reserveBillStatementGenFolderTa;
     private String invoiceGenFolderRsvTa;
     private String invoiceGenFolderLr;
 

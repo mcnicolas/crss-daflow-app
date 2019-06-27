@@ -218,6 +218,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case GEN_RESERVE_FILES:
                 case GEN_LR_FILES:
                 case STL_VALIDATION:
+                case GEN_ENERGY_BILLING_STATEMENTS:
                     tradingAmountsTaskExecutionService.launchJob(taskDto);
                     break;
                 case GEN_INPUT_WS_EMF:

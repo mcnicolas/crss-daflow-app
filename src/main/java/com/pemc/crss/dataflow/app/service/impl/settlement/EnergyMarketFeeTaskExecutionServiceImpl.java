@@ -256,4 +256,9 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     String getAdjustedGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_ADJ_EMF;
     }
+
+    @Override
+    String getPrelimGenBillStatementProfile() {
+        return null;
+    }
 }

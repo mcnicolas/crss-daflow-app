@@ -248,6 +248,34 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/generate-bill-statement-file-energy")
+    public ResponseEntity runGenerateStatementFileJobEnergy(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.FILE_BILL_STATEMENT_TA);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing generate bill statement job for energy trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ENERGY_BILLING_STATEMENTS, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/generate-bill-statement-file-reserve")
+    public ResponseEntity runGenerateStatementJobReserve(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.FILE_RSV_BILL_STATEMENT_TA);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+        log.info("Queueing generate bill statement job for reserve trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_RESERVE_BILLING_STATEMENTS, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping("/generate-file-reserve")
     public ResponseEntity runGenerateFileJobReserve(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 

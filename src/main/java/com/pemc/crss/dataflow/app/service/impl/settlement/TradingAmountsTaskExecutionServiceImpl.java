@@ -131,11 +131,23 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
             initializeFileGen(genFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
+            /* GEN BILL STATEMENT FILES ENERGY TA START */
+            List<JobInstance> genStatementFileJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_BILL_STATEMENT_TA, processType, parentId, regionGroup);
+
+            initializeEnergyBillStatementFileGen(genStatementFileJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
             /* GEN FILES RESERVE TA START */
             List<JobInstance> genFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
                     FILE_RSV_TA, processType, parentId, regionGroup);
 
             initializeFileGenReserveTa(genFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+
+            /* GEN FILES RESERVE TA START */
+            List<JobInstance> genStatementFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+                    FILE_RSV_BILL_STATEMENT_TA, processType, parentId, regionGroup);
+
+            initializeBillStatementFileGenReserveTa(genStatementFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES LINE RENTAL START */
             List<JobInstance> genFileLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
@@ -259,6 +271,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 break;
             case FILE_TA:
                 launchGenerateFileJob(taskRunDto);
+                break;
+            case FILE_BILL_STATEMENT_TA:
+                launchGenerateBillStatementFileJob(taskRunDto);
+                break;
+            case FILE_RSV_BILL_STATEMENT_TA:
+                launchGenerateBillStatementReserveTaJob(taskRunDto);
                 break;
             case FILE_RSV_TA:
                 launchGenerateFileReserveTaJob(taskRunDto);
@@ -639,6 +657,49 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         }
     }
 
+    private void initializeBillStatementFileGenReserveTa(final List<JobInstance> fileGenJobInstances,
+                                                         final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                                         final SettlementTaskExecutionDto taskExecutionDto,
+                                                         final String stlReadyGroupId) {
+
+        Set<String> generationNames = Sets.newHashSet();
+
+        for (JobInstance genFileJobInstance : fileGenJobInstances) {
+
+            String generationStlJobName = genFileJobInstance.getJobName();
+            if (generationNames.contains(generationStlJobName)) {
+                continue;
+            }
+
+            JobExecution generationJobExecution = getJobExecutionFromJobInstance(genFileJobInstance);
+            JobParameters generationJobParameters = generationJobExecution.getJobParameters();
+            String groupId = generationJobParameters.getString(GROUP_ID);
+
+            StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
+            BatchStatus currentStatus = generationJobExecution.getStatus();
+            stlJobGroupDto.setReserveBillStatementGenerationTaStatus(currentStatus);
+            stlJobGroupDto.setGroupId(groupId);
+            stlJobGroupDto.setRunEndDateTimeFileReserveBillStatementTa(generationJobExecution.getEndTime());
+
+            if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+                updateProgress(generationJobExecution, stlJobGroupDto);
+            }
+
+            stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
+
+            Optional.ofNullable(generationJobExecution.getExecutionContext()
+                    .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
+                    stlJobGroupDto.setReserveBillStatementGenFolderTa((String) val));
+
+            if (stlReadyGroupId.equals(groupId)) {
+                stlJobGroupDto.setHeader(true);
+                taskExecutionDto.setParentStlJobGroupDto(stlJobGroupDto);
+            }
+
+            generationNames.add(generationStlJobName);
+        }
+    }
+
     private Map<String, List<JobCalculationDto>> getJobCalculationMap(List<JobInstance> jobInstances, StlJobStage stlJobStage,
                                                                       Map<String, String> stepWithLabelMap) {
         Map<String, List<JobCalculationDto>> jobCalculationDtoMap = new HashMap<>();
@@ -907,6 +968,28 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
+    private void launchGenerateBillStatementReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                SettlementJobProfile.GEN_STATEMENT_FILE_PRELIM_RSV)));
+
+        log.info("Running generate reserve billing statement file job name={}, properties={}, arguments={}",
+                taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
+        lockJobJdbc(taskRunDto);
+    }
+
     // STL VALIDATION JOB LAUNCH
     private void launchStlValidateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
@@ -1053,6 +1136,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     String getPrelimGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_PRELIM;
+    }
+
+    @Override
+    String getPrelimGenBillStatementProfile() {
+        return SettlementJobProfile.GEN_STATEMENT_FILE_PRELIM;
     }
 
     @Override

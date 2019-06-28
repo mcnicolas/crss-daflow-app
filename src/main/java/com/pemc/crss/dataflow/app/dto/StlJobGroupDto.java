@@ -30,6 +30,8 @@ public class StlJobGroupDto {
     private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
     private BatchStatus invoiceGenerationRsvTaStatus;
+    private BatchStatus energyBillStatementGenerationStatus;
+    private BatchStatus reserveBillStatementGenerationTaStatus;
     private String status;
 
     private String lineRentalTopStatus;
@@ -41,6 +43,8 @@ public class StlJobGroupDto {
     private Date runStartDateTime;
     private Date runEndDateTime;
     private Date runEndDateTimeFileRsvTa;
+    private Date runEndDateTimeFileEnergyBillStatementTa;
+    private Date runEndDateTimeFileReserveBillStatementTa;
     private Date runEndDateTimeFileLr;
     private Long runId;
 
@@ -51,6 +55,8 @@ public class StlJobGroupDto {
 
     // folder in sftp server where files are uploaded
     private String invoiceGenFolder;
+    private String energyBillStatementGenFolder;
+    private String reserveBillStatementGenFolderTa;
     private String invoiceGenFolderRsvTa;
     private String invoiceGenFolderLr;
 
@@ -108,9 +114,19 @@ public class StlJobGroupDto {
                 ? DateUtil.convertToString(runEndDateTime, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
+    public String getRunEndDateTimeFileEnergyBillStatementTaStr() {
+        return runEndDateTimeFileEnergyBillStatementTa != null
+                ? DateUtil.convertToString(runEndDateTimeFileEnergyBillStatementTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
     public String getRunEndDateTimeFileRsvTaStr() {
         return runEndDateTimeFileRsvTa != null
                 ? DateUtil.convertToString(runEndDateTimeFileRsvTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
+    public String getRunEndDateTimeFileReserveBillStatementTaStr() {
+        return runEndDateTimeFileReserveBillStatementTa != null
+                ? DateUtil.convertToString(runEndDateTimeFileReserveBillStatementTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
     public String getRunEndDateTimeFileLrStr() {

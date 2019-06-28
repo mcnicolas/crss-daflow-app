@@ -243,4 +243,9 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     String getAdjustedGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_ADJ_RMF;
     }
+
+    @Override
+    String getPrelimGenBillStatementProfile() {
+        return null;
+    }
 }

@@ -114,7 +114,7 @@ public class StlJobGroupDto {
                 ? DateUtil.convertToString(runEndDateTime, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
-    public String getRunEndDateTimeFileEnergyBillStatementTa() {
+    public String getRunEndDateTimeFileEnergyBillStatementTaStr() {
         return runEndDateTimeFileEnergyBillStatementTa != null
                 ? DateUtil.convertToString(runEndDateTimeFileEnergyBillStatementTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
@@ -122,6 +122,11 @@ public class StlJobGroupDto {
     public String getRunEndDateTimeFileRsvTaStr() {
         return runEndDateTimeFileRsvTa != null
                 ? DateUtil.convertToString(runEndDateTimeFileRsvTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
+    }
+
+    public String getRunEndDateTimeFileReserveBillStatementTaStr() {
+        return runEndDateTimeFileReserveBillStatementTa != null
+                ? DateUtil.convertToString(runEndDateTimeFileReserveBillStatementTa, DateUtil.DEFAULT_DATETIME_FORMAT) : null;
     }
 
     public String getRunEndDateTimeFileLrStr() {

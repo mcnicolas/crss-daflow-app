@@ -17,7 +17,7 @@
         "type": "DOCKER",
         "volumes": [],
         "docker": {
-            "image": "registry.marathon.l4lb.thisdcos.directory:5000/crss-dataflow-app:2.7.0.BUILD-SNAPSHOT.875723f",
+            "image": "registry.marathon.l4lb.thisdcos.directory:5000/crss-dataflow-app:2.8.0.BUILD-SNAPSHOT.875723f",
             "forcePullImage": false,
             "privileged": false,
             "parameters": []

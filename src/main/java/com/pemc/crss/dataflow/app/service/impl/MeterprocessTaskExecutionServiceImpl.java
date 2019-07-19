@@ -420,6 +420,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     }
 
+    //modify countMonthlyRun to use range instead of specific date
     private void checkProcessTypeState(String process, String startDate, String endDate, String jobName) {
         String errMsq = "Must run " + process + " first!";
         Preconditions.checkState(executionParamRepository.countMonthlyRun(startDate, endDate, process, jobName) > 0, errMsq);

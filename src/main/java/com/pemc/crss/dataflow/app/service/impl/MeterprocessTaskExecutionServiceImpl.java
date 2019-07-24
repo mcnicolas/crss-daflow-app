@@ -32,10 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -134,7 +131,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         Preconditions.checkNotNull(taskRunDto.getJobName());
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
                 "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;

@@ -48,8 +48,6 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         LOG.debug("Launching Data Interface Job....");
         Preconditions.checkNotNull(taskRunDto.getJobName());
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
-                "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;
         List<String> properties = Lists.newArrayList();
@@ -59,25 +57,19 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
 
         if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(taskRunDto.getJobName()))) {
 
-            if (!StringUtils.isEmpty(taskRunDto.getStartDate())) {
+            if (!StringUtils.isEmpty(taskRunDto.getCurrentUser())) {
                 LOG.debug("Starting Manual Import........");
-                arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
-                        ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
-                arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
-                        ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
+                populateStartEndDates(arguments, taskRunDto);
                 arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
                 arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
                 arguments.add(concatKeyValue(MODE, MANUAL_MODE));
             } else {
                 LOG.debug("Starting Automatic Import........");
-                DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
-                String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
-                String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
-                arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
-                        ? QUOTE + startDate + QUOTE : startDate, "date"));
-                arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
-                        ? QUOTE + endDate + QUOTE : endDate, "date"));
+                Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
+                        "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
+
+                populateStartEndDates(arguments, taskRunDto);
                 arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
                 arguments.add(concatKeyValue(USERNAME, "system"));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
@@ -96,6 +88,26 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
+        }
+    }
+
+    private void populateStartEndDates(List<String> arguments, TaskRunDto taskRunDto) {
+        if (!StringUtils.isEmpty(taskRunDto.getCurrentUser())
+                && !taskRunDto.getJobName().equals(MarketInfoType.MTN_DATA.getJobName())) {
+            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
+                    ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
+            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
+                    ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
+        } else {
+            //If MTN_DATA, set start and end date same as automatic.
+            DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+            String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+            String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
+
+            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
+                    ? QUOTE + startDate + QUOTE : startDate, "date"));
+            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
+                    ? QUOTE + endDate + QUOTE : endDate, "date"));
         }
     }
 

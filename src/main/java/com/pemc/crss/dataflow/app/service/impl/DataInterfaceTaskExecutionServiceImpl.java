@@ -48,6 +48,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         LOG.debug("Launching Data Interface Job....");
         Preconditions.checkNotNull(taskRunDto.getJobName());
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
+                "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;
         List<String> properties = Lists.newArrayList();
@@ -55,26 +57,33 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
 
         List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
 
-        if (MARKET_INFO_TYPES.contains(MarketInfoType.getByJobName(taskRunDto.getJobName()))) {
+        MarketInfoType marketInfoType = MarketInfoType.getByJobName(taskRunDto.getJobName());
+        if (MARKET_INFO_TYPES.contains(marketInfoType)) {
 
-            if (!StringUtils.isEmpty(taskRunDto.getCurrentUser())) {
-                LOG.debug("Starting Manual Import........");
-                populateStartEndDates(arguments, taskRunDto);
-                arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
-                arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
-                arguments.add(concatKeyValue(MODE, MANUAL_MODE));
-            } else {
-                LOG.debug("Starting Automatic Import........");
+            if (!marketInfoType.equals(MarketInfoType.MTN_DATA)) {
+                if (!StringUtils.isEmpty(taskRunDto.getStartDate())) {
+                    LOG.debug("Starting Manual Import........");
+                    arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
+                            ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
+                    arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
+                            ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
+                    arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+                    arguments.add(concatKeyValue(MODE, MANUAL_MODE));
+                } else {
+                    LOG.debug("Starting Automatic Import........");
+                    DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+                    String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
+                    String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
-                Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
-                        "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
-
-                populateStartEndDates(arguments, taskRunDto);
-                arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
-                arguments.add(concatKeyValue(USERNAME, "system"));
-                arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
+                    arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
+                            ? QUOTE + startDate + QUOTE : startDate, "date"));
+                    arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
+                            ? QUOTE + endDate + QUOTE : endDate, "date"));
+                    arguments.add(concatKeyValue(USERNAME, "system"));
+                    arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
+                }
             }
-
+            arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));
             properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(MarketInfoType
                     .getByJobName(taskRunDto.getJobName()).getProfileName())));
@@ -88,26 +97,6 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
             LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
             launchJob(jobName, properties, arguments);
             lockJob(taskRunDto);
-        }
-    }
-
-    private void populateStartEndDates(List<String> arguments, TaskRunDto taskRunDto) {
-        if (!StringUtils.isEmpty(taskRunDto.getCurrentUser())
-                && !taskRunDto.getJobName().equals(MarketInfoType.MTN_DATA.getJobName())) {
-            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
-                    ? QUOTE + taskRunDto.getStartDate() + QUOTE : taskRunDto.getStartDate(), "date"));
-            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(taskRunDto.getEndDate())
-                    ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
-        } else {
-            //If MTN_DATA, set start and end date same as automatic.
-            DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
-            String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
-            String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
-
-            arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
-                    ? QUOTE + startDate + QUOTE : startDate, "date"));
-            arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
-                    ? QUOTE + endDate + QUOTE : endDate, "date"));
         }
     }
 
@@ -149,73 +138,73 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     .stream().map((JobInstance jobInstance) -> {
 
                         DataInterfaceExecutionDTO dataInterfaceExecutionDTO = new DataInterfaceExecutionDTO();
-                                if (getJobExecutions(jobInstance).iterator().hasNext()) {
-                                    JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate,
-                                            tradingStartDate, tradingEndDate, username).iterator().next();
+                        if (getJobExecutions(jobInstance).iterator().hasNext()) {
+                            JobExecution jobExecution = getJobExecutions(jobInstance, status, filterMode, runStartDate,
+                                    tradingStartDate, tradingEndDate, username).iterator().next();
 
-                                    Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
-                                    String jobName = jobExecution.getJobInstance().getJobName();
+                            Map jobParameters = Maps.transformValues(jobExecution.getJobParameters().getParameters(), JobParameter::getValue);
+                            String jobName = jobExecution.getJobInstance().getJobName();
 
-                                    String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
-                                    String user = (String) jobParameters.getOrDefault(USERNAME, "");
+                            String mode = StringUtils.upperCase((String) jobParameters.getOrDefault(MODE, "automatic"));
+                            String user = (String) jobParameters.getOrDefault(USERNAME, "");
 
-                                    DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
-                                    DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
-                                    DateTimeFormatter displayFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+                            DateTimeFormatter emdbFormat = DateTimeFormat.forPattern("dd-MMM-yy HH:mm:ss");
+                            DateTimeFormatter rbcqFormat = DateTimeFormat.forPattern("yyyyMMdd");
+                            DateTimeFormatter displayFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
 
-                                    Date automaticTradngDayStart = null;
-                                    Date automaticTradingDayEnd = null;
+                            Date automaticTradngDayStart = null;
+                            Date automaticTradingDayEnd = null;
 
-                                    //todo handle exceptions, temporarily revert to original behavior when startDate is null
-                                    LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
+                            //todo handle exceptions, temporarily revert to original behavior when startDate is null
+                            LocalDateTime runDate = new LocalDateTime(jobExecution.getStartTime());
 
-                                    if (mode.equalsIgnoreCase("automatic")) {
-                                        try {
-                                            String automaticStart = jobExecution.getExecutionContext().getString("startDate");
-                                            String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
+                            if (mode.equalsIgnoreCase("automatic")) {
+                                try {
+                                    String automaticStart = jobExecution.getExecutionContext().getString("startDate");
+                                    String automaticEnd = jobExecution.getExecutionContext().getString("endDate", "");
 
-                                            if (StringUtils.isEmpty(automaticEnd)) {
-                                                automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
-                                                        .parseDateTime(automaticStart))).toDate();
-                                            } else {
-                                                automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
-                                                        .parseDateTime(automaticStart))).toDate();
-                                                automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
-                                                        .parseDateTime(automaticEnd))).toDate();
-                                            }
-
-                                        } catch (Exception e) {
-                                            automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
-                                            automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
-                                        }
+                                    if (StringUtils.isEmpty(automaticEnd)) {
+                                        automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(rbcqFormat
+                                                .parseDateTime(automaticStart))).toDate();
+                                    } else {
+                                        automaticTradngDayStart = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                                .parseDateTime(automaticStart))).toDate();
+                                        automaticTradingDayEnd = displayFormat.parseDateTime(displayFormat.print(emdbFormat
+                                                .parseDateTime(automaticEnd))).toDate();
                                     }
 
-                                    Date tradingDayStart = !mode.equals("automatic") ? (Date) jobParameters.get("startDate")
-                                            : automaticTradngDayStart;
-                                    Date tradingDayEnd = !mode.equals("automatic") ? (Date) jobParameters.get("endDate")
-                                            : automaticTradingDayEnd;
-
-                                    dataInterfaceExecutionDTO.setId(jobInstance.getId());
-                                    dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
-                                    dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
-                                    dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
-                                    dataInterfaceExecutionDTO.setParams(jobParameters);
-                                    dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
-                                    dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
-                                    dataInterfaceExecutionDTO.setMode(mode);
-                                    dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
-                                    dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
-                                    dataInterfaceExecutionDTO.setUser(user);
-                                    setLogs(dataInterfaceExecutionDTO, jobExecution);
-
-                                    if (jobExecution.getStatus().isRunning()) {
-                                        calculateDataInterfaceProgress(jobExecution, dataInterfaceExecutionDTO);
-                                    }
-
-                                    return dataInterfaceExecutionDTO;
-                                } else {
-                                    return null;
+                                } catch (Exception e) {
+                                    automaticTradngDayStart = runDate.minusDays(1).withHourOfDay(00).withMinuteOfHour(05).toDate();
+                                    automaticTradingDayEnd = runDate.withHourOfDay(00).withMinuteOfHour(00).toDate();
                                 }
+                            }
+
+                            Date tradingDayStart = !mode.equals("automatic") ? (Date) jobParameters.get("startDate")
+                                    : automaticTradngDayStart;
+                            Date tradingDayEnd = !mode.equals("automatic") ? (Date) jobParameters.get("endDate")
+                                    : automaticTradingDayEnd;
+
+                            dataInterfaceExecutionDTO.setId(jobInstance.getId());
+                            dataInterfaceExecutionDTO.setRunStartDateTime(jobExecution.getStartTime());
+                            dataInterfaceExecutionDTO.setRunEndDateTime(jobExecution.getEndTime());
+                            dataInterfaceExecutionDTO.setStatus(jobExecution.getStatus().toString());
+                            dataInterfaceExecutionDTO.setParams(jobParameters);
+                            dataInterfaceExecutionDTO.setBatchStatus(jobExecution.getStatus());
+                            dataInterfaceExecutionDTO.setType(MarketInfoType.getByJobName(jobName).getLabel());
+                            dataInterfaceExecutionDTO.setMode(mode);
+                            dataInterfaceExecutionDTO.setTradingDayStart(tradingDayStart);
+                            dataInterfaceExecutionDTO.setTradingDayEnd(tradingDayEnd);
+                            dataInterfaceExecutionDTO.setUser(user);
+                            setLogs(dataInterfaceExecutionDTO, jobExecution);
+
+                            if (jobExecution.getStatus().isRunning()) {
+                                calculateDataInterfaceProgress(jobExecution, dataInterfaceExecutionDTO);
+                            }
+
+                            return dataInterfaceExecutionDTO;
+                        } else {
+                            return null;
+                        }
                     })
                     .filter(Objects::nonNull)
                     .collect(toList());

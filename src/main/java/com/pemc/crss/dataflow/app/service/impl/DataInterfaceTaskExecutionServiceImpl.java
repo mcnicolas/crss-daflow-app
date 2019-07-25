@@ -48,8 +48,6 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         LOG.debug("Launching Data Interface Job....");
         Preconditions.checkNotNull(taskRunDto.getJobName());
-        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedIsTrue(taskRunDto.getJobName()) == 0,
-                "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;
         List<String> properties = Lists.newArrayList();
@@ -71,6 +69,10 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     arguments.add(concatKeyValue(MODE, MANUAL_MODE));
                 } else {
                     LOG.debug("Starting Automatic Import........");
+
+                    Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
+                            "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
+
                     DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
                     String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
                     String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));

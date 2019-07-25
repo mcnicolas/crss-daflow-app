@@ -100,7 +100,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     ? QUOTE + taskRunDto.getEndDate() + QUOTE : taskRunDto.getEndDate(), "date"));
         } else {
             //If MTN_DATA, set start and end date same as automatic.
-            DateTimeFormatter df = DateTimeFormat.forPattern("yyyy/MM/dd");
+            DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
             String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
             String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 

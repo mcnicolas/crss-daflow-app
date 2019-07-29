@@ -59,6 +59,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
         if (MARKET_INFO_TYPES.contains(marketInfoType)) {
 
             if (!marketInfoType.equals(MarketInfoType.MTN_DATA)) {
+                // TODO: Refactor to base on taskRunDto.getMode()
                 if (!StringUtils.isEmpty(taskRunDto.getStartDate())) {
                     LOG.debug("Starting Manual Import........");
                     arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(taskRunDto.getStartDate())
@@ -82,8 +83,13 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     arguments.add(concatKeyValue(END_DATE, StringUtils.containsWhitespace(endDate)
                             ? QUOTE + endDate + QUOTE : endDate, "date"));
                     arguments.add(concatKeyValue(USERNAME, "system"));
-                    arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
+                    arguments.add(concatKeyValue(MODE, taskRunDto.getMode() != null ? taskRunDto.getMode() : AUTOMATIC_MODE));
                 }
+            } else {
+                arguments.add(concatKeyValue(START_DATE, "", "date"));
+                arguments.add(concatKeyValue(END_DATE, "", "date"));
+                arguments.add(concatKeyValue(USERNAME, "system"));
+                arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));

@@ -28,6 +28,7 @@ public class TaskRunDto {
     private String meterType;
     private String regionGroup;
     private String region;
+    private String mode;
 
     // FOR SETTLEMENT AMS OUTPUT GENERATION
     private String amsInvoiceDate;

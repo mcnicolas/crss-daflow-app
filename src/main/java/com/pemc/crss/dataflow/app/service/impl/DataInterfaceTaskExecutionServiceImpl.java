@@ -86,8 +86,6 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     arguments.add(concatKeyValue(MODE, taskRunDto.getMode() != null ? taskRunDto.getMode() : AUTOMATIC_MODE));
                 }
             } else {
-                arguments.add(concatKeyValue(START_DATE, "", "date"));
-                arguments.add(concatKeyValue(END_DATE, "", "date"));
                 arguments.add(concatKeyValue(USERNAME, "system"));
                 arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
             }

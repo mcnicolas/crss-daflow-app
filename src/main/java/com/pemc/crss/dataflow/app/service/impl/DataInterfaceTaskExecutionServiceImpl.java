@@ -48,6 +48,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
     public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         LOG.debug("Launching Data Interface Job....");
         Preconditions.checkNotNull(taskRunDto.getJobName());
+        Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
+                "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
         String jobName = null;
         List<String> properties = Lists.newArrayList();
@@ -87,7 +89,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                 }
             } else {
                 arguments.add(concatKeyValue(USERNAME, "system"));
-                arguments.add(concatKeyValue(MODE, AUTOMATIC_MODE));
+                arguments.add(concatKeyValue(MODE, taskRunDto.getMode().equals(MANUAL_MODE) ? MANUAL_MODE : AUTOMATIC_MODE));
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));

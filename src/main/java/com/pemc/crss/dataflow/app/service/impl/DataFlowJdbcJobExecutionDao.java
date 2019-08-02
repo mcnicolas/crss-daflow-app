@@ -47,59 +47,70 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
             "from %PREFIX%JOB_INSTANCE A " +
             "join %PREFIX%JOB_EXECUTION B " +
             "   on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS C " +
+            "inner join %PREFIX%JOB_EXECUTION_PARAMS C " +
             "   on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS D " +
+            "       and C.KEY_NAME = 'mode'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS D " +
             "   on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS E " +
+            "       and D.KEY_NAME = 'startDate'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS E " +
             "   on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS F " +
+            "       and E.KEY_NAME = 'endDate'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS F " +
             "   on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID " +
+            "       and F.KEY_NAME = 'username'" +
             "where JOB_NAME like ? " +
             "   and B.STATUS like ? " +
             "   and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? " +
-            "   and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') " +
-            "   and ((TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') or ? = '%') " +
-            "   and ((TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') or ? = '%') " +
-            "   and (F.STRING_VAL like ? and F.KEY_NAME = 'username') " +
+            "   and C.STRING_VAL like ? " +
+            "   and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? or ? = '%') " +
+            "   and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? or ? = '%') " +
+            "   and F.STRING_VAL like ? " +
             "order by JOB_INSTANCE_ID desc";
     private static final String COUNT_JOBS_WITH_NAME =
             "SELECT COUNT(*) from %PREFIX%JOB_INSTANCE A " +
             "join %PREFIX%JOB_EXECUTION B " +
             "   on A.JOB_INSTANCE_ID = B.JOB_INSTANCE_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS C " +
+            "inner join %PREFIX%JOB_EXECUTION_PARAMS C " +
             "   on B.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS D " +
+            "       and C.KEY_NAME = 'mode'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS D " +
             "   on B.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS E " +
+            "       and D.KEY_NAME = 'startDate'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS E " +
             "   on B.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS F " +
+            "       and E.KEY_NAME = 'endDate'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS F " +
             "   on B.JOB_EXECUTION_ID = F.JOB_EXECUTION_ID " +
+            "       and F.KEY_NAME = 'username'" +
             "where JOB_NAME like ? " +
             "   and B.STATUS like ? " +
             "   and TO_CHAR(B.START_TIME, 'yyyy-mm-dd') like ? " +
-            "   and (C.STRING_VAL like ? and C.KEY_NAME = 'mode') " +
-            "   and ((TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'startDate') or ? = '%') " +
-            "   and ((TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and E.KEY_NAME = 'endDate') or ? = '%') " +
-            "   and (F.STRING_VAL like ? and F.KEY_NAME = 'username')";
+            "   and C.STRING_VAL like ? " +
+            "   and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? or ? = '%') " +
+            "   and (TO_CHAR(E.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? or ? = '%') " +
+            "   and F.STRING_VAL like ?";
     private static final String FIND_CUSTOM_JOB_EXECUTION =
             "SELECT A.JOB_EXECUTION_ID, A.START_TIME, A.END_TIME, A.STATUS, A.EXIT_CODE, A.EXIT_MESSAGE, A.CREATE_TIME, A.LAST_UPDATED, A.VERSION, A.JOB_CONFIGURATION_LOCATION " +
             "from %PREFIX%JOB_EXECUTION A " +
             "join %PREFIX%JOB_EXECUTION_PARAMS B " +
             "   on A.JOB_EXECUTION_ID = B.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS C " +
+            "inner join %PREFIX%JOB_EXECUTION_PARAMS C " +
             "   on A.JOB_EXECUTION_ID = C.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS D " +
+            "       and C.KEY_NAME = 'mode'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS D " +
             "   on A.JOB_EXECUTION_ID = D.JOB_EXECUTION_ID " +
-            "join %PREFIX%JOB_EXECUTION_PARAMS E " +
+            "       and D.KEY_NAME = 'endDate'" +
+            "left join %PREFIX%JOB_EXECUTION_PARAMS E " +
             "   on A.JOB_EXECUTION_ID = E.JOB_EXECUTION_ID " +
+            "       and E.KEY_NAME = 'username'" +
             "where A.JOB_INSTANCE_ID = ? " +
             "   and A.STATUS like ? " +
             "   and TO_CHAR(A.START_TIME, 'yyyy-mm-dd') like ? " +
-            "   and (B.STRING_VAL like ? and B.KEY_NAME = 'mode') " +
-            "   and ((TO_CHAR(C.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and C.KEY_NAME = 'startDate') or ? = '%') " +
-            "   and ((TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? and D.KEY_NAME = 'endDate') or ? = '%') " +
-            "   and (E.STRING_VAL like ? and E.KEY_NAME = 'username') " +
+            "   and B.STRING_VAL like ? " +
+            "   and (TO_CHAR(C.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? or ? = '%') " +
+            "   and (TO_CHAR(D.DATE_VAL, 'yyyy-mm-dd hh24:mi') like ? or ? = '%') " +
+            "   and E.STRING_VAL like ? " +
             "order by JOB_EXECUTION_ID desc";
 
     private static final String FAILED_EXIT_MESSAGE = "Manually failed by dataflow-app job queue service due to timeout exceeded";

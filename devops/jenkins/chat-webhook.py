@@ -6,8 +6,8 @@ import sys
 # Hangouts Chat incoming webhook quickstart
 #
 def main(message):
-    url = 'https://chat.googleapis.com/v1/spaces/AAAABDLkcb0/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=mjbAUMUiZS0Kl40RhOsrTXIiFApK36Fy15cmqQu7RhE%3D'
-    bot_message = {'text' : message, 'thread': {'name': 'spaces/AAAABDLkcb0/threads/cnbMVljHQBY'}}
+    url = 'https://chat.googleapis.com/v1/spaces/AAAAiLybCsU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=KUSqG5G7RwKw2R2ainXVELoZfZMmbtLh7fqUw7cm2_s%3D'
+    bot_message = {'text' : message, 'thread': {'name': 'spaces/AAAAiLybCsU/threads/daSduJXQ2Es'}}
 
     message_headers = { 'Content-Type': 'application/json; charset=UTF-8'}
 

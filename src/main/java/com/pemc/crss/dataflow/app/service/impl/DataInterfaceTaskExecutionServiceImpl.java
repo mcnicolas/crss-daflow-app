@@ -88,8 +88,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     arguments.add(concatKeyValue(MODE, taskRunDto.getMode() != null ? taskRunDto.getMode() : AUTOMATIC_MODE));
                 }
             } else {
-                arguments.add(concatKeyValue(USERNAME, "system"));
-                arguments.add(concatKeyValue(MODE, MANUAL_MODE.equals(taskRunDto.getMode()) ? MANUAL_MODE : AUTOMATIC_MODE));
+                arguments.add(concatKeyValue(USERNAME, taskRunDto.getMode().equals(MANUAL_MODE) ? taskRunDto.getCurrentUser() : "system"));
+                arguments.add(concatKeyValue(MODE, taskRunDto.getMode().equals(MANUAL_MODE) ? MANUAL_MODE : AUTOMATIC_MODE));
             }
             arguments.add(concatKeyValue(PROCESS_TYPE, taskRunDto.getMarketInformationType()));
             arguments.add(concatKeyValue(RUN_ID, String.valueOf(System.currentTimeMillis()), "long"));

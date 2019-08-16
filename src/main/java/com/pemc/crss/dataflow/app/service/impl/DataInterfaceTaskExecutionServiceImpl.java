@@ -58,6 +58,11 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
         List<MarketInfoType> MARKET_INFO_TYPES = Arrays.asList(MarketInfoType.values());
 
         MarketInfoType marketInfoType = MarketInfoType.getByJobName(taskRunDto.getJobName());
+
+        if (taskRunDto.getMode() == null) {
+            taskRunDto.setMode(AUTOMATIC_MODE);
+        }
+
         if (MARKET_INFO_TYPES.contains(marketInfoType)) {
 
             if (!marketInfoType.equals(MarketInfoType.MTN_DATA)) {

@@ -257,8 +257,15 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
         if (mode.equalsIgnoreCase("automatic")) {
             if (retryAttempt < maxRetry) {
 
-                String startDate = df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));
-                String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
+                MarketInfoType marketInfoType = MarketInfoType.getByJobName(failedJobName);
+                int daysIntervalFromCurrent = 1;
+                int daysIntervalFromStart = marketInfoType.equals(MarketInfoType.RESERVE_SCHEDULE) ? 0 : 1;
+
+                String startDate = df.print(LocalDateTime.now().minusDays(daysIntervalFromCurrent)
+                        .withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));
+                String endDate = df.print(LocalDateTime.now()
+                        .minusDays(daysIntervalFromCurrent - daysIntervalFromStart)
+                        .withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
 
                 List<String> properties = Lists.newArrayList();
                 List<String> arguments = Lists.newArrayList();

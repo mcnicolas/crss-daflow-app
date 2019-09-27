@@ -82,9 +82,16 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
                     Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
                             "There is an existing ".concat(taskRunDto.getJobName()).concat(" job running"));
 
+                    int daysIntervalFromCurrent = 1;
+                    int daysIntervalFromStart = marketInfoType.equals(MarketInfoType.RESERVE_SCHEDULE) ? 0 : 1;
+
                     DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
-                    String startDate =  df.print(LocalDateTime.now().minusDays(1).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));;
-                    String endDate = df.print(LocalDateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0));
+                    String startDate =  df.print(LocalDateTime.now().minusDays(daysIntervalFromCurrent).withHourOfDay(0).withMinuteOfHour(5).withSecondOfMinute(0));
+                    String endDate = df.print(LocalDateTime.now()
+                            .minusDays(daysIntervalFromCurrent - daysIntervalFromStart)
+                            .withHourOfDay(0)
+                            .withMinuteOfHour(0)
+                            .withSecondOfMinute(0));
 
                     arguments.add(concatKeyValue(START_DATE, StringUtils.containsWhitespace(startDate)
                             ? QUOTE + startDate + QUOTE : startDate, "date"));

@@ -195,7 +195,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         checkFinalizeMonthlyStateAllRegions(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                     }
                 } else {
-                    arguments.add(concatKeyValue(ADJUSTMENT_NO, taskRunDto.getAdjNo() + ""));
+                    BatchJobAddtlParams paramsAdjNo = new BatchJobAddtlParams();
+                    paramsAdjNo.setRunId(runId);
+                    paramsAdjNo.setType(PARAMS_TYPE_LONG);
+                    paramsAdjNo.setKey(ADJUSTMENT_NO);
+                    paramsAdjNo.setLongVal(taskRunDto.getAdjNo());
+                    saveBatchJobAddtlParamsJdbc(paramsAdjNo);
                 }
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));

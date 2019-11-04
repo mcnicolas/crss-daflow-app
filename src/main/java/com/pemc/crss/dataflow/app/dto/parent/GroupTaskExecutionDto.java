@@ -14,6 +14,7 @@ public class GroupTaskExecutionDto {
     private Date endDate;
     private String billingPeriodName;
     private String processType;
+    private Long adjNo;
     // this list should contain all the same billing period or within the billing period
     private List<TaskExecutionDto> taskExecutionDtoList = new ArrayList<>();
 
@@ -87,5 +88,13 @@ public class GroupTaskExecutionDto {
 
     public void setTaskExecutionDtoList(List<TaskExecutionDto> taskExecutionDtoList) {
         this.taskExecutionDtoList = taskExecutionDtoList;
+    }
+
+    public Long getAdjNo() {
+        return adjNo;
+    }
+
+    public void setAdjNo(Long adjNo) {
+        this.adjNo = adjNo;
     }
 }

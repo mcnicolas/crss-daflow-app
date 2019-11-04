@@ -101,6 +101,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 DateTime endDate = dtf.parseDateTime(o.getBillingPeriod().substring(6));
                 groupTaskExecutionDto.setStartDate(startDate.toDate());
                 groupTaskExecutionDto.setEndDate(endDate.toDate());
+                groupTaskExecutionDto.setAdjNo(o.getAdjNo());
             } else {
                 // daily
                 DateTime date = dtf.parseDateTime(o.getBillingPeriod());

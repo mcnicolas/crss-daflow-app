@@ -506,9 +506,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     private List<TaskExecutionDto> getTaskExecutionDtosUnderBillingPeriod(int count, Pageable pageable, String billingPeriod, String processType, Long adjNo) {
-        List<TaskExecutionDto> taskExecutionDtos;
-
-        taskExecutionDtos = executionParamRepository.getJobInstanceByBillingPeriodAndProcessType(pageable.getOffset(), pageable.getPageSize(), RUN_WESM_JOB_NAME, billingPeriod, processType, adjNo).stream()
+        List<TaskExecutionDto> taskExecutionDtos = executionParamRepository.getJobInstanceByBillingPeriodAndProcessType(pageable.getOffset(), pageable.getPageSize(), RUN_WESM_JOB_NAME, billingPeriod, processType, adjNo).stream()
                 .map(this::getTaskExecutionDto)
                 .filter(Objects::nonNull)
                 .collect(toList());

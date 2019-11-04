@@ -14,6 +14,7 @@ import com.pemc.crss.shared.commons.util.TaskUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctWesmBillingPeriod;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.MapBillingPeriodAdjNoRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import org.apache.commons.lang3.StringUtils;
@@ -67,6 +68,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     @Autowired
     private SettlementJobLockRepository settlementJobLockRepository;
 
+    @Autowired
+    private MapBillingPeriodAdjNoRepository mapBillingPeriodAdjNoRepository;
+
     @Override
     public Page<TaskExecutionDto> findJobInstances(Pageable pageable) {
         int count = 0;
@@ -108,9 +112,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     @Override
-    public Page<TaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType) {
+    public Page<TaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType, Long adjNo) {
         int count = executionParamRepository.countJobInstanceByBillingPeriodAndProcessType(RUN_WESM_JOB_NAME, billingPeriod, processType);
-        return new PageImpl<>(getTaskExecutionDtosUnderBillingPeriod(count, pageable, billingPeriod, processType));
+        return new PageImpl<>(getTaskExecutionDtosUnderBillingPeriod(count, pageable, billingPeriod, processType, adjNo));
     }
 
     @Override
@@ -189,6 +193,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         checkFinalizeMonthlyStateRegionGroup(taskRunDto.getRegionGroup(), processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                         checkFinalizeMonthlyStateAllRegions(processType, taskRunDto.getStartDate(), taskRunDto.getEndDate());
                     }
+                } else {
+                    arguments.add(concatKeyValue(ADJUSTMENT_NO, taskRunDto.getAdjNo() + ""));
                 }
 
                 arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
@@ -498,11 +504,11 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
         return taskExecutionDtos;
     }
 
-    private List<TaskExecutionDto> getTaskExecutionDtosUnderBillingPeriod(int count, Pageable pageable, String billingPeriod, String processType) {
+    private List<TaskExecutionDto> getTaskExecutionDtosUnderBillingPeriod(int count, Pageable pageable, String billingPeriod, String processType, Long adjNo) {
         List<TaskExecutionDto> taskExecutionDtos = Lists.newArrayList();
 
         if (count > 0) {
-            taskExecutionDtos = executionParamRepository.getJobInstanceByBillingPeriodAndProcessType(pageable.getOffset(), pageable.getPageSize(), RUN_WESM_JOB_NAME, billingPeriod, processType).stream()
+            taskExecutionDtos = executionParamRepository.getJobInstanceByBillingPeriodAndProcessType(pageable.getOffset(), pageable.getPageSize(), RUN_WESM_JOB_NAME, billingPeriod, processType, adjNo).stream()
                     .map(this::getTaskExecutionDto)
                     .filter(Objects::nonNull)
                     .collect(toList());

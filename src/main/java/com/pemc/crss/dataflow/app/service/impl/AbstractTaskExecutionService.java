@@ -75,6 +75,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String PARENT_JOB = "parentJob";
     protected static final String METER_TYPE = "meterType";
     protected static final String PROCESS_TYPE = "processType";
+    protected static final String ADJUSTMENT_NO = "adjNo";
     protected DateFormat dateFormat = new SimpleDateFormat(DateUtil.DEFAULT_DATE_FORMAT);
     protected static final String USERNAME = "username";
     protected static final String WESM_USERNAME = "wesmUsername";

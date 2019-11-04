@@ -68,9 +68,9 @@ public class MeterprocessTaskExecutionResource {
     }
 
     @RequestMapping(value = "/find-jobs-by-billing-period", method = RequestMethod.GET)
-    public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstancesGroupByBillingPeriod(Pageable pageable, String billingPeriod, String processType) {
+    public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstancesGroupByBillingPeriod(Pageable pageable, String billingPeriod, String processType, Long adjNo) {
         LOG.debug("Finding job instances request. pageable={}", pageable);
-        return new ResponseEntity<>(taskExecutionService.findJobInstancesByBillingPeriodAndProcessType(pageable, billingPeriod, processType), HttpStatus.OK);
+        return new ResponseEntity<>(taskExecutionService.findJobInstancesByBillingPeriodAndProcessType(pageable, billingPeriod, processType, adjNo), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST)

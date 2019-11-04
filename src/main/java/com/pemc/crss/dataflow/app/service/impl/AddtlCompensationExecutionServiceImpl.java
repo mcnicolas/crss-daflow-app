@@ -1,24 +1,27 @@
 package com.pemc.crss.dataflow.app.service.impl;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.support.PageableRequest;
+import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.PricingCondition;
 import com.pemc.crss.shared.commons.reference.StlAddtlCompStepUtil;
+import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.commons.util.TaskUtil;
+import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
+import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
+import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import lombok.extern.slf4j.Slf4j;
-
-import java.math.BigDecimal;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
@@ -33,17 +36,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.pemc.crss.dataflow.app.support.PageableRequest;
-import com.pemc.crss.shared.commons.reference.MeterProcessType;
-import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
-import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
-import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
+import java.math.BigDecimal;
+import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.*;
 import static com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName.*;
@@ -220,7 +218,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     @Override
-    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType) {
+    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType, Long adjNo) {
         return null;
     }
 

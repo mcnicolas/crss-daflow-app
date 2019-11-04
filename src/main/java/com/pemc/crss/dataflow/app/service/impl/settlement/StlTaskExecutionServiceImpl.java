@@ -109,7 +109,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     private String parseGroupId(final String billingPeriod, final MeterProcessType processType, final String parentId) {
         if (processType.equals(ADJUSTED)) {
-            return billingPeriod.concat(parentId);
+            return parentId;
         } else {
             return billingPeriod;
         }

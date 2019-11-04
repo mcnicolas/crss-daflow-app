@@ -29,6 +29,7 @@ public class TaskRunDto {
     private String regionGroup;
     private String region;
     private String mode;
+    private Long adjNo;
 
     // FOR SETTLEMENT AMS OUTPUT GENERATION
     private String amsInvoiceDate;
@@ -100,7 +101,8 @@ public class TaskRunDto {
                 Objects.equals(pricingCondition, that.pricingCondition) &&
                 Objects.equals(jobId, that.jobId) &&
                 Objects.equals(regionGroup, that.regionGroup) &&
-                Objects.equals(region, that.region);
+                Objects.equals(region, that.region) &&
+                Objects.equals(adjNo, that.adjNo);
 
     }
 

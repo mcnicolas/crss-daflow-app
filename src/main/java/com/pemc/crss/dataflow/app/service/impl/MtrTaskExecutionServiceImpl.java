@@ -111,7 +111,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
     }
 
     @Override
-    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType) {
+    public Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType, Long adjNo) {
         return null;
     }
 

@@ -10,16 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.repository.ExecutionContextSerializer;
-import org.springframework.batch.core.repository.dao.AbstractJdbcBatchMetadataDao;
-import org.springframework.batch.core.repository.dao.ExecutionContextDao;
-import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
-import org.springframework.batch.core.repository.dao.JdbcExecutionContextDao;
-import org.springframework.batch.core.repository.dao.JdbcJobExecutionDao;
-import org.springframework.batch.core.repository.dao.JdbcJobInstanceDao;
-import org.springframework.batch.core.repository.dao.JdbcStepExecutionDao;
-import org.springframework.batch.core.repository.dao.JobExecutionDao;
-import org.springframework.batch.core.repository.dao.JobInstanceDao;
-import org.springframework.batch.core.repository.dao.StepExecutionDao;
+import org.springframework.batch.core.repository.dao.*;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,7 +40,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableBatchProcessing
@@ -134,7 +131,18 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Bean(name = "jsonContextSerializer")
     public ExecutionContextSerializer jsonContextSerializer() {
-        return new Jackson2ExecutionContextStringSerializer();
+        return new FakeSerializer();
+    }
+
+    public class FakeSerializer implements ExecutionContextSerializer {
+        @Override
+        public Map<String, Object> deserialize(InputStream inputStream) throws IOException {
+            return new HashMap<>();
+        }
+        @Override
+        public void serialize(Map<String, Object> object, OutputStream outputStream) throws IOException {
+            outputStream.write("fake".getBytes(StandardCharsets.US_ASCII));
+        }
     }
 
     @Bean

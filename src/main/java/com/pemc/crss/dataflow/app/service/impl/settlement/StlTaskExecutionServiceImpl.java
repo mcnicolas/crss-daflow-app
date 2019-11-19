@@ -400,9 +400,6 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             stlJobGroupDtoMap.put(groupId, stlJobGroupDto);
 
-            log.info("generationJobExecution: id={}", generationJobExecution.getId());
-            log.info("generationJobExecution: execution_context={}", generationJobExecution.getExecutionContext().toString());
-
             Optional.ofNullable(generationJobExecution.getExecutionContext()
                     .get(INVOICE_GENERATION_FILENAME_KEY)).ifPresent(val ->
                     stlJobGroupDto.setInvoiceGenFolder((String) val));

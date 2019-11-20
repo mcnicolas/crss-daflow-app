@@ -4,6 +4,7 @@ package com.pemc.crss.dataflow.app.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.listener.TaskRetryListener;
 import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
 import org.slf4j.Logger;
@@ -131,7 +132,18 @@ public class ApplicationConfig extends WebMvcConfigurerAdapter {
 
     @Bean(name = "jsonContextSerializer")
     public ExecutionContextSerializer jsonContextSerializer() {
-        return new FakeSerializer();
+        return new CustomJacksonSerializer();
+    }
+
+    public class CustomJacksonSerializer extends Jackson2ExecutionContextStringSerializer {
+        @Override
+        public Map<String, Object> deserialize(InputStream in) throws IOException {
+            try {
+                return super.deserialize(in);
+            } catch (Exception e) {
+                return Maps.newHashMap();
+            }
+        }
     }
 
     public class FakeSerializer implements ExecutionContextSerializer {

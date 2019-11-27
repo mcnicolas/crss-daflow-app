@@ -161,7 +161,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 determineIfJobsAreLocked(taskExecutionDto, stlReadyJob.getBillingPeriod());
             }
 
-            for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
+            taskExecutionDto.getStlJobGroupDtoMap().values().forEach(stlJobGroupDto -> {
 
                 boolean isDaily = taskExecutionDto.getProcessType().equals(DAILY);
 
@@ -181,12 +181,9 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
                 if (!isDaily && stlJobGroupDto.isHeader()) {
 
-                    long start = System.currentTimeMillis();
                     List<ViewSettlementJob> viewSettlementJobs = stlReadyJobQueryService
                             .getStlReadyJobsByParentIdAndProcessTypeAndRegionGroup(processType, parentIdStr, regionGroup);
 
-                    long duration = System.currentTimeMillis() - start;
-                    log.debug("getStlReadyJobsByParentIdAndProcessTypeAndRegionGroup: query_time={} ms", duration);
                     stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
                             viewSettlementJobs, billPeriodStart, billPeriodEnd));
                 }
@@ -227,7 +224,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                                     }
                             );
                 }
-            }
+            });
 
             taskExecutionDtos.add(taskExecutionDto);
         }

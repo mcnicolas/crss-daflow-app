@@ -16,7 +16,6 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
-import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import lombok.extern.slf4j.Slf4j;
@@ -178,7 +177,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 determineStlJobGroupDtoStatus(stlJobGroupDto, isDaily, billPeriodStart, billPeriodEnd);
 
                 determineStlJobGroupDtoLrStatus(stlJobGroupDto, isDaily, billPeriodStart, billPeriodEnd);
-
+/*
                 if (!isDaily && stlJobGroupDto.isHeader()) {
 
                     List<ViewSettlementJob> viewSettlementJobs = stlReadyJobQueryService
@@ -186,7 +185,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
                     stlJobGroupDto.setOutdatedTradingDates(getOutdatedTradingDates(jobDtos,
                             viewSettlementJobs, billPeriodStart, billPeriodEnd));
-                }
+                }*/
 
                 // determine if line rental is finalized
                 if (!isDaily) {

@@ -160,7 +160,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     JobExecution getJobExecutionFromJobInstance(final JobInstance jobInstance) {
-        List<JobExecution> jobExecutions = getJobExecutions(jobInstance);
+        List<JobExecution> jobExecutions = getJobExecutionsNoStepContext(jobInstance);
 
         // most of the time one jobInstance contains only one jobExecution.
         if (jobExecutions.size() > 1) {

@@ -239,8 +239,22 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         return executions;
     }
 
+    protected List<JobExecution> getJobExecutionsNoStepContext(JobInstance jobInstance) {
+        List<JobExecution> executions = jobExecutionDao.findJobExecutions(jobInstance);
+        for (JobExecution jobExecution : executions) {
+            getJobExecutionDependencies(jobExecution, jobInstance);
+        }
+        return executions;
+    }
+
     protected void getJobExecutionDependencies(JobExecution jobExecution) {
         JobInstance jobInstance = jobInstanceDao.getJobInstance(jobExecution);
+        stepExecutionDao.addStepExecutions(jobExecution);
+        jobExecution.setJobInstance(jobInstance);
+        jobExecution.setExecutionContext(ecDao.getExecutionContext(jobExecution));
+    }
+
+    protected void getJobExecutionDependencies(JobExecution jobExecution, JobInstance jobInstance) {
         stepExecutionDao.addStepExecutions(jobExecution);
         jobExecution.setJobInstance(jobInstance);
         jobExecution.setExecutionContext(ecDao.getExecutionContext(jobExecution));

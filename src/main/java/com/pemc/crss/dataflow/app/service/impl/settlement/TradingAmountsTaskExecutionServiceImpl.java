@@ -50,7 +50,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
     private static final Map<String, String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS =
             Collections.singletonMap(SettlementStepUtil.CALC_GMR_VAT, "Calculate GMR / VAT");
-
     @Autowired
     private StlReadyJobQueryService stlReadyJobQueryService;
 

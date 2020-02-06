@@ -34,7 +34,6 @@ public class JobCalculationDto {
     private String status;
     private StlJobStage jobStage;
     private BatchStatus jobExecStatus;
-    private String segregateNss;
 
     private List<TaskSummaryDto> taskSummaryList = new ArrayList<>();
 }

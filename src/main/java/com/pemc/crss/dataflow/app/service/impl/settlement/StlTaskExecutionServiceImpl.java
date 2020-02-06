@@ -15,6 +15,7 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
+import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ViewSettlementJobRepository;
@@ -62,6 +63,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     @Autowired
     ViewSettlementJobRepository viewSettlementJobRepository;
+
+    @Autowired
+    BatchJobAddtlParamsRepository batchJobAddtlParamsRepository;
 
     // Abstract Methods
 
@@ -189,6 +193,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String groupId = genInputWsJobParameters.getString(GROUP_ID);
             Date genInputWsStartDate = genInputWsJobParameters.getDate(START_DATE);
             Date genInputWsEndDate = genInputWsJobParameters.getDate(END_DATE);
+            Long genInputWsRunId = genInputWsJobParameters.getLong(RUN_ID);
 
             final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
 
@@ -214,6 +219,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             JobCalculationDto partialCalcDto = new JobCalculationDto(genWsJobExec.getStartTime(),
                     genWsJobExec.getEndTime(), genInputWsStartDate, genInputWsEndDate,
                     jobGenInputWsStatus, GENERATE_IWS, currentBatchStatus);
+
+            String segregateNss = batchJobAddtlParamsRepository.findByRunIdAndKey(genInputWsRunId, "segregateNssByLlccPay").getStringVal();
+            partialCalcDto.setSegregateNss(segregateNss);
 
             // for skiplogs use
             partialCalcDto.setTaskSummaryList(showSummaryWithLabel(genWsJobExec, getInputWorkSpaceStepsForSkipLogs()));

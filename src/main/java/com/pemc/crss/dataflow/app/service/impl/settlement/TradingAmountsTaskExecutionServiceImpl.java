@@ -711,9 +711,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             JobParameters jobParameters = jobExecution.getJobParameters();
             Date startDate = jobParameters.getDate(START_DATE);
             Date endDate = jobParameters.getDate(END_DATE);
+            Long runId = jobParameters.getLong(RUN_ID);
             JobCalculationDto jobCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
                     startDate, endDate, convertStatus(jobExecution.getStatus(), stlJobStage.getLabel()),
                     stlJobStage, jobExecution.getStatus());
+            String segregateNss = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "segregateNssByLlccPay").getStringVal();
+            jobCalcDto.setSegregateNss(segregateNss);
             jobCalcDto.setTaskSummaryList(showSummaryWithLabel(jobExecution, stepWithLabelMap));
             jobCalculationDtoMap.get(jobInstance.getJobName()).add(jobCalcDto);
         }));

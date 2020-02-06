@@ -275,6 +275,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String groupId = calcJobParameters.getString(GROUP_ID);
             Date calcStartDate = calcJobParameters.getDate(START_DATE);
             Date calcEndDate = calcJobParameters.getDate(END_DATE);
+            Long calcRunId = calcJobParameters.getLong(RUN_ID);
 
             final StlJobGroupDto stlJobGroupDto = stlJobGroupDtoMap.getOrDefault(groupId, new StlJobGroupDto());
 
@@ -295,6 +296,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             JobCalculationDto partialCalcDto = new JobCalculationDto(stlCalcJobExec.getStartTime(),
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
                     jobCalcStatus, CALCULATE_STL, currentBatchStatus);
+
+            String segregateNss = batchJobAddtlParamsRepository.findByRunIdAndKey(calcRunId, "segregateNssByLlccPay").getStringVal();
+            partialCalcDto.setSegregateNss(segregateNss);
 
             partialCalcDto.setTaskSummaryList(showSummaryWithLabel(stlCalcJobExec, getCalculateStepsForSkipLogs()));
 

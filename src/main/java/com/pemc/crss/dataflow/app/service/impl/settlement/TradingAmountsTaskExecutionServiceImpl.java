@@ -16,6 +16,7 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.SettlementStepUtil;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
+import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
@@ -715,7 +716,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             JobCalculationDto jobCalcDto = new JobCalculationDto(jobExecution.getStartTime(), jobExecution.getEndTime(),
                     startDate, endDate, convertStatus(jobExecution.getStatus(), stlJobStage.getLabel()),
                     stlJobStage, jobExecution.getStatus());
-            String segregateNss = batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "segregateNssByLlccPay").getStringVal();
+            String segregateNss = Optional.ofNullable(batchJobAddtlParamsRepository.findByRunIdAndKey(runId, "segregateNssByLlccPay"))
+                    .map(BatchJobAddtlParams::getStringVal).orElse(null);
             jobCalcDto.setSegregateNss(segregateNss);
             jobCalcDto.setTaskSummaryList(showSummaryWithLabel(jobExecution, stepWithLabelMap));
             jobCalculationDtoMap.get(jobInstance.getJobName()).add(jobCalcDto);

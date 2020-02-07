@@ -220,7 +220,9 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     genWsJobExec.getEndTime(), genInputWsStartDate, genInputWsEndDate,
                     jobGenInputWsStatus, GENERATE_IWS, currentBatchStatus);
 
-            String segregateNss = batchJobAddtlParamsRepository.findByRunIdAndKey(genInputWsRunId, "segregateNssByLlccPay").getStringVal();
+            String segregateNss = Optional.ofNullable(
+                    batchJobAddtlParamsRepository.findByRunIdAndKey(genInputWsRunId, "segregateNssByLlccPay"))
+                    .map(BatchJobAddtlParams::getStringVal).orElse(null);
             partialCalcDto.setSegregateNss(segregateNss);
 
             // for skiplogs use
@@ -297,7 +299,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     stlCalcJobExec.getEndTime(), calcStartDate, calcEndDate,
                     jobCalcStatus, CALCULATE_STL, currentBatchStatus);
 
-            String segregateNss = batchJobAddtlParamsRepository.findByRunIdAndKey(calcRunId, "segregateNssByLlccPay").getStringVal();
+            String segregateNss = Optional.ofNullable(batchJobAddtlParamsRepository.findByRunIdAndKey(calcRunId, "segregateNssByLlccPay"))
+                    .map(BatchJobAddtlParams::getStringVal).orElse(null);
             partialCalcDto.setSegregateNss(segregateNss);
 
             partialCalcDto.setTaskSummaryList(showSummaryWithLabel(stlCalcJobExec, getCalculateStepsForSkipLogs()));

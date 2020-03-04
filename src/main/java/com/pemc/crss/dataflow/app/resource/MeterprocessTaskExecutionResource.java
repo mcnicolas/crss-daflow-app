@@ -83,7 +83,8 @@ public class MeterprocessTaskExecutionResource {
             setJobParams(taskRunDto);
         }
 
-        if ("computeWesmMq".equalsIgnoreCase(taskRunDto.getJobName())) {
+        if ("computeWesmMq".equalsIgnoreCase(taskRunDto.getJobName())
+                || "copyStlReady".equalsIgnoreCase(taskRunDto.getJobName())) {
             Arrays.stream(taskRunDto.getRegionGroup().split(",")).forEach(
                     s -> {
                         TaskRunDto dto = taskRunDto.clone(taskRunDto);

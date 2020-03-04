@@ -409,55 +409,54 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
                 arguments.add(concatKeyValue(TaskUtil.BP, jobParameters.getString(TaskUtil.BP)));
                 jobName = "crss-meterprocess-task-mqcomputation";
-            } else if (COPY_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
-                arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
-                arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
-                arguments.add(concatKeyValue(PROCESS_TYPE, processType));
-                arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
-                arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
-                arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
-                arguments.add(concatKeyValue(RG, taskRunDto.getRegionGroup()));
-
-                BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
-                paramsBillingPeriodId.setRunId(runId);
-                paramsBillingPeriodId.setType(PARAMS_TYPE_LONG);
-                paramsBillingPeriodId.setKey(PARAMS_BILLING_PERIOD_ID);
-                paramsBillingPeriodId.setLongVal(taskRunDto.getBillingPeriodId());
-                saveBatchJobAddtlParamsJdbc(paramsBillingPeriodId);
-
-                BatchJobAddtlParams paramsBillingPeriod = new BatchJobAddtlParams();
-                paramsBillingPeriod.setRunId(runId);
-                paramsBillingPeriod.setType(PARAMS_TYPE_LONG);
-                paramsBillingPeriod.setKey(PARAMS_BILLING_PERIOD);
-                paramsBillingPeriod.setLongVal(taskRunDto.getBillingPeriod());
-                saveBatchJobAddtlParamsJdbc(paramsBillingPeriod);
-
-                BatchJobAddtlParams paramsSupplyMonth = new BatchJobAddtlParams();
-                paramsSupplyMonth.setRunId(runId);
-                paramsSupplyMonth.setType(PARAMS_TYPE_STRING);
-                paramsSupplyMonth.setKey(PARAMS_SUPPLY_MONTH);
-                paramsSupplyMonth.setStringVal(taskRunDto.getSupplyMonth());
-                saveBatchJobAddtlParamsJdbc(paramsSupplyMonth);
-
-                BatchJobAddtlParams paramsBillingPeriodName = new BatchJobAddtlParams();
-                paramsBillingPeriodName.setRunId(runId);
-                paramsBillingPeriodName.setType(PARAMS_TYPE_STRING);
-                paramsBillingPeriodName.setKey(PARAMS_BILLING_PERIOD_NAME);
-                paramsBillingPeriodName.setStringVal(taskRunDto.getBillingPeriodName());
-                saveBatchJobAddtlParamsJdbc(paramsBillingPeriodName);
-
-                BatchJobAddtlParams paramsAdjNo = new BatchJobAddtlParams();
-                paramsAdjNo.setRunId(runId);
-                paramsAdjNo.setType(PARAMS_TYPE_LONG);
-                paramsAdjNo.setKey(ADJUSTMENT_NO);
-                paramsAdjNo.setLongVal(taskRunDto.getAdjNo());
-                saveBatchJobAddtlParamsJdbc(paramsAdjNo);
-
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_COPY_STL_READY_MONTHLY)));
-
-                jobName = "crss-meterprocess-task-stlready";
-
             }
+        } else if (COPY_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
+            arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
+            arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
+            arguments.add(concatKeyValue(PROCESS_TYPE,  taskRunDto.getMeterProcessType()));
+            arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
+            arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
+            arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
+            arguments.add(concatKeyValue(RG, taskRunDto.getRegionGroup()));
+
+            BatchJobAddtlParams paramsBillingPeriodId = new BatchJobAddtlParams();
+            paramsBillingPeriodId.setRunId(runId);
+            paramsBillingPeriodId.setType(PARAMS_TYPE_LONG);
+            paramsBillingPeriodId.setKey(PARAMS_BILLING_PERIOD_ID);
+            paramsBillingPeriodId.setLongVal(taskRunDto.getBillingPeriodId());
+            saveBatchJobAddtlParamsJdbc(paramsBillingPeriodId);
+
+            BatchJobAddtlParams paramsBillingPeriod = new BatchJobAddtlParams();
+            paramsBillingPeriod.setRunId(runId);
+            paramsBillingPeriod.setType(PARAMS_TYPE_LONG);
+            paramsBillingPeriod.setKey(PARAMS_BILLING_PERIOD);
+            paramsBillingPeriod.setLongVal(taskRunDto.getBillingPeriod());
+            saveBatchJobAddtlParamsJdbc(paramsBillingPeriod);
+
+            BatchJobAddtlParams paramsSupplyMonth = new BatchJobAddtlParams();
+            paramsSupplyMonth.setRunId(runId);
+            paramsSupplyMonth.setType(PARAMS_TYPE_STRING);
+            paramsSupplyMonth.setKey(PARAMS_SUPPLY_MONTH);
+            paramsSupplyMonth.setStringVal(taskRunDto.getSupplyMonth());
+            saveBatchJobAddtlParamsJdbc(paramsSupplyMonth);
+
+            BatchJobAddtlParams paramsBillingPeriodName = new BatchJobAddtlParams();
+            paramsBillingPeriodName.setRunId(runId);
+            paramsBillingPeriodName.setType(PARAMS_TYPE_STRING);
+            paramsBillingPeriodName.setKey(PARAMS_BILLING_PERIOD_NAME);
+            paramsBillingPeriodName.setStringVal(taskRunDto.getBillingPeriodName());
+            saveBatchJobAddtlParamsJdbc(paramsBillingPeriodName);
+
+            BatchJobAddtlParams paramsAdjNo = new BatchJobAddtlParams();
+            paramsAdjNo.setRunId(runId);
+            paramsAdjNo.setType(PARAMS_TYPE_LONG);
+            paramsAdjNo.setKey(ADJUSTMENT_NO);
+            paramsAdjNo.setLongVal(taskRunDto.getAdjNo());
+            saveBatchJobAddtlParamsJdbc(paramsAdjNo);
+
+            properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_COPY_STL_READY_MONTHLY)));
+
+            jobName = "crss-meterprocess-task-stlready";
         }
 
         LOG.debug("Running job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);

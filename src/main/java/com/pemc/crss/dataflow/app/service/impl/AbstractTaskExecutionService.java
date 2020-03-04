@@ -98,6 +98,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     protected static final String PROFILE_STL_READY_MONTHLY_PRELIM = "finalizeMonthlyPrelim";
     protected static final String PROFILE_STL_READY_MONTHLY_FINAL = "finalizeMonthlyFinal";
     protected static final String PROFILE_STL_READY_MONTHLY_ADJUSTED = "finalizeMonthlyAdjusted";
+    protected static final String PROFILE_COPY_STL_READY_MONTHLY = "copyStlReady";
     protected static final String METER_TYPE_WESM= "MIRF_MT_WESM";
     protected static final String METER_TYPE_RCOA= "MIRF_MT_RCOA";
     protected static final String MSP = "msp";

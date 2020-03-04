@@ -116,6 +116,8 @@ public class MeterprocessTaskExecutionResource {
                 return JobProcess.FINALIZE_STL_READY;
             case "genReport":
                 return JobProcess.GEN_MQ_REPORT;
+            case "copyStlReady":
+                return JobProcess.COPY_STL_READY;
             default:
                 throw new RuntimeException("Unrecognized metering job name: " + jobName);
         }

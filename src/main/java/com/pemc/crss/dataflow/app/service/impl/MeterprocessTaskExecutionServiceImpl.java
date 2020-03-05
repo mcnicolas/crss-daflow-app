@@ -411,6 +411,9 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 jobName = "crss-meterprocess-task-mqcomputation";
             }
         } else if (COPY_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
+
+            checkFinalizedStlStateRegionGroup(taskRunDto.getStartDate(), taskRunDto.getEndDate(), taskRunDto.getRegionGroup());
+
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
             arguments.add(concatKeyValue(PROCESS_TYPE,  taskRunDto.getMeterProcessType()));
@@ -601,6 +604,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             String errorMessage = "Cannot run WESM on billing date ( %s ) with ADJUSTED meter process type. Must have a Settlement Process of FINAL meter type finalized on the same billing period";
             Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate, MeterProcessType.FINAL.name()), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
         }
+    }
+
+
+    private void checkFinalizedStlStateRegionGroup(String startDate, String endDate, String regionGroup) {
+        String errorMessage = "Cannot Copy GESQ on billing date ( %s ) with ADJUSTED meter process type. Must have a Settlement Process of FINAL meter type finalized on the same billing period";
+        Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate, MeterProcessType.FINAL.name(), regionGroup), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
     }
 
     private TaskExecutionDto getTaskExecutionDto(JobInstance jobInstance) {

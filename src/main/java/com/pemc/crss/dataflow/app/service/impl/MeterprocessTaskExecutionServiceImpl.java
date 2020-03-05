@@ -415,7 +415,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
             arguments.add(concatKeyValue(PROCESS_TYPE,  taskRunDto.getMeterProcessType()));
             arguments.add(concatKeyValue(METER_TYPE, METER_TYPE_WESM));
-            arguments.add(concatKeyValue(WESM_USERNAME, taskRunDto.getCurrentUser()));
+            arguments.add(concatKeyValue(STL_READY_USERNAME, taskRunDto.getCurrentUser()));
             arguments.add(concatKeyValue(TaskUtil.BP, taskRunDto.getFormattedBillingPeriod()));
             arguments.add(concatKeyValue(RG, taskRunDto.getRegionGroup()));
 

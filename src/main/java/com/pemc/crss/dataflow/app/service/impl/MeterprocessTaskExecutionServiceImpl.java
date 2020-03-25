@@ -414,6 +414,8 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             checkFinalizedStlStateRegionGroup(taskRunDto.getStartDate(), taskRunDto.getEndDate(), taskRunDto.getRegionGroup());
 
+            checkFinalizedStlStateRegionGroupAdjNo(taskRunDto.getFormattedBillingPeriod(), taskRunDto.getAdjNo(), taskRunDto.getRegionGroup());
+
             arguments.add(concatKeyValue(START_DATE, taskRunDto.getStartDate(), PARAMS_TYPE_DATE));
             arguments.add(concatKeyValue(END_DATE, taskRunDto.getEndDate(), PARAMS_TYPE_DATE));
             arguments.add(concatKeyValue(PROCESS_TYPE,  taskRunDto.getMeterProcessType()));
@@ -610,6 +612,12 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private void checkFinalizedStlStateRegionGroup(String startDate, String endDate, String regionGroup) {
         String errorMessage = "Cannot Copy GESQ on billing date ( %s ) with ADJUSTED meter process type. Must have a Settlement Process of FINAL meter type finalized on the same billing period";
         Preconditions.checkState(settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalized(startDate, endDate, MeterProcessType.FINAL.name(), regionGroup), String.format(errorMessage, startDate + (endDate != null ? " / " + endDate : "")));
+    }
+
+    private void checkFinalizedStlStateRegionGroupAdjNo(String billingPeriod, Long adjNo, String regionGroup) {
+        String groupId = billingPeriod + adjNo;
+        String errorMessage = "Cannot Copy GESQ on Formatted Billing Period ( %s ) with Adjustment Number ( %s ) and Region Group ( %s ). An Adjustment Settlement Process with the same parameters is already finalized!";
+        Preconditions.checkState(!settlementJobLockRepository.tdAmtOrEMFBillingPeriodIsFinalizedAdj(groupId, MeterProcessType.ADJUSTED.name(), regionGroup), String.format(errorMessage, billingPeriod, adjNo + "", regionGroup));
     }
 
     private TaskExecutionDto getTaskExecutionDto(JobInstance jobInstance) {

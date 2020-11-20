@@ -6,19 +6,25 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
+import com.pemc.crss.dataflow.app.service.impl.AddtlCompensationExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -45,7 +51,7 @@ public class AddtlCompensationExecutionResource {
     public ResponseEntity runGroupJob(@RequestBody AddtlCompensationRunListDto addtlCompensationRunListDto, Principal principal) throws URISyntaxException {
         log.debug("Running job request. addtlCompensationRunDtos={}", addtlCompensationRunListDto);
 
-        //((AddtlCompensationExecutionServiceImpl)taskExecutionService).validateAddtlCompDtos(addtlCompensationRunListDto.getAddtlCompensationRunDtos());
+        ((AddtlCompensationExecutionServiceImpl)taskExecutionService).validateAddtlCompDtos(addtlCompensationRunListDto.getAddtlCompensationRunDtos());
 
         for (AddtlCompensationRunDto acRunDto : addtlCompensationRunListDto.getAddtlCompensationRunDtos()) {
             TaskRunDto taskRunDto = new TaskRunDto();

@@ -353,6 +353,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         switch (pc) {
             case AP:
             case SEC:
+            case PSM:
                 finalizeProfile = AddtlCompJobProfile.AC_FINALIZE_PROFILE_AP_SEC;
                 saveAMSadditionalParamsApSec(runId, taskRunDto);
                 break;

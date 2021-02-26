@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.resource.settlement;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
+import com.pemc.crss.dataflow.app.service.DispatchIntervalService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.Collections;
@@ -43,6 +46,10 @@ public class TradingAmountsTaskExecutionResource {
     @Autowired
     @Qualifier("tradingAmountsTaskExecutionService")
     private TaskExecutionService taskExecutionService;
+
+    @Autowired
+    @Qualifier("tradingAmountsDispatchIntervalService")
+    private DispatchIntervalService dispatchIntervalService;
 
     @Autowired
     private BatchJobQueueService queueService;
@@ -327,4 +334,15 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity<>(taskExecutionService.getBatchJobSkipLogs(pageableRequest), HttpStatus.OK);
     }
 
+    @PostMapping(value = "/download/get-batch-job-skip-logs")
+    public void exportBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest, HttpServletResponse response) throws IOException {
+        LOG.debug("Exporting skip logs request. pageable={}", pageableRequest.getPageable());
+        dispatchIntervalService.exportBatchJobSkipLogs(pageableRequest, response);
+    }
+
+    @PostMapping(value = "/download/get-processed-logs")
+    public void exportProcessedLogs(@RequestBody PageableRequest pageableRequest, HttpServletResponse response) throws IOException {
+        LOG.debug("Exporting processed logs request. pageable={}", pageableRequest.getPageable());
+        dispatchIntervalService.exportProcessedLogs(pageableRequest, response);
+    }
 }

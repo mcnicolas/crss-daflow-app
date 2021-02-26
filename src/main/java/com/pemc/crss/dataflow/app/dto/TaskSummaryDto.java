@@ -12,6 +12,15 @@ public class TaskSummaryDto {
     private int readCount;
     private int writeCount;
     private int skipCount;
+    private int processedCount;
+
+    public int getProcessedCount() {
+        return processedCount;
+    }
+
+    public void setProcessedCount(int processedCount) {
+        this.processedCount = processedCount;
+    }
 
     public String getStepCode() {
         return stepCode;

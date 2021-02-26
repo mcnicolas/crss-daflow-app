@@ -20,6 +20,7 @@ import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
 import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
+import com.pemc.crss.shared.core.dataflow.repository.ViewTxnOutputAddtlCompensationRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -77,6 +78,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Autowired
     private SettlementJobLockRepository settlementJobLockRepository;
 
+    @Autowired
+    private ViewTxnOutputAddtlCompensationRepository viewTxnOutputAddtlCompensationRepository;
+
     @Value("${cfg.ams.remarks-max-length}")
     private Long maxRemarksLength;
 
@@ -126,12 +130,21 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                                     Double acApprovedRate = batchJobAddtlParamsService.getBatchJobAddtlParamsDoubleVal(parameters.getLong(RUN_ID), AC_APPROVED_RATE);
 
                                     AddtlCompensationExecDetailsDto addtlCompensationExecDetailsDto = new AddtlCompensationExecDetailsDto();
-                                    addtlCompensationExecDetailsDto.setRunId(parameters.getLong(RUN_ID));
+                                    Long runId = parameters.getLong(RUN_ID);
+
+                                    addtlCompensationExecDetailsDto.setRunId(runId);
                                     addtlCompensationExecDetailsDto.setBillingId(acBillingId);
                                     addtlCompensationExecDetailsDto.setMtn(acMtn);
                                     addtlCompensationExecDetailsDto.setApprovedRate(acApprovedRate != null ? BigDecimal.valueOf(acApprovedRate) : BigDecimal.ZERO);
                                     addtlCompensationExecDetailsDto.setStatus(jobExecution.getStatus().name());
-                                    addtlCompensationExecDetailsDto.setTaskSummaryList(showSummary(jobExecution, AC_CALC_STEP_LIST));
+
+                                    List<TaskSummaryDto> taskSummaryDtos = showSummary(jobExecution, AC_CALC_STEP_LIST).stream().map(taskSummaryDto -> {
+                                        int processedCount = viewTxnOutputAddtlCompensationRepository.findByAcGroupIdAndAcJobId(groupId, runId).size();
+                                        taskSummaryDto.setProcessedCount(processedCount);
+                                        return taskSummaryDto;
+                                    }).collect(Collectors.toList());
+
+                                    addtlCompensationExecDetailsDto.setTaskSummaryList(taskSummaryDtos);
                                     addtlCompensationExecDetailsDto.setRunningSteps(getProgress(jobExecution));
                                     addtlCompensationExecDetailsDto.setRunStartDate(DateUtil.convertToLocalDateTime(jobExecution.getStartTime()));
                                     addtlCompensationExecDetailsDto.setRunEndDate(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));

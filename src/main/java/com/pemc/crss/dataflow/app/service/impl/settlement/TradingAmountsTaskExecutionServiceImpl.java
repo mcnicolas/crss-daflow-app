@@ -36,6 +36,7 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.pemc.crss.dataflow.app.support.StlJobStage.*;
@@ -291,7 +292,6 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }
     }
-
 
     // Line Rental job instances start
     private void initializeCalculateLr(final List<JobInstance> calculateLineRentalInstances,

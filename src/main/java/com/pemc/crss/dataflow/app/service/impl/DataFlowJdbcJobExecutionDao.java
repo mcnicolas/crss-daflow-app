@@ -27,15 +27,9 @@ import org.springframework.util.Assert;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_COMPLETE_FINALIZE_QUERY;
-import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_DISTINCT_COUNT_QUERY;
-import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_DISTINCT_QUERY;
-import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.ADDTL_COMP_INTS_QUERY;
+import static com.pemc.crss.dataflow.app.support.AddtlCompensationQuery.*;
 
 @Slf4j
 public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
@@ -217,16 +211,75 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
 
     public Long countDistinctAddtlCompJobInstances(final Map<String, String> mapParams) {
         log.debug("Querying Additional Compensation Job Distinct Count query with params: {}", mapParams);
-        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_DISTINCT_COUNT_QUERY), Long.class,
-                resolveAddtlCompFilterParams(mapParams));
+        String status = Optional.ofNullable(mapParams.get("status")).orElse("ALL");
+
+        switch (status) {
+            case "ALL":
+                return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_DISTINCT_COUNT_QUERY), Long.class,
+                        (Object[]) resolveAddtlCompFilterParams(mapParams));
+            case "COMPLETED-FINALIZE":
+                return countDistinctAddtlCompCompletedFinalizeJobInstances(mapParams);
+            case "COMPLETED-CALCULATE-GMR":
+                return countDistinctAddtlCompCompletedCalculateGmrJobInstances(mapParams);
+            default:  // we can safely say that the last case is "BLANK"
+                return countDistinctAddtlCompBlankJobInstances(mapParams);
+        }
     }
 
-    public List<DistinctAddtlCompDto> findDistinctAddtlCompJobInstances(final int start, final int count,
-                                                                        final Map<String, String> mapParams) {
-        log.debug("Querying Additional Compensation Job Distinct Select query with params: {}", mapParams);
+    public Long countDistinctAddtlCompCompletedFinalizeJobInstances(final Map<String, String> mapParams) {
+        log.debug("Querying Additional Compensation 'COMPLETED-FINALIZE' Job Distinct Count query with params: {}", mapParams);
+        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_COMPLETED_FINALIZE_DISTINCT_COUNT_QUERY), Long.class,
+                (Object[]) resolveAddtlCompStatusFilterParams(mapParams));
+    }
 
-        return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_DISTINCT_QUERY),
-                resolveAddtlCompFilterParams(mapParams), getAddtlCompExtractor(start, count));
+    public Long countDistinctAddtlCompCompletedCalculateGmrJobInstances(final Map<String, String> mapParams) {
+        log.debug("Querying Additional Compensation 'COMPLETED-CALCULATE-GMR' Job Distinct Count query with params: {}", mapParams);
+        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_COMPLETED_CALCULATE_GMR_DISTINCT_COUNT_QUERY), Long.class,
+                (Object[]) resolveAddtlCompStatusFilterParamsCalculateGmrAndBlank(mapParams));
+    }
+
+    public Long countDistinctAddtlCompBlankJobInstances(final Map<String, String> mapParams) {
+        log.debug("Querying Additional Compensation 'BLANK' Job Distinct Count query with params: {}", mapParams);
+        return this.getJdbcTemplate().queryForObject(this.getQuery(ADDTL_COMP_BLANK_DISTINCT_COUNT_QUERY), Long.class,
+                (Object[]) resolveAddtlCompStatusFilterParamsCalculateGmrAndBlank(mapParams));
+    }
+
+    public List<DistinctAddtlCompDto> findDistinctAddtlCompJobInstances(final int start, final int count, final Map<String, String> mapParams) {
+        String status = Optional.ofNullable(mapParams.get("status")).orElse("ALL");
+        log.debug("Querying Additional Compensation Job Distinct Select query with params: {} and status: {}", mapParams, status);
+
+        switch (status) {
+            case "ALL":
+                return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_DISTINCT_QUERY),
+                    resolveAddtlCompFilterParams(mapParams), getAddtlCompExtractor(start, count));
+            case "COMPLETED-FINALIZE":
+                return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_COMPLETED_FINALIZE_DISTINCT_QUERY),
+                    resolveAddtlCompStatusFilterParams(mapParams), getAddtlCompExtractor(start, count));
+            case "COMPLETED-CALCULATE-GMR":
+                return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_COMPLETED_CALCULATE_GMR_DISTINCT_QUERY),
+                        resolveAddtlCompStatusFilterParamsCalculateGmrAndBlank(mapParams), getAddtlCompExtractor(start, count));
+            default:  // we can safely say that the last case is "BLANK"
+                return this.getJdbcTemplate().query(this.getQuery(ADDTL_COMP_BLANK_DISTINCT_QUERY),
+                        resolveAddtlCompStatusFilterParamsCalculateGmrAndBlank(mapParams), getAddtlCompExtractor(start, count));
+        }
+    }
+
+    private String[] resolveAddtlCompStatusFilterParams(final Map<String, String> mapParams) {
+        String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
+        String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
+        String pricingCondition = resolveQueryParam(mapParams.getOrDefault("pricingCondition", null));
+        String groupId = resolveQueryParam(mapParams.getOrDefault("groupId", null));
+
+        return new String[]{startDate, endDate, pricingCondition, groupId};
+    }
+
+    private String[] resolveAddtlCompStatusFilterParamsCalculateGmrAndBlank(final Map<String, String> mapParams) {
+        String startDate = resolveQueryParam(mapParams.getOrDefault("startDate", null));
+        String endDate = resolveQueryParam(mapParams.getOrDefault("endDate", null));
+        String pricingCondition = resolveQueryParam(mapParams.getOrDefault("pricingCondition", null));
+        String groupId = resolveQueryParam(mapParams.getOrDefault("groupId", null));
+
+        return new String[]{startDate, endDate, pricingCondition, groupId, startDate, endDate, pricingCondition, groupId};
     }
 
     private String[] resolveAddtlCompFilterParams(final Map<String, String> mapParams) {
@@ -257,7 +310,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         }
 
         return this.getJdbcTemplate().query(StlCalculationQuery.executionQuery(), new DataFlowJdbcJobExecutionDao.JobExecutionColNameRowMapper(null),
-                new String[]{jobName.concat(parentGroup), startDate, endDate, startDate, endDate, type != null ? type.name() : ""});
+                (Object[]) new String[]{jobName.concat(parentGroup), startDate, endDate, startDate, endDate, type != null ? type.name() : ""});
     }
 
     // Job Queue methods start

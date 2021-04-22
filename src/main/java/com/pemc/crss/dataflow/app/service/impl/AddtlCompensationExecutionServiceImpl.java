@@ -101,10 +101,20 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     @Override
     public Page<? extends BaseTaskExecutionDto> findJobInstances(PageableRequest pageableRequest) {
         final Pageable pageable = pageableRequest.getPageable();
-        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances(pageableRequest.getMapParams());
+        final Map<String, String> mapParams = pageableRequest.getMapParams();
 
-        List<AddtlCompensationExecutionDto> addtlCompensationExecutionDtoList = dataFlowJdbcJobExecutionDao
-                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize(), pageableRequest.getMapParams())
+        Long totalSize = dataFlowJdbcJobExecutionDao.countDistinctAddtlCompJobInstances(mapParams);
+        List<AddtlCompensationExecutionDto> addtlCompensationExecutionDtoList = getAddtlCompensationExecutionDtoList(pageable, mapParams);
+
+        return new PageImpl<>(addtlCompensationExecutionDtoList, pageable, totalSize);
+    }
+
+    public List<AddtlCompensationExecutionDto> getAddtlCompensationExecutionDtoList(Pageable pageable, Map<String, String> mapParams) {
+        log.info("getAddtlCompensationExecutionDtoList({}, {})", pageable, mapParams);
+        String status = Optional.ofNullable(mapParams.get("status")).orElse("ALL");
+
+        return dataFlowJdbcJobExecutionDao
+                .findDistinctAddtlCompJobInstances(pageable.getOffset(), pageable.getPageSize(), mapParams)
                 .stream()
                 .map(distinctAddtlCompDto -> {
                     distinctAddtlCompDto.setMaxAmsRemarksLength(maxRemarksLength);
@@ -210,9 +220,8 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
                     addtlCompensationExecutionDto.setAddtlCompensationExecDetailsDtos(addtlCompensationExecDetailsDtos);
                     return addtlCompensationExecutionDto;
-                }).collect(Collectors.toList());
-
-        return new PageImpl<>(addtlCompensationExecutionDtoList, pageable, totalSize);
+                })
+                .collect(Collectors.toList());
     }
 
     @Override

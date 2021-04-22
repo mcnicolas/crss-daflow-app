@@ -33,23 +33,20 @@ public class WebCsvUtils {
         try (ICsvBeanWriter beanWriter = new CsvBeanWriter(new OutputStreamWriter(response.getOutputStream()),
                 CsvPreference.STANDARD_PREFERENCE)) {
 
-            // TODO: test if this can be refactored
-            String[] newHeader = headers;
-            String[] mapper = fields;
-            if (newHeader.length != mapper.length) {
+            if (headers.length != fields.length) {
                 throw new RuntimeException(
                         String.format("Headers and fields length does not match :: headers=%d, fields=%d",
-                                newHeader.length, mapper.length));
+                                headers.length, fields.length));
             }
 
             if (processors == null || processors.length == 0) {
-                processors = getDefaultCellProcessors(mapper.length);
+                processors = getDefaultCellProcessors(fields.length);
             }
 
-            beanWriter.writeHeader(newHeader);
+            beanWriter.writeHeader(headers);
 
             for (T row : rows) {
-                beanWriter.write(row, mapper, processors);
+                beanWriter.write(row, fields, processors);
             }
         }
     }

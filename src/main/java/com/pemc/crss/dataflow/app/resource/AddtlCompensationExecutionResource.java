@@ -6,6 +6,7 @@ import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
 import com.pemc.crss.dataflow.app.service.AddtlCompJobService;
+import com.pemc.crss.dataflow.app.service.FinalizedAddtlCompensationExecutionService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.AddtlCompensationExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
@@ -22,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.Principal;
 
@@ -35,6 +38,9 @@ public class AddtlCompensationExecutionResource {
     private TaskExecutionService taskExecutionService;
 
     @Autowired
+    private FinalizedAddtlCompensationExecutionService finalizedAddtlCompensationExecutionService;
+
+    @Autowired
     private BatchJobQueueService batchJobQueueService;
 
     @Autowired
@@ -44,6 +50,12 @@ public class AddtlCompensationExecutionResource {
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(@RequestBody PageableRequest pageableRequest) {
         log.debug("Finding job instances request. pageable={}", pageableRequest.getPageable());
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageableRequest), HttpStatus.OK);
+    }
+
+    @PostMapping("/download/job-instances")
+    public void exportAllJobInstances(@RequestBody PageableRequest pageableRequest, HttpServletResponse response) throws IOException {
+        log.debug("Downloading job instances request. pageable={}", pageableRequest.getPageable());
+        finalizedAddtlCompensationExecutionService.exportJobInstances(pageableRequest, response);
     }
 
     @RequestMapping(value = "/multi", method = RequestMethod.POST)

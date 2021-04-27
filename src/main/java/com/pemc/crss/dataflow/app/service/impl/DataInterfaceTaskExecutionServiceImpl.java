@@ -68,7 +68,8 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
             if (!marketInfoType.equals(MarketInfoType.MTN_DATA)
                     && !marketInfoType.equals(MarketInfoType.MRU_DATA)
                     && !marketInfoType.equals(MarketInfoType.ASIE_DATA)
-                    && !marketInfoType.equals(MarketInfoType.COG_DATA)) {
+                    && !marketInfoType.equals(MarketInfoType.COG_DATA)
+                    && !marketInfoType.equals(MarketInfoType.SGAD_DATA)) {
                 // TODO: Refactor to base on taskRunDto.getMode()
                 if (!StringUtils.isEmpty(taskRunDto.getStartDate())) {
                     LOG.debug("Starting Manual Import........");

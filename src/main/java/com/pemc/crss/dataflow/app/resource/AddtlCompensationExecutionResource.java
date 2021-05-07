@@ -5,6 +5,7 @@ import com.pemc.crss.dataflow.app.dto.AddtlCompensationRunListDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.jobqueue.BatchJobQueueService;
+import com.pemc.crss.dataflow.app.service.AddtlCompJobService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.AddtlCompensationExecutionServiceImpl;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
@@ -13,18 +14,13 @@ import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
-import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -40,6 +36,9 @@ public class AddtlCompensationExecutionResource {
 
     @Autowired
     private BatchJobQueueService batchJobQueueService;
+
+    @Autowired
+    private AddtlCompJobService addtlCompJobService;
 
     @PostMapping("/job-instances")
     public ResponseEntity<Page<? extends StubTaskExecutionDto>> findAllJobInstances(@RequestBody PageableRequest pageableRequest) {
@@ -118,6 +117,15 @@ public class AddtlCompensationExecutionResource {
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_FILES_AC, taskRunDto);
         batchJobQueueService.save(jobQueue);
 
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @RequestMapping(method = RequestMethod.DELETE)
+    public ResponseEntity deleteJob(@RequestParam(value = "jobId") long jobId,
+                                    @RequestParam(value = "mtn") String mtn,
+                                    @RequestParam(value = "pricingCondition") String pricingCondition,
+                                    @RequestParam(value = "groupId") String groupId) throws URISyntaxException {
+        addtlCompJobService.deleteJob(jobId, mtn, pricingCondition, groupId);
         return new ResponseEntity(HttpStatus.OK);
     }
 

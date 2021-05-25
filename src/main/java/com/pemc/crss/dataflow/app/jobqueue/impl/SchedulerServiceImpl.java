@@ -14,6 +14,8 @@ import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +45,9 @@ public class SchedulerServiceImpl implements SchedulerService {
 
     @Autowired
     private DataFlowJdbcJobExecutionDao dataFlowJdbcJobExecutionDao;
+
+    @Autowired
+    protected JobExplorer jobExplorer;
 
     @Autowired
     @Qualifier("tradingAmountsTaskExecutionService")
@@ -311,13 +316,23 @@ public class SchedulerServiceImpl implements SchedulerService {
                     break;
                 case FAILED:
                     log.info("Job {} FAILED given jobExecutionId {}", job.getJobProcess(), job.getJobExecutionId());
+                    JobExecution jobExecutionEntity = jobExplorer.getJobExecution(jobExecutionId);
+
                     job.setStatus(FAILED_RUN);
                     job.setJobExecEnd(DateUtil.convertToLocalDateTime(jobExecution.getEndTime()));
+                    job.setDetails(processFailedMessage(jobExecutionEntity));
                     break;
                 default:
                     // do nothing. job is probably still running
             }
         }
+    }
+
+    private String processFailedMessage(JobExecution jobExecution) {
+        return jobExecution.getStepExecutions().parallelStream()
+                .filter(stepExecution -> stepExecution.getStepName().matches("(.*)Part(.*)"))
+                .filter(stepExecution -> stepExecution.getStatus().isUnsuccessful())
+                .findFirst().map(stepExecution -> stepExecution.getExitStatus().getExitDescription()).orElse(null);
     }
 
 

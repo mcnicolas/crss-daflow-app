@@ -175,6 +175,25 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
         return getNamedParameterJdbcTemplate().query(searchSql, querySqlSource, new JobInstanceRowMapper());
     }
 
+    public List<JobInstance> findJobInstancesByNameAndBillingPeriod(final String jobNamePrefix,
+                                                                    final String billingPeriod) {
+
+        MapSqlParameterSource querySqlSource = new MapSqlParameterSource()
+                .addValue("jobPrefix", jobNamePrefix + WILD_CARD)
+                .addValue("billingPeriod", Long.valueOf(billingPeriod));
+
+        String searchSql = "SELECT JI.JOB_INSTANCE_ID, JI.JOB_NAME from BATCH_JOB_INSTANCE JI "
+                + " JOIN BATCH_JOB_EXECUTION JE on JI.JOB_INSTANCE_ID = JE.JOB_INSTANCE_ID "
+                + " JOIN BATCH_JOB_EXECUTION_PARAMS BP on JE.JOB_EXECUTION_ID = BP.JOB_EXECUTION_ID AND BP.KEY_NAME = 'parentJob' "
+                + " JOIN BATCH_JOB_EXECUTION_PARAMS PTYPE on JE.JOB_EXECUTION_ID = PTYPE.JOB_EXECUTION_ID AND PTYPE.KEY_NAME = 'processType'"
+                + " WHERE JI.JOB_NAME like :jobPrefix "
+                + " AND BP.LONG_VAL = :billingPeriod "
+                + " AND PTYPE.STRING_VAL = 'FINAL' "
+                + " ORDER BY JI.JOB_INSTANCE_ID DESC";
+
+        return getNamedParameterJdbcTemplate().query(searchSql, querySqlSource, new JobInstanceRowMapper());
+    }
+
     public int getJobInstanceCount(String jobName, String status, String mode, String runStartDate,
                                    String tradingStartDate, String tradingEndDate, String username) throws NoSuchJobException {
         try {

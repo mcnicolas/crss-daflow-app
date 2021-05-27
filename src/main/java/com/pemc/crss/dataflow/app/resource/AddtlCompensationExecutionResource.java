@@ -141,5 +141,9 @@ public class AddtlCompensationExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping(value = "/validate-billing-period")
+    public ResponseEntity<Boolean> validateBillingPeriod(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+        return new ResponseEntity(addtlCompJobService.validateBillingPeriod(taskRunDto), HttpStatus.OK);
+    }
 
 }

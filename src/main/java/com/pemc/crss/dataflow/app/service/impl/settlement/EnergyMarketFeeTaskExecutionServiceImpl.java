@@ -243,6 +243,11 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     }
 
     @Override
+    String getDailyTaggingProfile() {
+        return SettlementJobProfile.TAG_DAILY;
+    }
+
+    @Override
     String getPrelimGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_PRELIM_EMF;
     }

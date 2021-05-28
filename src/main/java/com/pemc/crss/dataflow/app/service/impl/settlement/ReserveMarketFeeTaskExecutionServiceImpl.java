@@ -230,6 +230,11 @@ public class ReserveMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSe
     }
 
     @Override
+    String getDailyTaggingProfile() {
+        return SettlementJobProfile.TAG_DAILY;
+    }
+
+    @Override
     String getPrelimGenFileProfile() {
         return SettlementJobProfile.GEN_FILE_PRELIM_RMF;
     }

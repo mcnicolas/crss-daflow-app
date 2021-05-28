@@ -101,6 +101,8 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
     abstract String getAdjustedTaggingProfile();
 
+    abstract String getDailyTaggingProfile();
+
     abstract String getPrelimGenFileProfile();
 
     abstract String getPrelimGenBillStatementProfile();
@@ -951,6 +953,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                         getAdjustedTaggingProfile())));
                 saveFinalizeAMSadditionalParams(runId, taskRunDto);
                 break;
+            case DAILY:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getDailyTaggingProfile())));
+                break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
@@ -987,6 +993,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         getAdjustedGenFileProfile())));
                 saveAMSadditionalParams(runId, taskRunDto);
+                break;
+            case DAILY:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getDailyTaggingProfile())));
                 break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);

@@ -962,6 +962,10 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                         SettlementJobProfile.GEN_FILE_ADJ_RSV)));
                 saveAMSadditionalParams(runId, taskRunDto);
                 break;
+            case DAILY:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        getDailyTaggingProfile())));
+                break;
             default:
                 throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
         }
@@ -1135,6 +1139,11 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     @Override
     String getAdjustedTaggingProfile() {
         return SettlementJobProfile.TAG_MONTHLY_ADJ;
+    }
+
+    @Override
+    String getDailyTaggingProfile() {
+        return SettlementJobProfile.TAG_DAILY;
     }
 
     @Override

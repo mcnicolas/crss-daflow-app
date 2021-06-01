@@ -91,8 +91,9 @@ public class AddtlCompJobServiceImpl implements AddtlCompJobService {
             startDateSet.add(DateUtil.convertToLocalDate(genInputWsStartDate));
         }
 
+        SortedSet<LocalDate> referencebillingPeriodDates = DateUtil.createRange(sDate, eDate);
         SortedSet<LocalDate> billingPeriodDates = DateUtil.createRange(sDate, eDate);
-        billingPeriodDates.forEach(billingPeriodDate -> {
+        referencebillingPeriodDates.forEach(billingPeriodDate -> {
             if (startDateSet.contains(billingPeriodDate)) {
                 billingPeriodDates.remove(billingPeriodDate);
             }

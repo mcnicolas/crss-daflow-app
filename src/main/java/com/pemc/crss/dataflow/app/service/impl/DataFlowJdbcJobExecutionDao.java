@@ -189,6 +189,7 @@ public class DataFlowJdbcJobExecutionDao extends JdbcJobExecutionDao {
                 + " WHERE JI.JOB_NAME like :jobPrefix "
                 + " AND BP.LONG_VAL = :billingPeriod "
                 + " AND PTYPE.STRING_VAL = 'FINAL' "
+                + " AND JE.STATUS = 'COMPLETED' "
                 + " ORDER BY JI.JOB_INSTANCE_ID DESC";
 
         return getNamedParameterJdbcTemplate().query(searchSql, querySqlSource, new JobInstanceRowMapper());

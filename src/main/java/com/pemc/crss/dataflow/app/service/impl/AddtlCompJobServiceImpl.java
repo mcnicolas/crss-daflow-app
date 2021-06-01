@@ -106,8 +106,8 @@ public class AddtlCompJobServiceImpl implements AddtlCompJobService {
 
     private String derivePrevBillingPeriod(LocalDate startDate, LocalDate endDate) {
 
-        String prevBp = DateUtil.convertToString(startDate, DateUtil.REPORT_DATETIME_FORMAT).substring(2)
-                + DateUtil.convertToString(endDate, DateUtil.REPORT_DATETIME_FORMAT).substring(2);
+        String prevBp = DateUtil.convertToString(startDate, DateUtil.REPORT_FILENAME_FORMAT).substring(2)
+                + DateUtil.convertToString(endDate, DateUtil.REPORT_FILENAME_FORMAT).substring(2);
         log.info("prevBp = {}", prevBp);
         return prevBp;
     }

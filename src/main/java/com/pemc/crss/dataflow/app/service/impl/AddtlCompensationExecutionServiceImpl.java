@@ -376,6 +376,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
             case AP:
             case SEC:
             case PSM:
+            case MOT:
                 finalizeProfile = AddtlCompJobProfile.AC_FINALIZE_PROFILE_AP_SEC;
                 saveAMSadditionalParamsApSec(runId, taskRunDto);
                 break;

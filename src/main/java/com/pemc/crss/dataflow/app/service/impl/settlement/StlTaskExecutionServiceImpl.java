@@ -137,12 +137,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         taskExecutionDto.setStatus(convertStatus(BatchStatus.COMPLETED, "SETTLEMENT"));
         taskExecutionDto.setStlReadyStatus(BatchStatus.COMPLETED);
 
-        if (!stlReadyJob.getProcessType().equals(DAILY)) {
-            taskExecutionDto.setBillPeriodStartDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "startDate"));
-            taskExecutionDto.setBillPeriodEndDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "endDate"));
-        } else {
-            taskExecutionDto.setDailyDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "dailyDate"));
-        }
+        taskExecutionDto.setBillPeriodStartDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "startDate"));
+        taskExecutionDto.setBillPeriodEndDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "endDate"));
+
+        taskExecutionDto.setDailyDate(DateUtil.extractDateFromBillingPeriod(billingPeriod, "dailyDate"));
 
         taskExecutionDto.setProcessType(stlReadyJob.getProcessType());
 

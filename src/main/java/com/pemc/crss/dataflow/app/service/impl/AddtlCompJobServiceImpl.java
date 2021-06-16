@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 import static com.pemc.crss.shared.commons.util.TaskUtil.END_DATE;
 import static com.pemc.crss.shared.commons.util.TaskUtil.START_DATE;
@@ -65,16 +66,19 @@ public class AddtlCompJobServiceImpl implements AddtlCompJobService {
     public Boolean validateBillingPeriod(TaskRunDto taskRunDto) {
         //get dates
         String startDate = taskRunDto.getStartDate();
-        String endDate = taskRunDto.getEndDate();
-        //prev bp dates
-        LocalDate sDate = DateUtil.parseLocalDate(startDate).minusMonths(1);
-        LocalDate eDate = DateUtil.parseLocalDate(endDate).minusMonths(1);
 
-        //just for FINAL
-        List<JobInstance> jobInstances = dataFlowJdbcJobExecutionDao.findJobInstancesByNameAndBillingPeriod(GEN_EBRSV_INPUT_WS,
-                derivePrevBillingPeriod(sDate, eDate));
+        Map<String, Object> lastCompleteBillingPeriod = executionParamRepository.getLastCompleteBillingPeriod();
 
-        return determineIWSCompleteness(jobInstances, sDate, eDate);
+        if (!lastCompleteBillingPeriod.isEmpty()) {
+
+            LocalDate latestStartDate = DateUtil.convertToLocalDate((Date) lastCompleteBillingPeriod.get("start_date"));
+            LocalDate dtoStartDate = DateUtil.parseLocalDate(startDate);
+
+            if (dtoStartDate.isBefore(latestStartDate) || dtoStartDate.isEqual(latestStartDate))
+                return true;
+        }
+
+        return false;
     }
 
     private Boolean determineIWSCompleteness(List<JobInstance> jobInstances, LocalDate sDate, LocalDate eDate) {

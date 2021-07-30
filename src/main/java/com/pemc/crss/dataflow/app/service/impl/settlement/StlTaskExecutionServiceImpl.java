@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.pemc.crss.dataflow.app.dto.*;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.service.impl.AbstractTaskExecutionService;
 import com.pemc.crss.dataflow.app.support.StlJobStage;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -794,7 +795,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
-    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchGenerateInputWorkspaceJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
 
@@ -873,7 +874,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJobJdbc(taskRunDto);
     }
 
-    void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchCalculateJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -921,7 +922,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJobJdbc(taskRunDto);
     }
 
-    void launchFinalizeJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchFinalizeJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -965,7 +966,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJobJdbc(taskRunDto);
     }
 
-    void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchGenerateFileJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -1006,7 +1007,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         lockJobJdbc(taskRunDto);
     }
 
-    void launchGenerateBillStatementFileJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+    void launchGenerateBillStatementFileJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();

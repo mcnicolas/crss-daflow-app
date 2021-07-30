@@ -3,6 +3,7 @@ package com.pemc.crss.dataflow.app.service;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
 import org.springframework.data.domain.Page;
@@ -30,7 +31,7 @@ public interface TaskExecutionService {
 
     Page<? extends StubTaskExecutionDto> findJobInstancesByBillingPeriodAndProcessType(Pageable pageable, String billingPeriod, String processType, Long adjNo);
 
-    void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
+    void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException;
 
     /**
      * This method should be revisited once its finalized where to get dispatch interval.
@@ -45,7 +46,7 @@ public interface TaskExecutionService {
 
     void deleteJob(long jobId);
 
-    void relaunchFailedJob(long jobId) throws URISyntaxException;
+    void relaunchFailedJob(long jobId) throws URISyntaxException, LaunchJobException;
 
     String getFailedExitMsg(int
                                     stepId);

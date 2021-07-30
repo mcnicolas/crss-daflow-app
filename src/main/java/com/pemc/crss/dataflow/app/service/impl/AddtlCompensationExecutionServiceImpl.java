@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.reference.PricingCondition;
@@ -245,7 +246,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
     }
 
     @Override
-    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         switch (taskRunDto.getJobName()) {
             case AddtlCompJobName.AC_CALC:
                 launchAddtlCompensation(taskRunDto);
@@ -300,7 +301,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    private void launchAddtlCompensation(TaskRunDto taskRunDto) throws URISyntaxException {
+    private void launchAddtlCompensation(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         String startDate = taskRunDto.getBillingStartDate();
         String endDate = taskRunDto.getBillingEndDate();
         String groupId = buildGroupId(taskRunDto);
@@ -328,7 +329,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
-    private void calcGmrVatAc(TaskRunDto taskRunDto) throws URISyntaxException {
+    private void calcGmrVatAc(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         String startDate = taskRunDto.getStartDate();
         String endDate = taskRunDto.getEndDate();
         String pricingCondition = taskRunDto.getPricingCondition();
@@ -353,7 +354,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
     }
 
-    private void finalizeAc(TaskRunDto taskRunDto) throws URISyntaxException {
+    private void finalizeAc(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         String startDate = taskRunDto.getStartDate();
         String endDate = taskRunDto.getEndDate();
         String pricingCondition = taskRunDto.getPricingCondition();
@@ -470,7 +471,7 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         }
     }
 
-    private void generateFilesAc(TaskRunDto taskRunDto) throws URISyntaxException {
+    private void generateFilesAc(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
 
         String startDate = taskRunDto.getStartDate();
         String endDate = taskRunDto.getEndDate();

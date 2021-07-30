@@ -7,6 +7,7 @@ import com.pemc.crss.dataflow.app.dto.MtrTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
@@ -129,7 +130,7 @@ public class MtrTaskExecutionServiceImpl extends AbstractTaskExecutionService {
 
     @Override
     @Transactional(value = "transactionManager")
-    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         Preconditions.checkNotNull(taskRunDto.getJobName());
 

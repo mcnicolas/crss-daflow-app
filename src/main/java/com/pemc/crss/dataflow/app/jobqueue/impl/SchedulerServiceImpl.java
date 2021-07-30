@@ -2,6 +2,7 @@ package com.pemc.crss.dataflow.app.jobqueue.impl;
 
 import com.pemc.crss.dataflow.app.dto.JobExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.jobqueue.SchedulerService;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.service.impl.DataFlowJdbcJobExecutionDao;
@@ -252,8 +253,11 @@ public class SchedulerServiceImpl implements SchedulerService {
 
             job.setStatus(STARTING);
             job.setStartingDate(LocalDateTime.now());
+        } catch (LaunchJobException e) {
+            log.info("Ignoring exception during job launch. error: {}", e.getMessage());
+            job.setStatus(STARTING);
+            job.setStartingDate(LocalDateTime.now());
         } catch (Exception e) {
-
             log.error("Exception {} encountered when running {}, error: {}", e.getClass(), job.getJobProcess(), e.getMessage());
             job.setStatus(FAILED_EXECUTION);
             job.setDetails(ExceptionUtils.getStackTrace(e));

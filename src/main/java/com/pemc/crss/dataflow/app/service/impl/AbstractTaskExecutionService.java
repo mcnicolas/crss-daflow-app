@@ -6,15 +6,11 @@ import com.pemc.crss.dataflow.app.dto.BaseTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskProgressDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.TaskSummaryDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.util.DateUtil;
-import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobRunLock;
-import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
-import com.pemc.crss.shared.core.dataflow.entity.QBatchJobSkipLog;
+import com.pemc.crss.shared.core.dataflow.entity.*;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobRunLockRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobSkipLogRepository;
 import com.pemc.crss.shared.core.dataflow.repository.ExecutionParamRepository;
@@ -153,7 +149,7 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
     public abstract Page<? extends BaseTaskExecutionDto> findJobInstances(Pageable pageable);
 
     @Override
-    public abstract void launchJob(TaskRunDto taskRunDto) throws URISyntaxException;
+    public abstract void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException;
 
     @Override
     public int getDispatchInterval() {
@@ -359,11 +355,16 @@ public abstract class AbstractTaskExecutionService implements TaskExecutionServi
         taskExecutionDto.setProgress(progressDto);
     }
 
-    protected void launchJob(String jobName, List<String> properties, List<String> arguments) throws URISyntaxException {
+    protected void launchJob(String jobName, List<String> properties, List<String> arguments)
+            throws URISyntaxException, LaunchJobException {
         ResourceSupport resourceSupport = restTemplate.getForObject(new URI(dataFlowUrl), ResourceSupport.class);
-        restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref().concat(
-                "?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments", StringUtils.join(arguments, ","),
-                "properties", StringUtils.join(properties, ",")));
+        try {
+            restTemplate.postForObject(resourceSupport.getLink("tasks/deployments/deployment").expand(jobName).getHref().concat(
+                    "?arguments={arguments}&properties={properties}"), null, Object.class, ImmutableMap.of("arguments", StringUtils.join(arguments, ","),
+                    "properties", StringUtils.join(properties, ",")));
+        } catch (Exception e) {
+            throw new LaunchJobException(e.getMessage());
+        }
     }
 
     protected void lockJob(TaskRunDto taskRunDto) {

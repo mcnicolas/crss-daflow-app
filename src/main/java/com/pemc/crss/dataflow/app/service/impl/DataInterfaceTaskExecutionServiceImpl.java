@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import com.pemc.crss.dataflow.app.dto.*;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MarketInfoType;
 import org.apache.commons.lang3.StringUtils;
@@ -45,7 +46,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
 
     @Override
     @Transactional(value = "transactionManager")
-    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
+    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
         LOG.debug("Launching Data Interface Job....");
         Preconditions.checkNotNull(taskRunDto.getJobName());
         Preconditions.checkState(batchJobRunLockRepository.countByJobNameAndLockedDateAndLockedIsTrue(taskRunDto.getJobName(), new Date()) == 0,
@@ -248,7 +249,7 @@ public class DataInterfaceTaskExecutionServiceImpl extends AbstractTaskExecution
         return Integer.valueOf(super.getDispatchInterval());
     }
 
-    public void relaunchFailedJob(long jobId) throws URISyntaxException {
+    public void relaunchFailedJob(long jobId) throws URISyntaxException, LaunchJobException {
         LOG.debug("Executing relaunch failed job....");
         JobExecution failedJobExecution = jobExplorer.getJobExecution(jobId);
         Map jobParameters = Maps.transformValues(failedJobExecution.getJobParameters().getParameters(), JobParameter::getValue);

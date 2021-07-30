@@ -1,7 +1,8 @@
 package com.pemc.crss.dataflow.app.resource;
 
-import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
+import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
+import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.service.TaskExecutionService;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ public class DataInterfaceTaskExecutionResource {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+    public ResponseEntity runJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException, LaunchJobException {
         String currentUser = SecurityUtil.getCurrentUser(principal);
         LOG.debug("Running job request. taskRunDto={}, user={}", taskRunDto, currentUser);
         taskRunDto.setCurrentUser(currentUser);
@@ -47,7 +48,7 @@ public class DataInterfaceTaskExecutionResource {
     }
 
     @RequestMapping(value = "/auto", method = RequestMethod.POST)
-    public ResponseEntity runAutomaticJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+    public ResponseEntity runAutomaticJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException, LaunchJobException {
         return runJob(taskRunDto, principal);
     }
 

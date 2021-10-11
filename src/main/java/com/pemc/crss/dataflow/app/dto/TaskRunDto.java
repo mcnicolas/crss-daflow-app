@@ -66,6 +66,7 @@ public class TaskRunDto {
     private String jobId;
 
     private List<MruInstallmentParam> mruInstallmentParams;
+    private List<StartEndDateParam> startEndDateParams;
 
     @Override
     public boolean equals(Object o) {

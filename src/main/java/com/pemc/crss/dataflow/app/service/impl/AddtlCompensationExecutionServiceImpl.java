@@ -606,6 +606,34 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         batchJobAddtlParamApprovedRate.setKey(AC_APPROVED_RATE);
         batchJobAddtlParamApprovedRate.setDoubleVal(taskRunDto.getApprovedRate().doubleValue());
         saveBatchJobAddtlParamsJdbc(batchJobAddtlParamApprovedRate);
+
+        saveAddltCompCalcDateRangeParams(runId, taskRunDto);
+    }
+
+    private void saveAddltCompCalcDateRangeParams(Long runId, TaskRunDto taskRunDto) {
+        List<StartEndDateParam> startEndDateParams = taskRunDto.getStartEndDateParams();
+
+        String concatStartDates = startEndDateParams.stream().map(StartEndDateParam::getStartDate)
+                .collect(Collectors.joining(TaskUtil.MRU_PARAM_DELIMITER));
+
+        String concatEndDates = startEndDateParams.stream().map(StartEndDateParam::getEndDate)
+                .collect(Collectors.joining(TaskUtil.MRU_PARAM_DELIMITER));
+
+        if (StringUtils.isNotEmpty(concatStartDates) && StringUtils.isNotEmpty(concatEndDates)) {
+            BatchJobAddtlParams batchJobAddtlParamsStartDateRange = new BatchJobAddtlParams();
+            batchJobAddtlParamsStartDateRange.setRunId(runId);
+            batchJobAddtlParamsStartDateRange.setType("STRING");
+            batchJobAddtlParamsStartDateRange.setKey(AMS_START_DATE_RANGE);
+            batchJobAddtlParamsStartDateRange.setStringVal(concatStartDates);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsStartDateRange);
+
+            BatchJobAddtlParams batchJobAddtlParamsEndDateRange = new BatchJobAddtlParams();
+            batchJobAddtlParamsEndDateRange.setRunId(runId);
+            batchJobAddtlParamsEndDateRange.setType("STRING");
+            batchJobAddtlParamsEndDateRange.setKey(AMS_END_DATE_RANGE);
+            batchJobAddtlParamsEndDateRange.setStringVal(concatEndDates);
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsEndDateRange);
+        }
     }
 
     private void saveAddtlCompParam(TaskRunDto taskRunDto, String groupId) {

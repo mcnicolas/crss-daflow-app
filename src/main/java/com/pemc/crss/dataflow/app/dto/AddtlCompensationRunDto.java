@@ -1,6 +1,7 @@
 package com.pemc.crss.dataflow.app.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class AddtlCompensationRunDto {
 
@@ -11,6 +12,7 @@ public class AddtlCompensationRunDto {
     private String billingEndDate;
     private String pricingCondition;
     private String currentUser;
+    private List<StartEndDateParam> startEndDateParams;
 
     public String getBillingId() {
         return billingId;
@@ -66,5 +68,13 @@ public class AddtlCompensationRunDto {
 
     public void setCurrentUser(String currentUser) {
         this.currentUser = currentUser;
+    }
+
+    public List<StartEndDateParam> getStartEndDateParams() {
+        return startEndDateParams;
+    }
+
+    public void setStartEndDateParams(List<StartEndDateParam> startEndDateParams) {
+        this.startEndDateParams = startEndDateParams;
     }
 }

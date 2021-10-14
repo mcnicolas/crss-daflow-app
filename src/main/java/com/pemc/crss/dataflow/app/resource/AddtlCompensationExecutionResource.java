@@ -72,7 +72,7 @@ public class AddtlCompensationExecutionResource {
             taskRunDto.setBillingStartDate(acRunDto.getBillingStartDate());
             taskRunDto.setBillingEndDate(acRunDto.getBillingEndDate());
             taskRunDto.setPricingCondition(acRunDto.getPricingCondition());
-            taskRunDto.setStartEndDateParams(taskRunDto.getStartEndDateParams());
+            taskRunDto.setStartEndDateParams(acRunDto.getStartEndDateParams());
 
             taskRunDto.setRunId(System.currentTimeMillis());
             taskRunDto.setJobName(AddtlCompJobName.AC_CALC);

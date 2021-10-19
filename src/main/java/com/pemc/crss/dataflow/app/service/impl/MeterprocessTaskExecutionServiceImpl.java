@@ -54,6 +54,7 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
     private static final String RUN_STL_NOT_READY_JOB_NAME = "stlNotReady";
     private static final String RUN_STL_READY_JOB_NAME = "stlReady";
     private static final String RUN_MQ_REPORT_JOB_NAME = "genReport";
+    private static final String RUN_GESQ_REPORT_JOB_NAME = "genGesqReport";
     private static final String PARAMS_BILLING_PERIOD_ID = "billingPeriodId";
     private static final String PARAMS_BILLING_PERIOD = "billingPeriod";
     private static final String PARAMS_SUPPLY_MONTH = "supplyMonth";
@@ -410,6 +411,19 @@ public class MeterprocessTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
                 arguments.add(concatKeyValue(TaskUtil.BP, jobParameters.getString(TaskUtil.BP)));
                 jobName = "crss-meterprocess-task-mqcomputation";
+            } else if (RUN_GESQ_REPORT_JOB_NAME.equals(taskRunDto.getJobName())) {
+                if (isDaily) {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_DAILY_MQ_REPORT)));
+                } else {
+                    properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(PROFILE_MONTHLY_MQ_REPORT)));
+                }
+                if (taskRunDto.getTradingDate() != null
+                        && taskRunDto.getTradingDate().equals(BatchStatus.COMPLETED.name())) {
+                    arguments.add(concatKeyValue(MQ_REPORT_STAT_AFTER_FINALIZE, BatchStatus.COMPLETED.name()));
+                }
+                arguments.add(concatKeyValue(MQ_REPORT_USERNAME, taskRunDto.getCurrentUser()));
+                arguments.add(concatKeyValue(TaskUtil.BP, jobParameters.getString(TaskUtil.BP)));
+                jobName = "crss-meterprocess-task-gesqreport";
             }
         } else if (COPY_STL_READY_JOB_NAME.equals(taskRunDto.getJobName())) {
 

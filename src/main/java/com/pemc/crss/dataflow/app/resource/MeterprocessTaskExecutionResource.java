@@ -117,6 +117,8 @@ public class MeterprocessTaskExecutionResource {
                 return JobProcess.FINALIZE_STL_READY;
             case "genReport":
                 return JobProcess.GEN_MQ_REPORT;
+            case "genGesqReport":
+                return JobProcess.GEN_GESQ_REPORT;
             case "copyStlReady":
                 return JobProcess.COPY_STL_READY;
             default:

@@ -30,6 +30,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.FINALIZE_S
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_MQ_REPORT;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.RUN_RCOA;
 import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.RUN_STL_READY;
+import static com.pemc.crss.shared.core.dataflow.reference.JobProcess.GEN_GESQ_REPORT;
 
 @Slf4j
 @RestController
@@ -50,7 +51,7 @@ public class BatchJobQueueResource {
         List<BatchJobQueueDisplay> jobQueueDisplays = jobQueuePage.getContent().stream().map(BatchJobQueueDisplay::new)
                 .collect(Collectors.toList());
 
-        jobQueueDisplays.stream().filter(queueDisplay -> Arrays.asList(RUN_RCOA, RUN_STL_READY, FINALIZE_STL_READY, GEN_MQ_REPORT)
+        jobQueueDisplays.stream().filter(queueDisplay -> Arrays.asList(RUN_RCOA, RUN_STL_READY, FINALIZE_STL_READY, GEN_MQ_REPORT, GEN_GESQ_REPORT)
                 .contains(queueDisplay.getJobProcess()) && queueDisplay.getMeteringParentId() != null)
                 .forEach(queueDisplay -> batchJobQueueService.setMtnParam(queueDisplay));
 

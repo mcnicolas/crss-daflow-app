@@ -208,7 +208,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case RUN_STL_READY:
                 case FINALIZE_STL_READY:
                 case GEN_MQ_REPORT:
-                    //case GEN_GESQ_REPORT:
+                case GEN_GESQ_REPORT:
                 case COPY_STL_READY:
                     meterprocessTaskExecutionService.launchJob(taskDto);
                     break;

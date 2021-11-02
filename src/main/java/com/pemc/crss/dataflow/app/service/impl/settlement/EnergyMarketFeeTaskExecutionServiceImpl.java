@@ -6,7 +6,6 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
-import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
@@ -137,7 +136,7 @@ public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionSer
     }
 
     @Override
-    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
                 taskRunDto.getBaseType());
 

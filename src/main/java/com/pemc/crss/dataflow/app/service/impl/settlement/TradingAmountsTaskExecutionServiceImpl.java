@@ -9,7 +9,6 @@ import com.pemc.crss.dataflow.app.dto.StlJobGroupDto;
 import com.pemc.crss.dataflow.app.dto.TaskRunDto;
 import com.pemc.crss.dataflow.app.dto.parent.GroupTaskExecutionDto;
 import com.pemc.crss.dataflow.app.dto.parent.StubTaskExecutionDto;
-import com.pemc.crss.dataflow.app.exception.LaunchJobException;
 import com.pemc.crss.dataflow.app.service.StlReadyJobQueryService;
 import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.support.StlJobStage;
@@ -245,7 +244,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     @Override
-    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    public void launchJob(TaskRunDto taskRunDto) throws URISyntaxException {
         log.info("Running JobName=[{}], type=[{}], baseType=[{}]", taskRunDto.getJobName(), taskRunDto.getMeterProcessType(),
                 taskRunDto.getBaseType());
 
@@ -728,7 +727,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     // Launch Line Rental Jobs start
-    private void launchCalculateLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchCalculateLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -784,7 +783,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
-    private void launchFinalizeLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchFinalizeLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -822,7 +821,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
-    private void launchGenerateFileLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchGenerateFileLineRentalJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -860,7 +859,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     // Launch Line Rental Jobs end
 
     // Generate Monthly Summary is exclusive for TA
-    private void launchGenMonthlySummaryJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchGenMonthlySummaryJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -898,7 +897,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     // Calculate GMR is exclusive for TTA
-    private void launchCalculateGmrJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchCalculateGmrJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -936,7 +935,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
-    private void launchGenerateFileReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchGenerateFileReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -977,7 +976,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
-    private void launchGenerateBillStatementReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchGenerateBillStatementReserveTaJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
@@ -1000,7 +999,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
     }
 
     // STL VALIDATION JOB LAUNCH
-    private void launchStlValidateJob(final TaskRunDto taskRunDto) throws URISyntaxException, LaunchJobException {
+    private void launchStlValidateJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();

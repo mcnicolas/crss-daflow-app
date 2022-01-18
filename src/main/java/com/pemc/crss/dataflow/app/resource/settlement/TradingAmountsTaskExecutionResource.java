@@ -328,6 +328,36 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/calculate-alloc")
+    public ResponseEntity runCalculateAllocJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.CALC_ALLOC);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing calculate allocation job for trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_ALLOC, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/generate-alloc-report")
+    public ResponseEntity runGenerateAllocReportJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.FILE_ALLOC);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing generate allocation report job for trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ALLOC_REPORT, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping(value = "/get-batch-job-skip-logs")
     public ResponseEntity<Page<BatchJobSkipLog>> getBatchJobSkipLogs(@RequestBody PageableRequest pageableRequest) {
         LOG.debug("Finding skip logs request. pageable={}", pageableRequest.getPageable());

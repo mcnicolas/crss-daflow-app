@@ -1066,22 +1066,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> properties = Lists.newArrayList();
 
-        switch (processType) {
-            case PRELIM:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.MONTHLY_ALLOC_PRELIM)));
-                break;
-            case FINAL:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.MONTHLY_ALLOC_FINAL)));
-                break;
-            case ADJUSTED:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.MONTHLY_ALLOC_ADJUSTED)));
-                break;
-            default:
-                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
-        }
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                SettlementJobProfile.MONTHLY_ALLOC_CALC)));
 
         log.info("Running calculate allocation job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
@@ -1104,22 +1090,8 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> properties = Lists.newArrayList();
 
-        switch (processType) {
-            case PRELIM:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.GEN_FILE_ALLOC_REPORT_PRELIM)));
-                break;
-            case FINAL:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.GEN_FILE_ALLOC_REPORT_FINAL)));
-                break;
-            case ADJUSTED:
-                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                        SettlementJobProfile.GEN_FILE_ALLOC_REPORT_ADJUSTED)));
-                break;
-            default:
-                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
-        }
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                SettlementJobProfile.GEN_FILE_ALLOC_REPORT)));
 
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 

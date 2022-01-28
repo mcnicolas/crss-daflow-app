@@ -1146,6 +1146,34 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
         }
     }
 
+    void saveAllocAdditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+        log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        try {
+            BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsInvoiceDate.setRunId(runId);
+            batchJobAddtlParamsInvoiceDate.setType("DATE");
+            batchJobAddtlParamsInvoiceDate.setKey(ALLOC_DATE);
+            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAllocDate()));
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsDueDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsDueDate.setRunId(runId);
+            batchJobAddtlParamsDueDate.setType("DATE");
+            batchJobAddtlParamsDueDate.setKey(ALLOC_DUE_DATE);
+            batchJobAddtlParamsDueDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAllocDueDate()));
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsDueDate);
+
+            BatchJobAddtlParams batchJobAddtlParamsRemarks = new BatchJobAddtlParams();
+            batchJobAddtlParamsRemarks.setRunId(runId);
+            batchJobAddtlParamsRemarks.setType("STRING");
+            batchJobAddtlParamsRemarks.setKey(ALLOC_REMARKS);
+            batchJobAddtlParamsRemarks.setStringVal(taskRunDto.getAllocRemarks());
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarks);
+        } catch (ParseException e) {
+            log.error("Error parsing additional batch job params for AMS: {}", e);
+        }
+    }
+
     /* launchJob methods end */
 
     // unused inherited methods

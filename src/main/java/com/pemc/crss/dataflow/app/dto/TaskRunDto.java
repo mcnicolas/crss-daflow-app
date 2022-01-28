@@ -68,6 +68,11 @@ public class TaskRunDto {
     private List<MruInstallmentParam> mruInstallmentParams;
     private List<StartEndDateParam> startEndDateParams;
 
+    //Allocation
+    private String allocDate;
+    private String allocDueDate;
+    private String allocRemarks;
+
     @Override
     public boolean equals(Object o) {
         // do not include runId and ams fields, supplyMonth, billingPeriodName, formattedBillingPeriod, currentUser

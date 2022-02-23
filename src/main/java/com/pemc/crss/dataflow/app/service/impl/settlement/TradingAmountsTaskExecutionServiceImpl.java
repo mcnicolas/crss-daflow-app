@@ -1056,7 +1056,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
-        //MeterProcessType processType = MeterProcessType.valueOf(type);
+        MeterProcessType processType = MeterProcessType.valueOf(type);
 
         //validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS, taskRunDto.getRegionGroup());
 
@@ -1066,8 +1066,19 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
 
         List<String> properties = Lists.newArrayList();
 
-        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
-                SettlementJobProfile.MONTHLY_ALLOC_CALC)));
+        switch (processType) {
+            case PRELIM:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.MONTHLY_PRELIM_ALLOC_CALC)));
+                break;
+            case FINAL:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.MONTHLY_ALLOC_CALC)));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
         saveAllocAdditionalParams(runId, taskRunDto);
 
         log.info("Running calculate allocation job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
@@ -1081,7 +1092,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
-        MeterProcessType processType = MeterProcessType.valueOf(type);
+        //MeterProcessType processType = MeterProcessType.valueOf(type);
 
         //validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS, taskRunDto.getRegionGroup());
 

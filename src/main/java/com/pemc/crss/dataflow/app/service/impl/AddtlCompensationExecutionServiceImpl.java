@@ -16,6 +16,7 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
@@ -55,6 +56,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     private static final String ADDTL_COMP_TASK_NAME = "crss-settlement-task-calculation-addtlcomp";
     private static final String ADDTL_COMP_FILE_GEN_TASK_NAME = "crss-settlement-task-file-gen-addtlcomp";
+
+    private static final String STL_TASK_NAME = "crss-settlement-task-calculation";
+    private static final String STL_FILE_GEN_TASK_NAME = "crss-settlement-task-invoice-generation";
 
     private static final String AC_FILE_GEN_FOLDERNAME = "AC_FILE_GEN_FOLDERNAME";
     private static final List<String> AC_CALC_STEP_LIST = Arrays.asList(StlAddtlCompStepUtil.CALC_ADDTL_COMP_STEP,
@@ -258,6 +262,12 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
                 break;
             case AddtlCompJobName.AC_GEN_FILE:
                 generateFilesAc(taskRunDto);
+                break;
+            case AddtlCompJobName.AC_CALC_ALLOC:
+                calcAlloc(taskRunDto);
+                break;
+            case AddtlCompJobName.AC_GEN_ALLOC_REPORT:
+                genAllocReport(taskRunDto);
                 break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
@@ -491,6 +501,53 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(AC_GEN_FILE_PROFILE)));
 
         launchJob(ADDTL_COMP_FILE_GEN_TASK_NAME, properties, arguments);
+    }
+
+    private void calcAlloc(TaskRunDto taskRunDto) throws URISyntaxException {
+        String startDate = taskRunDto.getStartDate();
+        String endDate = taskRunDto.getEndDate();
+        String pricingCondition = taskRunDto.getPricingCondition();
+        String groupId = taskRunDto.getGroupId();
+
+        List<String> properties = Lists.newArrayList();
+        List<String> arguments = Lists.newArrayList();
+
+        final Long runId = taskRunDto.getRunId();
+        arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, groupId));
+        arguments.add(concatKeyValue(START_DATE, startDate, "date"));
+        arguments.add(concatKeyValue(END_DATE, endDate, "date"));
+        arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+        arguments.add(concatKeyValue(PROCESS_TYPE, "AC"));
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
+                fetchSpringProfilesActive(SettlementJobProfile.MONTHLY_AC_ALLOC_CALC)));
+
+        launchJob(STL_TASK_NAME, properties, arguments);
+    }
+
+    private void genAllocReport(TaskRunDto taskRunDto) throws URISyntaxException {
+        String startDate = taskRunDto.getStartDate();
+        String endDate = taskRunDto.getEndDate();
+        String pricingCondition = taskRunDto.getPricingCondition();
+        String groupId = taskRunDto.getGroupId();
+
+        List<String> properties = Lists.newArrayList();
+        List<String> arguments = Lists.newArrayList();
+
+        final Long runId = taskRunDto.getRunId();
+        arguments.add(concatKeyValue(RUN_ID, String.valueOf(runId), "long"));
+        arguments.add(concatKeyValue(GROUP_ID, groupId));
+        arguments.add(concatKeyValue(START_DATE, startDate, "date"));
+        arguments.add(concatKeyValue(END_DATE, endDate, "date"));
+        arguments.add(concatKeyValue(AC_PRICING_CONDITION, pricingCondition));
+        arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
+        arguments.add(concatKeyValue(PROCESS_TYPE, "AC"));
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(SettlementJobProfile.GEN_FILE_ALLOC_REPORT)));
+
+        launchJob(STL_FILE_GEN_TASK_NAME, properties, arguments);
     }
 
     private void saveAMSadditionalParamsApSec(final Long runId, final TaskRunDto taskRunDto) {

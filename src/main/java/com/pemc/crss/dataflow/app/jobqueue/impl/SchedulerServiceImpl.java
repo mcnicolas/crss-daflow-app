@@ -247,6 +247,8 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case CALC_GMR_VAT_AC:
                 case FINALIZE_AC:
                 case GEN_FILES_AC:
+                case CALC_ALLOC_AC:
+                case GEN_ALLOC_REPORT_AC:
                     addtlCompensationExecutionService.launchJob(taskDto);
                     break;
                 default:

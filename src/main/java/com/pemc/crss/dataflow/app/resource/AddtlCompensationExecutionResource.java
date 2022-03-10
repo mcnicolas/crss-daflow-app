@@ -133,6 +133,36 @@ public class AddtlCompensationExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/calcAlloc", method = RequestMethod.POST)
+    public ResponseEntity calcAlloc(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(AddtlCompJobName.AC_CALC_ALLOC);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing finalize job for additional compensation. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_ALLOC, taskRunDto);
+        batchJobQueueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/genAllocReport", method = RequestMethod.POST)
+    public ResponseEntity genAllocReport(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(AddtlCompJobName.AC_GEN_ALLOC_REPORT);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing finalize job for additional compensation. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ALLOC_REPORT, taskRunDto);
+        batchJobQueueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @RequestMapping(method = RequestMethod.DELETE)
     public ResponseEntity deleteJob(@RequestParam(value = "jobId") long jobId,
                                     @RequestParam(value = "mtn") String mtn,

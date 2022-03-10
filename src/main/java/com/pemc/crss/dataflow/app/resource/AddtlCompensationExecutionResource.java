@@ -142,7 +142,7 @@ public class AddtlCompensationExecutionResource {
 
         log.info("Queueing finalize job for additional compensation. taskRunDto={}", taskRunDto);
 
-        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_ALLOC, taskRunDto);
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_ALLOC_AC, taskRunDto);
         batchJobQueueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);
@@ -157,7 +157,7 @@ public class AddtlCompensationExecutionResource {
 
         log.info("Queueing finalize job for additional compensation. taskRunDto={}", taskRunDto);
 
-        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ALLOC_REPORT, taskRunDto);
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ALLOC_REPORT_AC, taskRunDto);
         batchJobQueueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);

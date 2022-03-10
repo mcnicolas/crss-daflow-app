@@ -521,10 +521,26 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
         arguments.add(concatKeyValue(PROCESS_TYPE, "AC"));
 
+        saveAllocAdditionalParams(runId, taskRunDto);
+
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE,
                 fetchSpringProfilesActive(SettlementJobProfile.MONTHLY_AC_ALLOC_CALC)));
 
         launchJob(STL_TASK_NAME, properties, arguments);
+    }
+
+    void saveAllocAdditionalParams(final Long runId, final TaskRunDto taskRunDto) {
+        log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        try {
+            BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
+            batchJobAddtlParamsInvoiceDate.setRunId(runId);
+            batchJobAddtlParamsInvoiceDate.setType("DATE");
+            batchJobAddtlParamsInvoiceDate.setKey(ALLOC_DATE);
+            batchJobAddtlParamsInvoiceDate.setDateVal(DateUtil.getStartRangeDate(taskRunDto.getAllocDate()));
+            saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsInvoiceDate);
+        } catch (ParseException e) {
+            log.error("Error parsing additional batch job params for AMS: {}", e);
+        }
     }
 
     private void genAllocReport(TaskRunDto taskRunDto) throws URISyntaxException {

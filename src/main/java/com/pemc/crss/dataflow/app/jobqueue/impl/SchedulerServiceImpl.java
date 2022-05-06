@@ -85,11 +85,19 @@ public class SchedulerServiceImpl implements SchedulerService {
     @Value("${scheduler.parallel-stl-monthly-job}")
     private Long parallelStlMonthlyJob;
 
+    @Value("${scheduler.execute-ac-at-monthly-node}")
+    private String executeAcAtMonthlyNode;
+
     @Scheduled(fixedDelayString = "${scheduler.interval-milliseconds}")
     @Override
     public void execute() {
-        executeDaily(DAILY_AND_AC);
-        executeMonthly(MONTHLY);
+        if ("Y".equalsIgnoreCase(executeAcAtMonthlyNode)) {
+            executeDaily(DAILY);
+            executeMonthly(MONTHLY_AND_AC);
+        } else {
+            executeDaily(DAILY_AND_AC);
+            executeMonthly(MONTHLY);
+        }
     }
 
     private void executeDaily(List<MeterProcessType> meterProcessTypes) {

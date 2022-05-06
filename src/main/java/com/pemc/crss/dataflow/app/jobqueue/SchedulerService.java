@@ -20,5 +20,10 @@ public interface SchedulerService {
     List<MeterProcessType> MONTHLY = Arrays.asList(MeterProcessType.PRELIM, MeterProcessType.PRELIMINARY,
             MeterProcessType.FINAL, MeterProcessType.ADJUSTED, MeterProcessType.MONTHLY);
 
+    List<MeterProcessType> DAILY = Arrays.asList(MeterProcessType.DAILY, MeterProcessType.DEFAULT);
+
+    List<MeterProcessType> MONTHLY_AND_AC = Arrays.asList(MeterProcessType.PRELIM, MeterProcessType.PRELIMINARY,
+            MeterProcessType.FINAL, MeterProcessType.ADJUSTED, MeterProcessType.MONTHLY, MeterProcessType.AC);
+
     List<QueueStatus> IN_PROGRESS_STATUS = Arrays.asList(ON_QUEUE, STARTED, STARTING);
 }

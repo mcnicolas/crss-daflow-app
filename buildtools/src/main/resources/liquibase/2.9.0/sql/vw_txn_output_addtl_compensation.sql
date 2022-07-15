@@ -26,9 +26,11 @@ CREATE VIEW dataflow.vw_txn_output_addtl_compensation AS
     txn_output_addtl_compensation.mtn,
     txn_output_addtl_compensation.region,
     txn_output_addtl_compensation.region_group,
-    txn_output_addtl_compensation.asie
+    txn_output_addtl_compensation.asie,
+    txn_output_addtl_compensation.scheduled_generation,
+    txn_output_addtl_compensation.deviation
    FROM settlement.txn_output_addtl_compensation;
 
-ALTER table dataflow.vw_stl_jobs OWNER TO crss_dataflow;
+ALTER table dataflow.vw_txn_output_addtl_compensation OWNER TO crss_dataflow;
 grant all on all tables in schema dataflow to crss_settlement;
 

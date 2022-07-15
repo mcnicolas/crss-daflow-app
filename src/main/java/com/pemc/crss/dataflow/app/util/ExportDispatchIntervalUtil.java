@@ -30,6 +30,8 @@ public class ExportDispatchIntervalUtil {
                 "GESQ",
                 "BCQ",
                 "ASIE",
+                "Scheduled Generation",
+                "Deviation",
                 "FEDP",
                 "Pricing Condition",
                 "Approved Rate",
@@ -45,6 +47,8 @@ public class ExportDispatchIntervalUtil {
                 "GESQ",
                 "BCQ",
                 "ASIE",
+                "Scheduled Generation",
+                "Deviation",
                 "FEDP",
                 "Pricing Condition",
                 "Approved Rate",
@@ -60,6 +64,8 @@ public class ExportDispatchIntervalUtil {
                 "gesq",
                 "bcq",
                 "asie",
+                "scheduledGeneration",
+                "deviation",
                 "fedp",
                 "pricingCondition",
                 "approvedRate",
@@ -75,6 +81,8 @@ public class ExportDispatchIntervalUtil {
                 "gesq",
                 "bcq",
                 "asie",
+                "scheduledGeneration",
+                "deviation",
                 "fedp",
                 "pricingCondition",
                 "approvedRate",
@@ -93,6 +101,8 @@ public class ExportDispatchIntervalUtil {
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
+                new org.supercsv.cellprocessor.Optional(),
+                new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional()
         };
     }
@@ -100,6 +110,8 @@ public class ExportDispatchIntervalUtil {
     public static CellProcessor[] getProcessedCellProcessors() {
         return new CellProcessor[]{
                 new FmtLocalDateTime(df),
+                new org.supercsv.cellprocessor.Optional(),
+                new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),

@@ -305,9 +305,10 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         checkTimeValidity(endDate);
 
-        for (AddtlCompensationRunDto runDto : addtlCompensationRunDtos) {
-            checkDuplicate(runDto);
-        }
+        //Commenting this out. Claims maybe filed even if billing_id is already finalized but have different date-range.
+//        for (AddtlCompensationRunDto runDto : addtlCompensationRunDtos) {
+//            checkDuplicate(runDto);
+//        }
     }
 
     private void launchAddtlCompensation(TaskRunDto taskRunDto) throws URISyntaxException {

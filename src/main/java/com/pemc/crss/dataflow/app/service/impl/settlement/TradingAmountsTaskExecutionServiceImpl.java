@@ -1072,6 +1072,7 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                         SettlementJobProfile.MONTHLY_PRELIM_ALLOC_CALC)));
                 break;
             case FINAL:
+            case ADJUSTED:
                 properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                         SettlementJobProfile.MONTHLY_ALLOC_CALC)));
                 break;

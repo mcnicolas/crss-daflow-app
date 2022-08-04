@@ -33,4 +33,4 @@ CREATE VIEW dataflow.vw_txn_output_addtl_compensation AS
 
 ALTER table dataflow.vw_txn_output_addtl_compensation OWNER TO crss_dataflow;
 grant all on all tables in schema dataflow to crss_settlement;
-
+grant all on all tables in schema settlement to crss_dataflow;

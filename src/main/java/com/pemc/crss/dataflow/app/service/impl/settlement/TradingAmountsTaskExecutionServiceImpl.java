@@ -291,9 +291,14 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case CALC_ALLOC:
                 launchCalculateAllocJob(taskRunDto);
                 break;
+            case CALC_ALLOC_RESERVE:
+                launchCalculateAllocReserveJob(taskRunDto);
+                break;
             case FILE_ALLOC:
                 launchGenerateAllocReportJob(taskRunDto);
                 break;
+            case FILE_ALLOC_RESERVE:
+                launchGenerateAllocReserveReportJob(taskRunDto);
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }
@@ -1088,15 +1093,49 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
         lockJobJdbc(taskRunDto);
     }
 
+    private void launchCalculateAllocReserveJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+        MeterProcessType processType = MeterProcessType.valueOf(type);
+
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        switch (processType) {
+            case PRELIM:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.CALC_RESERVE_MONTHLY_PRELIM_ALLOC)));
+                break;
+            case FINAL:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.CALC_RESERVE_MONTHLY_FINAL_ALLOC)));
+                break;
+            case ADJUSTED:
+                properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                        SettlementJobProfile.CALC_RESERVE_MONTHLY_ADJ_ALLOC)));
+                break;
+            default:
+                throw new RuntimeException("Failed to launch job. Unhandled processType: " + type);
+        }
+
+        saveAllocAdditionalParams(runId, taskRunDto);
+
+        log.info("Running rmf calculate allocation job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_STL_CALC, properties, arguments);
+        lockJobJdbc(taskRunDto);
+    }
+
     private void launchGenerateAllocReportJob(final TaskRunDto taskRunDto) throws URISyntaxException {
         Preconditions.checkNotNull(taskRunDto.getRunId());
         final Long runId = taskRunDto.getRunId();
         final String groupId = taskRunDto.getGroupId();
         final String type = taskRunDto.getMeterProcessType();
-        //MeterProcessType processType = MeterProcessType.valueOf(type);
-
-        //validateFinalized(groupId, processType, StlCalculationType.TRADING_AMOUNTS, taskRunDto.getRegionGroup());
-
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
         arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
@@ -1107,6 +1146,26 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
                 SettlementJobProfile.GEN_FILE_ALLOC_REPORT)));
 
         log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+
+        launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
+        lockJobJdbc(taskRunDto);
+    }
+
+    private void launchGenerateAllocReserveReportJob(final TaskRunDto taskRunDto) throws URISyntaxException {
+        Preconditions.checkNotNull(taskRunDto.getRunId());
+        final Long runId = taskRunDto.getRunId();
+        final String groupId = taskRunDto.getGroupId();
+        final String type = taskRunDto.getMeterProcessType();
+        List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
+        arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
+        arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+
+        List<String> properties = Lists.newArrayList();
+
+        properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
+                SettlementJobProfile.GEN_RESERVE_FILE_ALLOC_REPORT)));
+
+        log.info("Running generate reserve alloc report job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJobJdbc(taskRunDto);

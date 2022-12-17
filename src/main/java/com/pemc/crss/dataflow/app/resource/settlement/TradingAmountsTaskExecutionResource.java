@@ -343,6 +343,21 @@ public class TradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @PostMapping("/calculate-alloc-reserve")
+    public ResponseEntity runCalculateAllocReserveJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.CALC_ALLOC_RESERVE);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing reserve calculate allocation job for trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.CALC_ALLOC_RESERVE, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @PostMapping("/generate-alloc-report")
     public ResponseEntity runGenerateAllocReportJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
@@ -353,6 +368,22 @@ public class TradingAmountsTaskExecutionResource {
         log.info("Queueing generate allocation report job for trading amounts. taskRunDto={}", taskRunDto);
 
         BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ALLOC_REPORT, taskRunDto);
+        queueService.save(jobQueue);
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+
+    @PostMapping("/generate-alloc-report-reserve")
+    public ResponseEntity runGenerateAllocReportReserveJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        taskRunDto.setRunId(System.currentTimeMillis());
+        taskRunDto.setJobName(SettlementJobName.FILE_ALLOC_RESERVE);
+        taskRunDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+        log.info("Queueing rmf generate allocation report job for trading amounts. taskRunDto={}", taskRunDto);
+
+        BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_ALLOC_REPORT_RESERVE, taskRunDto);
         queueService.save(jobQueue);
 
         return new ResponseEntity(HttpStatus.OK);

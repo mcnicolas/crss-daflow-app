@@ -1147,7 +1147,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
     }
 
     void saveAllocAdditionalParams(final Long runId, final TaskRunDto taskRunDto) {
-        log.info("Saving additional AMS params. TaskRunDto: {}", taskRunDto);
+        log.info("Saving additional Alloc params. TaskRunDto: {}", taskRunDto);
         try {
             BatchJobAddtlParams batchJobAddtlParamsInvoiceDate = new BatchJobAddtlParams();
             batchJobAddtlParamsInvoiceDate.setRunId(runId);
@@ -1170,7 +1170,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             batchJobAddtlParamsRemarks.setStringVal(taskRunDto.getAllocRemarks());
             saveBatchJobAddtlParamsJdbc(batchJobAddtlParamsRemarks);
         } catch (ParseException e) {
-            log.error("Error parsing additional batch job params for AMS: {}", e);
+            log.error("Error parsing additional batch job params for Alloc: {}", e);
         }
     }
 

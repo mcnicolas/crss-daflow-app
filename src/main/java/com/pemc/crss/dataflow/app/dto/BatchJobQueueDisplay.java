@@ -72,7 +72,7 @@ public class BatchJobQueueDisplay {
                     final List<JobProcess> jobProcessThatUseBaseDates = Arrays.asList(
                             GEN_ENERGY_FILES, GEN_RESERVE_FILES, GEN_LR_FILES, GEN_FILES_EMF, GEN_FILES_RMF, CALC_GMR_VAT,
                             FINALIZE_TA, FINALIZE_LR, FINALIZE_EMF, FINALIZE_RMF, GEN_MONTHLY_SUMMARY_TA, STL_VALIDATION, CALC_ALLOC,
-                            GEN_ALLOC_REPORT);
+                            CALC_ALLOC_RESERVE, GEN_ALLOC_REPORT, GEN_ALLOC_REPORT_RESERVE);
                     putIfPresent(paramMap, "Process Type", taskRunDto.getMeterProcessType());
                     if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.DAILY.name())) {
                         putIfPresent(paramMap, "Trading Date", taskRunDto.getTradingDate());

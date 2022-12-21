@@ -236,7 +236,9 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case GEN_ENERGY_BILLING_STATEMENTS:
                 case GEN_RESERVE_BILLING_STATEMENTS:
                 case CALC_ALLOC:
+                case CALC_ALLOC_RESERVE:
                 case GEN_ALLOC_REPORT:
+                case GEN_ALLOC_REPORT_RESERVE:
                     tradingAmountsTaskExecutionService.launchJob(taskDto);
                     break;
                 case GEN_INPUT_WS_EMF:

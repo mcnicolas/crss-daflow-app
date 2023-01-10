@@ -95,7 +95,7 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     @Override
     public void validateGenIwsAndCalcQueuedJobs(TaskRunDto taskRunDtoToQueue) {
         List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(Arrays.asList(JobProcess.GEN_INPUT_WS_TA,
-                JobProcess.CALC_TA));
+                JobProcess.CALC_TA, JobProcess.CALC_RTA));
 
         boolean sameJobInProgress = inProgressJobs.stream()
                 .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))

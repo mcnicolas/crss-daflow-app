@@ -14,6 +14,7 @@ import com.pemc.crss.shared.core.dataflow.dto.DistinctStlReadyJob;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.SettlementJobLock;
 import com.pemc.crss.shared.core.dataflow.entity.ViewSettlementJob;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAddtlParamsRepository;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
@@ -1093,6 +1094,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             switch (getStlCalculationType()) {
                 case TRADING_AMOUNTS:
+                case RESERVE_TRADING_AMOUNTS:
                     BatchJobAddtlParams batchJobAddtlParamsRemarksInv = new BatchJobAddtlParams();
                     batchJobAddtlParamsRemarksInv.setRunId(runId);
                     batchJobAddtlParamsRemarksInv.setType("STRING");

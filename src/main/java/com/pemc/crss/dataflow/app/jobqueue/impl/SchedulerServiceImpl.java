@@ -54,6 +54,10 @@ public class SchedulerServiceImpl implements SchedulerService {
     private TaskExecutionService tradingAmountsTaskExecutionService;
 
     @Autowired
+    @Qualifier("reserveTradingAmountsTaskExecutionService")
+    private TaskExecutionService reserveTradingAmountsTaskExecutionService;
+
+    @Autowired
     @Qualifier("energyMarketFeeTaskExecutionService")
     private TaskExecutionService energyMarketFeeTaskExecutionService;
 
@@ -122,7 +126,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                     IN_PROGRESS_STATUS, meterProcessTypes);
 
             if (nextJob != null) {
-                if (Arrays.asList(JobProcess.GEN_INPUT_WS_TA, JobProcess.CALC_TA).contains(nextJob.getJobProcess())) {
+                if (Arrays.asList(JobProcess.GEN_INPUT_WS_TA, JobProcess.CALC_TA, JobProcess.CALC_RTA).contains(nextJob.getJobProcess())) {
                     executeParallelRuns(nextJob);
                 } else {
                     handleNextJob(nextJob);
@@ -230,16 +234,22 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case FINALIZE_TA:
                 case FINALIZE_LR:
                 case GEN_ENERGY_FILES:
-                case GEN_RESERVE_FILES:
                 case GEN_LR_FILES:
                 case STL_VALIDATION:
                 case GEN_ENERGY_BILLING_STATEMENTS:
-                case GEN_RESERVE_BILLING_STATEMENTS:
                 case CALC_ALLOC:
-                case CALC_ALLOC_RESERVE:
                 case GEN_ALLOC_REPORT:
-                case GEN_ALLOC_REPORT_RESERVE:
                     tradingAmountsTaskExecutionService.launchJob(taskDto);
+                    break;
+                case CALC_RTA:
+                case GEN_MONTHLY_SUMMARY_RTA:
+                case CALC_RGMR_VAT:
+                case FINALIZE_RTA:
+                case GEN_RESERVE_FILES:
+                case GEN_RESERVE_BILLING_STATEMENTS:
+                case CALC_ALLOC_RESERVE:
+                case GEN_ALLOC_REPORT_RESERVE:
+                    reserveTradingAmountsTaskExecutionService.launchJob(taskDto);
                     break;
                 case GEN_INPUT_WS_EMF:
                 case CALC_EMF:

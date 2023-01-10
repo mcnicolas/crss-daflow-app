@@ -48,7 +48,7 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
 @Slf4j
 @Service("tradingAmountsTaskExecutionService")
 @Transactional
-public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
+public class EnergyTradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
 
     private static final Map<String, String> STL_GMR_CALC_STEP_WITH_SKIP_LOGS =
             Collections.singletonMap(SettlementStepUtil.CALC_GMR_VAT, "Calculate GMR / VAT");
@@ -276,12 +276,12 @@ public class TradingAmountsTaskExecutionServiceImpl extends StlTaskExecutionServ
             case FILE_BILL_STATEMENT_TA:
                 launchGenerateBillStatementFileJob(taskRunDto);
                 break;
-            case FILE_RSV_BILL_STATEMENT_TA:
-                launchGenerateBillStatementReserveTaJob(taskRunDto);
-                break;
-            case FILE_RSV_TA:
-                launchGenerateFileReserveTaJob(taskRunDto);
-                break;
+//            case FILE_RSV_BILL_STATEMENT_TA:
+//                launchGenerateBillStatementReserveTaJob(taskRunDto);
+//                break;
+//            case FILE_RSV_TA:
+//                launchGenerateFileReserveTaJob(taskRunDto);
+//                break;
             case FILE_LR:
                 launchGenerateFileLineRentalJob(taskRunDto);
                 break;

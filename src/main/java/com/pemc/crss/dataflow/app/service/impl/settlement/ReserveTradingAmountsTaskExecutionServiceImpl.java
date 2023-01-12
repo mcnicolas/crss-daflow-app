@@ -480,12 +480,12 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
 
     @Override
     String getPrelimGenInputWorkspaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_PRELIM_EBRSV_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_PRELIM_RSV_INPUT_WS;
     }
 
     @Override
     String getFinalGenInputWorkspaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_FINAL_EBRSV_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_FINAL_RSV_INPUT_WS;
     }
 
     @Override

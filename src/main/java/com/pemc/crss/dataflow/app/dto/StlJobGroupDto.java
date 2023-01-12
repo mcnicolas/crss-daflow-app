@@ -161,7 +161,8 @@ public class StlJobGroupDto {
                         .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
                         .collect(Collectors.toList()) : new ArrayList<>();
 
-        return Objects.equals(sortedCalcDtos.get(0).getJobStage(), CALCULATE_GMR);
+        return !sortedCalcDtos.isEmpty()
+                && Objects.equals(sortedCalcDtos.get(0).getJobStage(), CALCULATE_GMR);
     }
 
     public boolean isGenMonthlySummaryIsLatestJob() {
@@ -183,7 +184,8 @@ public class StlJobGroupDto {
                         .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
                         .collect(Collectors.toList()) : new ArrayList<>();
 
-        return Objects.equals(sortedCalcDtos.get(0).getJobStage(), GEN_MONTHLY_SUMMARY);
+        return !sortedCalcDtos.isEmpty()
+                && Objects.equals(sortedCalcDtos.get(0).getJobStage(), GEN_MONTHLY_SUMMARY);
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

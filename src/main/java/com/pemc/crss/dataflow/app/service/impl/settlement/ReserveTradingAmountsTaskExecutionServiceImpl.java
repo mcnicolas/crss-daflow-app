@@ -404,7 +404,8 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
             stlJobGroupDto.setGroupId(groupId);
             stlJobGroupDto.setRunEndDateTimeFileRsvTa(generationJobExecution.getEndTime());
 
-            if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(generationJobExecution.getStartTime())) {
                 updateProgress(generationJobExecution, stlJobGroupDto);
             }
 
@@ -447,7 +448,8 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
             stlJobGroupDto.setGroupId(groupId);
             stlJobGroupDto.setRunEndDateTimeFileReserveBillStatementTa(generationJobExecution.getEndTime());
 
-            if (!stlJobGroupDto.getLatestJobExecStartDate().after(generationJobExecution.getStartTime())) {
+            Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
+            if (latestJobExecStartDate == null || !latestJobExecStartDate.after(generationJobExecution.getStartTime())) {
                 updateProgress(generationJobExecution, stlJobGroupDto);
             }
 

@@ -26,7 +26,9 @@ import static com.pemc.crss.dataflow.app.support.StlJobStage.GEN_MONTHLY_SUMMARY
 public class StlJobGroupDto {
 
     private BatchStatus genMonthlySummaryStatus;
+    private BatchStatus genRsvMonthlySummaryStatus;
     private BatchStatus gmrVatMFeeCalculationStatus;
+    private BatchStatus rgmrVatMFeeCalculationStatus;
     private BatchStatus taggingStatus;
     private BatchStatus invoiceGenerationStatus;
     private BatchStatus invoiceGenerationRsvTaStatus;
@@ -153,6 +155,15 @@ public class StlJobGroupDto {
                 && Objects.equals(sortedCalcDtosWithoutLr.get(0).getJobStage(), CALCULATE_GMR);
     }
 
+    public boolean isCalculateRgmrIsLatestJob() {
+        List<JobCalculationDto> sortedCalcDtos = !jobCalculationDtos.isEmpty() ?
+                jobCalculationDtos.stream()
+                        .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
+                        .collect(Collectors.toList()) : new ArrayList<>();
+
+        return Objects.equals(sortedCalcDtos.get(0).getJobStage(), CALCULATE_GMR);
+    }
+
     public boolean isGenMonthlySummaryIsLatestJob() {
         List<StlJobStage> lineRentalJobStages = Arrays.asList(CALCULATE_LR, FINALIZE_LR);
 
@@ -164,6 +175,15 @@ public class StlJobGroupDto {
 
         return !sortedCalcDtosWithoutLr.isEmpty()
                 && Objects.equals(sortedCalcDtosWithoutLr.get(0).getJobStage(), GEN_MONTHLY_SUMMARY);
+    }
+
+    public boolean isGenMonthlyRsvSummaryIsLatestJob() {
+        List<JobCalculationDto> sortedCalcDtos = !jobCalculationDtos.isEmpty() ?
+                jobCalculationDtos.stream()
+                        .sorted(Collections.reverseOrder(Comparator.comparing(JobCalculationDto::getRunDate)))
+                        .collect(Collectors.toList()) : new ArrayList<>();
+
+        return Objects.equals(sortedCalcDtos.get(0).getJobStage(), GEN_MONTHLY_SUMMARY);
     }
 
     public List<JobCalculationDto> getSortedJobCalculationDtos() {

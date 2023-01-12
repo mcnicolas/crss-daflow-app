@@ -126,7 +126,8 @@ public class SchedulerServiceImpl implements SchedulerService {
                     IN_PROGRESS_STATUS, meterProcessTypes);
 
             if (nextJob != null) {
-                if (Arrays.asList(JobProcess.GEN_INPUT_WS_TA, JobProcess.CALC_TA, JobProcess.CALC_RTA).contains(nextJob.getJobProcess())) {
+                if (Arrays.asList(JobProcess.GEN_INPUT_WS_TA, JobProcess.GEN_INPUT_WS_RTA,
+                        JobProcess.CALC_TA, JobProcess.CALC_RTA).contains(nextJob.getJobProcess())) {
                     executeParallelRuns(nextJob);
                 } else {
                     handleNextJob(nextJob);
@@ -241,6 +242,7 @@ public class SchedulerServiceImpl implements SchedulerService {
                 case GEN_ALLOC_REPORT:
                     tradingAmountsTaskExecutionService.launchJob(taskDto);
                     break;
+                case GEN_INPUT_WS_RTA:
                 case CALC_RTA:
                 case GEN_MONTHLY_SUMMARY_RTA:
                 case CALC_RGMR_VAT:

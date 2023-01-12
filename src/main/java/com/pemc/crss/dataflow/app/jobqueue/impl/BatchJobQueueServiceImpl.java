@@ -11,6 +11,7 @@ import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.QBatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
+import com.pemc.crss.shared.core.dataflow.reference.SettlementJobName;
 import com.pemc.crss.shared.core.dataflow.repository.BatchJobQueueRepository;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import com.querydsl.core.BooleanBuilder;
@@ -95,16 +96,17 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
     @Override
     public void validateGenIwsAndCalcQueuedJobs(TaskRunDto taskRunDtoToQueue) {
         List<BatchJobQueue> inProgressJobs = findQueuedAndInProgressJobs(Arrays.asList(JobProcess.GEN_INPUT_WS_TA,
-                JobProcess.CALC_TA, JobProcess.CALC_RTA));
+                JobProcess.GEN_INPUT_WS_RTA, JobProcess.CALC_TA, JobProcess.CALC_RTA));
 
         boolean sameJobInProgress = inProgressJobs.stream()
+                .filter(inProgress -> !excludeJobs(taskRunDtoToQueue.getJobName()).contains(inProgress.getJobName()))
                 .map(jobQueue -> ModelMapper.toModel(jobQueue.getTaskObj(), TaskRunDto.class))
                 .anyMatch(taskRunDto ->
-                    Objects.equals(taskRunDto.getGroupId(), taskRunDtoToQueue.getGroupId()) &&
-                    Objects.equals(taskRunDto.getStartDate(), taskRunDtoToQueue.getStartDate()) &&
-                    Objects.equals(taskRunDto.getEndDate(), taskRunDtoToQueue.getEndDate()) &&
-                    Objects.equals(taskRunDto.getMeterProcessType(), taskRunDtoToQueue.getMeterProcessType()) &&
-                    Objects.equals(taskRunDto.getRegionGroup(), taskRunDtoToQueue.getRegionGroup())
+                        Objects.equals(taskRunDto.getGroupId(), taskRunDtoToQueue.getGroupId()) &&
+                                Objects.equals(taskRunDto.getStartDate(), taskRunDtoToQueue.getStartDate()) &&
+                                Objects.equals(taskRunDto.getEndDate(), taskRunDtoToQueue.getEndDate()) &&
+                                Objects.equals(taskRunDto.getMeterProcessType(), taskRunDtoToQueue.getMeterProcessType()) &&
+                                Objects.equals(taskRunDto.getRegionGroup(), taskRunDtoToQueue.getRegionGroup())
                 );
 
         if (sameJobInProgress) {
@@ -113,6 +115,25 @@ public class BatchJobQueueServiceImpl implements BatchJobQueueService {
                     taskRunDtoToQueue.getGroupId(), taskRunDtoToQueue.getEndDate(),
                     taskRunDtoToQueue.getMeterProcessType(), taskRunDtoToQueue.getRegionGroup()));
         }
+    }
+
+    // exclude energy/reserve related jobs that might have the same groupId, start/end date, meterProcessType, regionGroup
+    private List<String> excludeJobs(String job) {
+        List<String> excludeJobs = new ArrayList<>();
+        switch (job) {
+            case SettlementJobName.CALC_STL:
+            case SettlementJobName.GEN_EBRSV_INPUT_WS:
+                excludeJobs.add(SettlementJobName.CALC_RSV_STL);
+                excludeJobs.add(SettlementJobName.GEN_RSV_INPUT_WS);
+                break;
+            case SettlementJobName.CALC_RSV_STL:
+            case SettlementJobName.GEN_RSV_INPUT_WS:
+                excludeJobs.add(SettlementJobName.CALC_STL);
+                excludeJobs.add(SettlementJobName.GEN_EBRSV_INPUT_WS);
+                break;
+            default:
+        }
+        return excludeJobs;
     }
 
     @Override

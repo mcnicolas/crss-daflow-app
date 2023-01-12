@@ -41,7 +41,6 @@ import static com.pemc.crss.shared.commons.reference.MeterProcessType.*;
 import static com.pemc.crss.shared.commons.reference.MeterProcessType.DAILY;
 import static com.pemc.crss.shared.commons.reference.SettlementStepUtil.*;
 import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
-import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.FILE_LR;
 
 @Slf4j
 @Service("reserveTradingAmountsTaskExecutionService")
@@ -85,7 +84,7 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
 
             /* GENERATE INPUT WORKSPACE START */
             List<JobInstance> generateInputWsJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
-                    GEN_EBRSV_INPUT_WS, processType, parentId, regionGroup);
+                    GEN_RSV_INPUT_WS, processType, parentId, regionGroup);
 
             initializeGenInputWorkSpace(generateInputWsJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
@@ -102,10 +101,10 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
             initializeGenMonthlySummary(genMonthlySummaryJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* CALCULATE GMR START */
-            List<JobInstance> calculateGmrJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
+            List<JobInstance> calculateRgmrJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
                     CALC_RGMR, processType, parentId, regionGroup);
 
-            initializeCalculateGmr(calculateGmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+            initializeCalculateRgmr(calculateRgmrJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* FINALIZE START */
             List<JobInstance> taggingJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
@@ -210,7 +209,7 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
                 taskRunDto.getBaseType());
 
         switch (taskRunDto.getJobName()) {
-            case GEN_EBRSV_INPUT_WS:
+            case GEN_RSV_INPUT_WS:
                 launchGenerateInputWorkspaceJob(taskRunDto);
                 break;
             case CALC_RSV_STL:
@@ -285,7 +284,7 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
                     jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
             );
 
-            stlJobGroupDto.setGenMonthlySummaryStatus(currentStatus);
+            stlJobGroupDto.setGenRsvMonthlySummaryStatus(currentStatus);
             stlJobGroupDto.setGroupId(groupId);
             stlJobGroupDto.setGenMonthlySummaryRunDate(genMonthlySummaryJobExecution.getStartTime());
 
@@ -307,16 +306,16 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
     }
 
     // Calculate GMR is exclusive for Trading Amounts
-    private void initializeCalculateGmr(final List<JobInstance> calculateGmrJobInstances,
-                                        final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
-                                        final SettlementTaskExecutionDto taskExecutionDto,
-                                        final String stlReadyGroupId) {
+    private void initializeCalculateRgmr(final List<JobInstance> calculateRgmrJobInstances,
+                                         final Map<String, StlJobGroupDto> stlJobGroupDtoMap,
+                                         final SettlementTaskExecutionDto taskExecutionDto,
+                                         final String stlReadyGroupId) {
 
         Set<String> calcGmrNames = Sets.newHashSet();
-        Map<String, List<JobCalculationDto>> gmrJobCalculationDtoMap = getJobCalculationMap(calculateGmrJobInstances,
+        Map<String, List<JobCalculationDto>> gmrJobCalculationDtoMap = getJobCalculationMap(calculateRgmrJobInstances,
                 StlJobStage.CALCULATE_GMR, STL_GMR_CALC_STEP_WITH_SKIP_LOGS);
 
-        for (JobInstance calcGmrStlJobInstance : calculateGmrJobInstances) {
+        for (JobInstance calcGmrStlJobInstance : calculateRgmrJobInstances) {
             String calcGmrStlJobName = calcGmrStlJobInstance.getJobName();
             if (calcGmrNames.contains(calcGmrStlJobName)) {
                 continue;
@@ -334,7 +333,7 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
                     jobCalcDtoList -> stlJobGroupDto.getJobCalculationDtos().addAll(jobCalcDtoList)
             );
 
-            stlJobGroupDto.setGmrVatMFeeCalculationStatus(currentStatus);
+            stlJobGroupDto.setRgmrVatMFeeCalculationStatus(currentStatus);
             stlJobGroupDto.setGroupId(groupId);
             stlJobGroupDto.setGmrCalcRunDate(calcGmrJobExecution.getStartTime());
 
@@ -474,7 +473,7 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
 
     @Override
     String getDailyGenInputWorkspaceProfile() {
-        return SettlementJobProfile.GEN_DAILY_EBRSV_INPUT_WS;
+        return SettlementJobProfile.GEN_DAILY_RSV_INPUT_WS;
     }
 
     @Override

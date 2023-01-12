@@ -5,6 +5,7 @@ import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.core.dataflow.entity.ViewStlDailyStatus;
 import com.pemc.crss.shared.core.dataflow.reference.JobProcess;
 import com.pemc.crss.shared.core.dataflow.reference.QueueStatus;
+import com.sun.org.apache.bcel.internal.generic.RETURN;
 import org.apache.commons.lang.StringUtils;
 
 import java.time.LocalDateTime;
@@ -53,8 +54,12 @@ public class StlDailyStatusDisplay {
         switch (dailyStatus.getJobProcess()) {
             case GEN_INPUT_WS_TA:
                 return "Generate Input Workspace";
+            case GEN_INPUT_WS_RTA:
+                return "Generate Reserve Input Workspace";
             case CALC_TA:
                 return JobProcess.CALC_TA.getDescription();
+            case CALC_RTA:
+                return JobProcess.CALC_RTA.getDescription();
             default:
                 return null;
         }
@@ -94,5 +99,10 @@ public class StlDailyStatusDisplay {
     public boolean isCompletedGenIws() {
         return dailyStatus.getStatus() == QueueStatus.COMPLETED
                 && dailyStatus.getJobProcess() == JobProcess.GEN_INPUT_WS_TA;
+    }
+
+    public boolean isCompletedRsvGenIws() {
+        return dailyStatus.getStatus() == QueueStatus.COMPLETED
+                && dailyStatus.getJobProcess() == JobProcess.GEN_INPUT_WS_RTA;
     }
 }

@@ -9,6 +9,7 @@ import com.pemc.crss.dataflow.app.support.PageableRequest;
 import com.pemc.crss.dataflow.app.util.SecurityUtil;
 import com.pemc.crss.shared.commons.reference.MeterProcessType;
 import com.pemc.crss.shared.commons.util.DateUtil;
+import com.pemc.crss.shared.commons.util.ModelMapper;
 import com.pemc.crss.shared.commons.util.reference.Module;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobQueue;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobSkipLog;
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,7 +60,60 @@ public class ReserveTradingAmountsTaskExecutionResource {
         return new ResponseEntity<>(taskExecutionService.findJobInstances(pageableRequest), HttpStatus.OK);
     }
 
-    @PostMapping("/calculate-reserve")
+    @PostMapping("/generate-input-workspace")
+    public ResponseEntity runGenInputWorkSpaceJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
+
+        if (taskRunDto.isNewGroup()) {
+            for (BatchJobQueue runAdjJob : queueService.findQueuedAndInProgressJobs(
+                    Collections.singletonList(JobProcess.GEN_INPUT_WS_RTA))) {
+                TaskRunDto runAdjTaskDto = ModelMapper.toModel(runAdjJob.getTaskObj(), TaskRunDto.class);
+                if (runAdjTaskDto.isNewGroup() && Objects.equals(taskRunDto.getParentJob(), runAdjTaskDto.getParentJob())) {
+                    throw new RuntimeException("Cannot queue run adjustment job. Another run adjustment job"
+                            + " with the same billing period is already queued");
+                }
+            }
+
+            // set groupId at the start instead of setting it during execution.
+            taskRunDto.setGroupId(Long.valueOf(System.currentTimeMillis()).toString());
+        }
+
+        validateAdjustedRun(taskRunDto);
+
+        List<String> dateRangeStr;
+
+        switch (MeterProcessType.valueOf(taskRunDto.getMeterProcessType())) {
+            case DAILY:
+                dateRangeStr = DateUtil.createRangeString(taskRunDto.getTradingDate(), taskRunDto.getTradingDate(),
+                        null);
+                break;
+            default:
+                dateRangeStr = DateUtil.createRangeString(taskRunDto.getStartDate(), taskRunDto.getEndDate(), null);
+        }
+
+        dateRangeStr.forEach(dateStr -> {
+            TaskRunDto runDto = TaskRunDto.clone(taskRunDto);
+            runDto.setStartDate(dateStr);
+            runDto.setEndDate(dateStr);
+            runDto.setRunId(System.currentTimeMillis());
+            runDto.setJobName(SettlementJobName.GEN_RSV_INPUT_WS);
+            runDto.setCurrentUser(SecurityUtil.getCurrentUser(principal));
+
+            log.info("Queueing runGenInputWorkSpaceJob for reserve trading amounts. taskRunDto={}", runDto);
+
+            BatchJobQueue jobQueue = BatchJobQueueService.newInst(Module.SETTLEMENT, JobProcess.GEN_INPUT_WS_RTA, runDto);
+            jobQueue.setTradingDate(DateUtil.parseLocalDate(dateStr).atStartOfDay());
+            jobQueue.setGroupId(taskRunDto.getGroupId());
+            jobQueue.setRegionGroup(taskRunDto.getRegionGroup());
+
+            queueService.validateGenIwsAndCalcQueuedJobs(runDto);
+            queueService.save(jobQueue);
+
+        });
+
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/calculate")
     public ResponseEntity runCalculateJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         validateAdjustedRun(taskRunDto);
@@ -147,7 +202,7 @@ public class ReserveTradingAmountsTaskExecutionResource {
 
     private void validateAdjustedRun(final TaskRunDto taskRunDto) {
         if (Objects.equals(taskRunDto.getMeterProcessType(), MeterProcessType.ADJUSTED.name()) || taskRunDto.isNewGroup()) {
-            queueService.validateAdjustedProcess(taskRunDto, JobProcess.FINALIZE_TA);
+            queueService.validateAdjustedProcess(taskRunDto, JobProcess.FINALIZE_RTA);
         }
     }
 

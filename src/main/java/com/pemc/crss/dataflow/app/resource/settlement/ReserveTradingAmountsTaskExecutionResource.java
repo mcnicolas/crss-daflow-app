@@ -265,7 +265,7 @@ public class ReserveTradingAmountsTaskExecutionResource {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @PostMapping("/generate-alloc-report")
+    @PostMapping("/generate-alloc-report-reserve")
     public ResponseEntity runGenerateAllocReportJob(@RequestBody TaskRunDto taskRunDto, Principal principal) throws URISyntaxException {
 
         taskRunDto.setRunId(System.currentTimeMillis());

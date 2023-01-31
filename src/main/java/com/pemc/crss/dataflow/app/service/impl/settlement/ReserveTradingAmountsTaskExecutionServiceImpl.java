@@ -242,9 +242,9 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
             case CALC_ALLOC_RESERVE:
                 launchCalculateAllocReserveJob(taskRunDto);
                 break;
-//            case FILE_ALLOC_RESERVE:
-//                launchGenerateAllocReportJob(taskRunDto);
-//                break;
+            case FILE_ALLOC_RESERVE:
+                launchGenerateAllocReserveReportJob(taskRunDto);
+                break;
             default:
                 throw new RuntimeException("Job launch failed. Unhandled Job Name: " + taskRunDto.getJobName());
         }

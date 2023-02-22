@@ -503,6 +503,7 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
         Map<String, String> calcSteps = new LinkedHashMap<>();
         calcSteps.put(DISAGGREGATE_BCQ, "Disaggregate BCQ");
         calcSteps.put(CALC_SCALING_FACTOR, "Calculate Scaling Factor");
+        calcSteps.put(CALC_RCRA, "Calculate RTA");
 
         return calcSteps;
     }

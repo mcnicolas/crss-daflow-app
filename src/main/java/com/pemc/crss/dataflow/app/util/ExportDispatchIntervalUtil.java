@@ -33,7 +33,7 @@ public class ExportDispatchIntervalUtil {
                 "Scheduled Generation",
                 "Deviation",
                 "FEDP",
-                "Pricing Condition",
+                "Claim Type",
                 "Approved Rate",
                 "Reason"
         };

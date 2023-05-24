@@ -14,14 +14,12 @@ import com.pemc.crss.shared.commons.util.TaskUtil;
 import com.pemc.crss.shared.core.dataflow.entity.AddtlCompParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAddtlParams;
 import com.pemc.crss.shared.core.dataflow.entity.BatchJobAdjRun;
+import com.pemc.crss.shared.core.dataflow.entity.ViewCfgBillingId;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobName;
 import com.pemc.crss.shared.core.dataflow.reference.AddtlCompJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.SettlementJobProfile;
 import com.pemc.crss.shared.core.dataflow.reference.StlCalculationType;
-import com.pemc.crss.shared.core.dataflow.repository.AddtlCompParamsRepository;
-import com.pemc.crss.shared.core.dataflow.repository.BatchJobAdjRunRepository;
-import com.pemc.crss.shared.core.dataflow.repository.SettlementJobLockRepository;
-import com.pemc.crss.shared.core.dataflow.repository.ViewTxnOutputAddtlCompensationRepository;
+import com.pemc.crss.shared.core.dataflow.repository.*;
 import com.pemc.crss.shared.core.dataflow.service.BatchJobAddtlParamsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -84,6 +82,9 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
     @Autowired
     private ViewTxnOutputAddtlCompensationRepository viewTxnOutputAddtlCompensationRepository;
+
+    @Autowired
+    private ViewCfgBillingIdRepository cfgBillingIdRepository;
 
     @Value("${cfg.ams.remarks-max-length}")
     private Long maxRemarksLength;
@@ -331,12 +332,34 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         arguments.add(concatKeyValue(USERNAME, taskRunDto.getCurrentUser()));
         saveAddltCompCalcAdditionalParams(runId, taskRunDto);
 
-        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED);
+        String region = getBillingIdRegion(taskRunDto.getBillingId(), endDate);
+        log.info("billing-id: {}. Region: {}", taskRunDto.getBillingId(), region);
+
+        boolean hasAdjusted = billingPeriodIsFinalized(startDate, endDate, MeterProcessType.ADJUSTED, region);
+        log.info("Has Adjusted: {}", hasAdjusted);
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 hasAdjusted ? AddtlCompJobProfile.AC_CALC_ADJ_PROFILE : AddtlCompJobProfile.AC_CALC_FINAL_PROFILE)));
 
         log.debug("Running job name={}, properties={}, arguments={}", AC_CALC, properties, arguments);
         launchJob(ADDTL_COMP_TASK_NAME, properties, arguments);
+    }
+
+    private String getBillingIdRegion(String dtoBillingId, String bpEndDate) {
+        LocalDateTime endDateTime = DateUtil.parseLocalDate(bpEndDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
+        List<ViewCfgBillingId> billingIds = cfgBillingIdRepository.findByBillingIdIgnoreCase(dtoBillingId);
+        List<ViewCfgBillingId> beforeEndDateBillingIds = billingIds.stream()
+                .filter(o -> !endDateTime.isBefore(o.getEffectiveStartDate())).collect(Collectors.toList());
+
+        if (CollectionUtils.isNotEmpty(beforeEndDateBillingIds)) {
+            return beforeEndDateBillingIds.stream()
+                    .sorted(Comparator.comparing(ViewCfgBillingId::getEffectiveStartDate).reversed())
+                    .findFirst().get().getRegion();
+        } else {
+            return billingIds.stream()
+                    .sorted(Comparator.comparing(ViewCfgBillingId::getEffectiveStartDate).reversed())
+                    .findFirst().get().getRegion();
+        }
+
     }
 
     private void calcGmrVatAc(TaskRunDto taskRunDto) throws URISyntaxException {
@@ -740,6 +763,23 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
 
         return settlementJobLockRepository.billingPeriodIsFinalizedForAc(startDateTime, endDateTime, processType.name(),
                 StlCalculationType.TRADING_AMOUNTS.name());
+    }
+
+    private boolean billingPeriodIsFinalized(String startDate, String endDate, MeterProcessType processType, String region) {
+        LocalDateTime startDateTime = DateUtil.parseLocalDate(startDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
+        LocalDateTime endDateTime = DateUtil.parseLocalDate(endDate, DateUtil.DEFAULT_DATE_FORMAT).atStartOfDay();
+
+        List<String> regionGroups;
+        if ("LUZON".equalsIgnoreCase(region) || "VISAYAS".equalsIgnoreCase(region)) {
+            regionGroups = Lists.newArrayList("LUZON_VISAYAS", "ALL");
+        } else if ("MINDANAO".equalsIgnoreCase(region)) {
+            regionGroups = Lists.newArrayList("MINDANAO", "ALL");
+        } else {
+            regionGroups = Lists.newArrayList("ALL");
+        }
+
+        return settlementJobLockRepository.billingPeriodIsFinalizedForAcRegion(startDateTime, endDateTime, processType.name(),
+                StlCalculationType.TRADING_AMOUNTS.name(), regionGroups);
     }
 
     private void checkTimeValidity(String billingEndDate) {

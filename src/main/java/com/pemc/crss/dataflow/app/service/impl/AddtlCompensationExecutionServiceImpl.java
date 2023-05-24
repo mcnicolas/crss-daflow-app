@@ -777,7 +777,6 @@ public class AddtlCompensationExecutionServiceImpl extends AbstractTaskExecution
         } else {
             regionGroups = Lists.newArrayList("ALL");
         }
-
         return settlementJobLockRepository.billingPeriodIsFinalizedForAcRegion(startDateTime, endDateTime, processType.name(),
                 StlCalculationType.TRADING_AMOUNTS.name(), regionGroups);
     }

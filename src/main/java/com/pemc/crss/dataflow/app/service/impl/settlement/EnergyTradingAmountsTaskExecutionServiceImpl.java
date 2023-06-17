@@ -1139,13 +1139,14 @@ public class EnergyTradingAmountsTaskExecutionServiceImpl extends StlTaskExecuti
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
         arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
+        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
 
         List<String> properties = Lists.newArrayList();
 
         properties.add(concatKeyValue(SPRING_PROFILES_ACTIVE, fetchSpringProfilesActive(
                 SettlementJobProfile.GEN_FILE_ALLOC_REPORT)));
 
-        log.info("Running calculate gmr job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
+        log.info("Running generate alloc report job name={}, properties={}, arguments={}", taskRunDto.getJobName(), properties, arguments);
 
         launchJob(SPRING_BATCH_MODULE_FILE_GEN, properties, arguments);
         lockJobJdbc(taskRunDto);

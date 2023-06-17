@@ -409,6 +409,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
             stlJobGroupDto.setRunId(generationJobParameters.getLong(RUN_ID));
             stlJobGroupDto.setRunStartDateTime(generationJobExecution.getStartTime());
             stlJobGroupDto.setRunEndDateTime(generationJobExecution.getEndTime());
+            stlJobGroupDto.setRegionGroup(taskExecutionDto.getRegionGroup());
 
             Date latestJobExecStartDate = stlJobGroupDto.getLatestJobExecStartDate();
             if (latestJobExecStartDate == null || !latestJobExecStartDate.after(generationJobExecution.getStartTime())) {

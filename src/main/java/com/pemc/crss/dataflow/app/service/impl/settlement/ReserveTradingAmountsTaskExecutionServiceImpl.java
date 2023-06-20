@@ -490,12 +490,12 @@ public class ReserveTradingAmountsTaskExecutionServiceImpl extends StlTaskExecut
 
     @Override
     String getAdjustedMtrAdjGenInputWorkSpaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_ADJ_EBRSV_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_ADJ_RSV_INPUT_WS;
     }
 
     @Override
     String getAdjustedMtrFinGenInputWorkSpaceProfile() {
-        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_EBRSV_INPUT_WS;
+        return SettlementJobProfile.GEN_MONTHLY_ADJ_MTR_FIN_RSV_INPUT_WS;
     }
 
     @Override

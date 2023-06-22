@@ -1139,7 +1139,6 @@ public class EnergyTradingAmountsTaskExecutionServiceImpl extends StlTaskExecuti
         List<String> arguments = initializeJobArguments(taskRunDto, runId, groupId, type);
         arguments.add(concatKeyValue(START_DATE, taskRunDto.getBaseStartDate(), "date"));
         arguments.add(concatKeyValue(END_DATE, taskRunDto.getBaseEndDate(), "date"));
-        arguments.add(concatKeyValue(REGION_GROUP, taskRunDto.getRegionGroup()));
 
         List<String> properties = Lists.newArrayList();
 

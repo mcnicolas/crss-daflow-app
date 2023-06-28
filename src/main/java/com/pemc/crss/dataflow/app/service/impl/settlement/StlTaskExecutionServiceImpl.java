@@ -655,11 +655,13 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
 
             for (StlJobGroupDto stlJobGroupDto : taskExecutionDto.getStlJobGroupDtoMap().values()) {
 
+                log.info("xxx1 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                 // 1: lock stlJobGroupDto if it's already finalized
                 stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getGroupId().equals(stlJobGroupDto.getGroupId())
                         && stlJobLock.getParentJobId().equals(taskExecutionDto.getParentId()))
                         .findFirst().ifPresent(stlLock -> stlJobGroupDto.setLocked(stlLock.isLocked()));
 
+                log.info("xxx2 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                 Optional<SettlementJobLock> latestAdjustedStlLock = stlJobLocks.stream()
                         .filter(stlJobLock -> stlJobLock.getProcessType() == ADJUSTED && stlJobLock.isLocked() &&
                                 // do not include child jobs with FINAL parent since their parentId is equal to the billingPeriod
@@ -671,18 +673,23 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                 if (ADJUSTED.equals(processType) && stlJobGroupDto.isHeader() && !stlJobGroupDto.isLocked()) {
                     stlJobGroupDto.setLocked(true);
 
+                    log.info("xxx3 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                     // 2.1: release lock if FINAL is already locked
                     stlJobLocks.stream().filter(stlJobLock -> stlJobLock.getProcessType() == FINAL && stlJobLock.isLocked())
                             .findFirst().ifPresent(finalStlLock -> stlJobGroupDto.setLocked(false));
 
+                    log.info("xxx4 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                     // 2.2: lock if the latest finalized Adjusted Stl run's parent id is more recent than the header's parent id
                     latestAdjustedStlLock.ifPresent(stlJobLock ->
                             stlJobGroupDto.setLocked(taskExecutionDto.getParentId() < stlJobLock.getParentJobId()));
+
+                    log.info("xxx5 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                 }
 
                 // 3: for child runs of FINAL / ADJUSTED and not yet locked  (note all child runs are of ADJUSTED type)
                 if (!stlJobGroupDto.isHeader() && !stlJobGroupDto.isLocked()) {
                     stlJobGroupDto.setLocked(true);
+                    log.info("xxx6 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
 
                     List<Long> childGroupIds = taskExecutionDto.getStlJobGroupDtoMap().values().stream()
                             .filter(dto -> !dto.isHeader())
@@ -697,6 +704,7 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                     // 3.1: since groupId of child runs are timestamp-based, lock if a more recent child run is finalized
                     stlJobGroupDto.setLocked(finalizedGroupIdsOfChildJobs.stream()
                             .anyMatch(finalizedGroupId -> finalizedGroupId > Long.valueOf(stlJobGroupDto.getGroupId())));
+                    log.info("xxx7 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
 
                     // 3.2: lock if the latest finalized Adjusted Stl run's parent id is more recent than the child's parent id
                     latestAdjustedStlLock.ifPresent(stlJobLock -> {
@@ -704,8 +712,10 @@ public abstract class StlTaskExecutionServiceImpl extends AbstractTaskExecutionS
                                 !Objects.equals(taskExecutionDto.getParentStlJobGroupDto().getGroupId(), stlJobLock.getGroupId())) {
                             // latest tagged ADJUSTED run is meter-triggered and is different from the child's parent
                             stlJobGroupDto.setLocked(true);
+                            log.info("xxx8 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                         } else {
                             stlJobGroupDto.setLocked(taskExecutionDto.getParentId() < stlJobLock.getParentJobId());
+                            log.info("xxx9 stlJobGroupDtoisLocked {} - {}", stlJobGroupDto.getGroupId(), stlJobGroupDto.isLocked());
                         }
                     });
                 }

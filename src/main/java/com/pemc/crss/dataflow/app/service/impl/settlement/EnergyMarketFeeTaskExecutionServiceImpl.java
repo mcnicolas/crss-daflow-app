@@ -38,7 +38,6 @@ import static com.pemc.crss.shared.core.dataflow.reference.SettlementJobName.*;
 @Service("energyMarketFeeTaskExecutionService")
 @Transactional
 public class EnergyMarketFeeTaskExecutionServiceImpl extends StlTaskExecutionServiceImpl {
-
     @Autowired
     private StlReadyJobQueryService stlReadyJobQueryService;
 

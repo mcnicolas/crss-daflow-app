@@ -3,7 +3,8 @@ repositories {
         url "https://plugins.gradle.org/m2/"
     }
     maven {
-        url 'https://repo.spring.io/plugins-release'
+//        url 'https://repo.spring.io/plugins-release'
+        url "https://repo.spring.io/plugins-snapshot"
     }
 
     // this two repository must not be here since it was already
@@ -16,5 +17,6 @@ dependencies {
     classpath 'io.spring.gradle:dependency-management-plugin:0.6.0.RELEASE'
     classpath 'com.bmuschko:gradle-docker-plugin:2.6.5'
     classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.1'
-    classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+//    classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+    classpath 'io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT'
 }

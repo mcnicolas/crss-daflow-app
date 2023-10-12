@@ -142,13 +142,13 @@ public class EnergyTradingAmountsTaskExecutionServiceImpl extends StlTaskExecuti
             List<JobInstance> genFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
                     FILE_RSV_TA, processType, parentId, regionGroup);
 
-            initializeFileGenReserveTa(genFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+            //initializeFileGenReserveTa(genFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES RESERVE TA START */
             List<JobInstance> genStatementFileReserveTaJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(
                     FILE_RSV_BILL_STATEMENT_TA, processType, parentId, regionGroup);
 
-            initializeBillStatementFileGenReserveTa(genStatementFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
+            //initializeBillStatementFileGenReserveTa(genStatementFileReserveTaJobInstances, stlJobGroupDtoMap, taskExecutionDto, stlReadyGroupId);
 
             /* GEN FILES LINE RENTAL START */
             List<JobInstance> genFileLineRentalJobInstances = findJobInstancesByNameAndProcessTypeAndParentIdAndRegionGroup(

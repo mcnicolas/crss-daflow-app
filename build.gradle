@@ -47,7 +47,7 @@ apply plugin: 'spring-boot'
 
 jar {
     baseName = 'crss-dataflow-app'
-    version = '2.10.0.BUILD-SNAPSHOT'
+    version = '2.10.0.RELEASE'
 }
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
